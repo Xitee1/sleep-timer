@@ -21,6 +21,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.dp
 import dev.mato.sleeptimer.feature.timer.theme.DesignTokens
 import kotlin.math.cos
 import kotlin.math.floor
@@ -38,7 +40,7 @@ fun TimerBackground(
     content: @Composable BoxScope.() -> Unit,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
-        // Base vertical gradient
+        // Base vertical gradient + aurora blobs in a single canvas pass.
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawRect(
                 brush = Brush.verticalGradient(
@@ -80,37 +82,42 @@ private fun DrawScope.drawAuroraBlob(center: Offset, radius: Float, color: Color
 /**
  * Starfield with per-star random velocity. Ramps smoothly from rest to max drift speed
  * over ~5 s when [animating] turns on, and ramps back down when it turns off.
- * Stars never jump — positions integrate from the last frame.
+ * Star size and count scale with the display size.
  */
 @Composable
 private fun StarField(animating: Boolean) {
-    // Each entry: relative x, y in [0,1], base opacity
-    val seed = remember {
-        listOf(
-            Triple(0.12f, 0.08f, 0.60f), Triple(0.28f, 0.22f, 0.30f),
-            Triple(0.45f, 0.12f, 0.80f), Triple(0.62f, 0.28f, 0.40f),
-            Triple(0.78f, 0.15f, 0.50f), Triple(0.88f, 0.40f, 0.30f),
-            Triple(0.18f, 0.48f, 0.40f), Triple(0.35f, 0.62f, 0.25f),
-            Triple(0.55f, 0.55f, 0.35f), Triple(0.72f, 0.68f, 0.30f),
-            Triple(0.92f, 0.72f, 0.50f), Triple(0.08f, 0.78f, 0.30f),
-            Triple(0.48f, 0.86f, 0.20f), Triple(0.68f, 0.90f, 0.30f),
-            Triple(0.25f, 0.90f, 0.25f), Triple(0.15f, 0.35f, 0.30f),
-            Triple(0.50f, 0.38f, 0.20f), Triple(0.80f, 0.55f, 0.25f),
-            Triple(0.05f, 0.60f, 0.30f), Triple(0.95f, 0.25f, 0.40f),
-            Triple(0.38f, 0.05f, 0.30f), Triple(0.70f, 0.08f, 0.50f),
-            Triple(0.22f, 0.18f, 0.25f),
-        )
-    }
+    val configuration = LocalConfiguration.current
+    val screenMinDp = min(configuration.screenWidthDp, configuration.screenHeightDp)
+    // Scale stars and count by screen size. 360 dp phone = 1x, tablets go up to ~1.7x.
+    val sizeScale = (screenMinDp / 360f).coerceIn(0.9f, 1.7f)
+    // More stars on larger screens.
+    val starCount = (40 * sizeScale).toInt().coerceIn(40, 80)
 
-    // Stable per-star motion parameters.
-    val params = remember {
-        seed.mapIndexed { i, _ ->
+    // Each star: (relative x 0..1, relative y 0..1, opacity 0..1, size multiplier 0.7..1.4)
+    val seed = remember(starCount) {
+        List(starCount) { i ->
             val r = { k: Int ->
                 val v = sin(i * 12.9898 + k * 78.233) * 43758.5453
                 (v - floor(v)).toFloat()
             }
+            StarSeed(
+                x = r(0),
+                y = r(1),
+                opacity = 0.35f + r(2) * 0.55f,
+                sizeMul = 0.7f + r(3) * 0.7f,
+            )
+        }
+    }
+
+    // Stable per-star motion parameters.
+    val params = remember(seed) {
+        seed.mapIndexed { i, _ ->
+            val r = { k: Int ->
+                val v = sin((i + 500) * 12.9898 + k * 78.233) * 43758.5453
+                (v - floor(v)).toFloat()
+            }
             StarParams(
-                speed = 4f + r(1) * 10f,            // dp/s
+                speed = 4f + r(1) * 10f,
                 angle = r(2) * (2f * Math.PI.toFloat()),
                 wobbleFreq = 0.10f + r(3) * 0.30f,
                 wobbleAmt = 0.60f + r(4) * 1.20f,
@@ -119,8 +126,8 @@ private fun StarField(animating: Boolean) {
         }
     }
 
-    // Per-star integrated position offsets (in px).
-    val positions = remember { FloatArray(seed.size * 2) }
+    // Per-star integrated drift offsets (px).
+    val positions = remember(seed) { FloatArray(seed.size * 2) }
 
     // 0..1 smoothly ramped drive amount.
     val ramp = remember { Animatable(0f) }
@@ -131,7 +138,6 @@ private fun StarField(animating: Boolean) {
         )
     }
 
-    // Advance positions every frame using the current rampped velocity.
     var frameTick by remember { mutableLongStateOf(0L) }
     LaunchedEffect(Unit) {
         var last = 0L
@@ -165,27 +171,42 @@ private fun StarField(animating: Boolean) {
     ) {
         // Read frameTick so Compose redraws on every integration step.
         @Suppress("UNUSED_EXPRESSION") frameTick
+        val coreBase = 2.2.dp.toPx() * sizeScale
+        val haloBase = 7.0.dp.toPx() * sizeScale
         for (i in seed.indices) {
-            val (rx, ry, op) = seed[i]
-            val baseX = rx * size.width
-            val baseY = ry * size.height
-            val cx = baseX + positions[i * 2]
-            val cy = baseY + positions[i * 2 + 1]
-            val glow = 3f * op
-            // soft halo
+            val s = seed[i]
+            val cx = s.x * size.width + positions[i * 2]
+            val cy = s.y * size.height + positions[i * 2 + 1]
+            val core = coreBase * s.sizeMul
+            val halo = haloBase * s.sizeMul
+            // soft outer halo
             drawCircle(
-                color = Color.White.copy(alpha = op * 0.25f),
-                radius = glow,
+                color = Color.White.copy(alpha = s.opacity * 0.18f),
+                radius = halo,
                 center = Offset(cx, cy),
             )
+            // brighter mid halo
             drawCircle(
-                color = Color.White.copy(alpha = op),
-                radius = 1.4f,
+                color = Color.White.copy(alpha = s.opacity * 0.35f),
+                radius = core * 1.8f,
+                center = Offset(cx, cy),
+            )
+            // bright core
+            drawCircle(
+                color = Color.White.copy(alpha = s.opacity),
+                radius = core,
                 center = Offset(cx, cy),
             )
         }
     }
 }
+
+private data class StarSeed(
+    val x: Float,
+    val y: Float,
+    val opacity: Float,
+    val sizeMul: Float,
+)
 
 private data class StarParams(
     val speed: Float,

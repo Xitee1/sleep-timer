@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
@@ -40,8 +41,6 @@ import dev.mato.sleeptimer.feature.timer.R
 import dev.mato.sleeptimer.feature.timer.theme.DesignTokens
 import dev.mato.sleeptimer.feature.timer.timer.components.CircularDial
 import dev.mato.sleeptimer.feature.timer.timer.components.PlayButton
-import dev.mato.sleeptimer.feature.timer.timer.components.Preset
-import dev.mato.sleeptimer.feature.timer.timer.components.PresetRow
 import dev.mato.sleeptimer.feature.timer.timer.components.SecondaryRoundButton
 import dev.mato.sleeptimer.feature.timer.timer.components.TimeDisplay
 import dev.mato.sleeptimer.feature.timer.timer.components.TimerBackground
@@ -93,7 +92,7 @@ fun TimerScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 56.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 CircularDial(
@@ -102,7 +101,9 @@ fun TimerScreen(
                     runningMinutes = runningMinutes,
                     hapticEnabled = settings.hapticFeedbackEnabled,
                     onMinutesChanged = { viewModel.setMinutes(it) },
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .sizeIn(maxWidth = 320.dp, maxHeight = 320.dp),
                 )
 
                 when (val s = uiState) {
@@ -121,22 +122,7 @@ fun TimerScreen(
                 }
             }
 
-            if (uiState is TimerUiState.Idle) {
-                PresetRow(
-                    active = (uiState as TimerUiState.Idle).selectedMinutes,
-                    presets = listOf(
-                        Preset(5, "5m"),
-                        Preset(15, "15m"),
-                        Preset(30, "30m"),
-                        Preset(60, "1h"),
-                    ),
-                    onSelect = { viewModel.setMinutes(it) },
-                )
-            } else {
-                Spacer(modifier = Modifier.height(40.dp))
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             ActionRow(
                 isRunning = isRunning,
