@@ -92,7 +92,7 @@ private fun StarField(animating: Boolean) {
     val configuration = LocalConfiguration.current
     val screenMinDp = min(configuration.screenWidthDp, configuration.screenHeightDp)
     val sizeScale = (screenMinDp / 360f).coerceIn(0.9f, 1.4f)
-    val starCount = (110 * sizeScale).toInt().coerceIn(90, 200)
+    val starCount = (75 * sizeScale).toInt().coerceIn(60, 130)
 
     val seeds = remember(starCount) {
         List(starCount) { i ->
@@ -192,8 +192,8 @@ private fun StarField(animating: Boolean) {
 
         if (!initialized) return@Canvas
 
-        val coreBase = 1.1.dp.toPx() * sizeScale
-        val haloBase = 2.6.dp.toPx() * sizeScale
+        val coreBase = 0.85.dp.toPx() * sizeScale
+        val haloBase = 2.0.dp.toPx() * sizeScale
         val tw = twinkle.value
         val tSec = frameTick / 1_000_000_000f
 
