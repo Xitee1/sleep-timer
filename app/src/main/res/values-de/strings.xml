@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SleepTimer</string>
+
+    <!-- Timer Screen -->
+    <string name="minutes_label">MINUTEN</string>
+    <string name="start_timer">Timer starten</string>
+    <string name="stop_timer">Timer stoppen</string>
+    <string name="settings">Einstellungen</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Einstellungen</string>
+    <string name="category_sleep_timer">Sleep Timer</string>
+    <string name="playback_title">Wiedergabe</string>
+    <string name="playback_description">Audio- und Videowiedergabe stoppen</string>
+    <string name="fade_out_title">Fade-out-Dauer</string>
+    <string name="fade_out_seconds">%d Sekunden</string>
+    <string name="screen_title">Bildschirm</string>
+    <string name="screen_description">Bildschirm sperren wenn Timer endet</string>
+    <string name="screen_admin_required">Geräteadministrator-Berechtigung erforderlich</string>
+    <string name="category_notification">Benachrichtigung</string>
+    <string name="notification_title">Benachrichtigung aktivieren</string>
+    <string name="notification_description">Verbleibende Zeit und Schnellzugriff anzeigen</string>
+    <string name="category_haptic">Haptisches Feedback</string>
+    <string name="haptic_title">Haptisches Feedback</string>
+    <string name="haptic_description">Vibrieren bei Verwendung von Timer und Bedienelementen</string>
+
+    <!-- Notification -->
+    <string name="notification_channel_name">Schlaf-Timer</string>
+    <string name="notification_channel_description">Zeigt verbleibende Zeit des Schlaf-Timers</string>
+    <string name="notification_content_title">Schlaf-Timer</string>
+    <string name="notification_minutes_remaining">Noch %d Minuten</string>
+    <string name="notification_less_than_minute">Weniger als eine Minute verbleibend</string>
+    <string name="notification_action_add_five">+5 Min</string>
+    <string name="notification_action_cancel">Abbrechen</string>
+
+    <!-- Device Admin -->
+    <string name="device_admin_description">Erforderlich, um den Bildschirm zu sperren, wenn der Schlaf-Timer endet.</string>
+</resources>

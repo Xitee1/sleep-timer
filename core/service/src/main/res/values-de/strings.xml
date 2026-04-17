@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_name">Schlaf-Timer</string>
+    <string name="notification_channel_description">Zeigt verbleibende Zeit des Schlaf-Timers</string>
+    <string name="notification_content_title">Schlaf-Timer</string>
+    <string name="notification_minutes_remaining">Noch %d Minuten</string>
+    <string name="notification_less_than_minute">Weniger als eine Minute verbleibend</string>
+    <string name="notification_action_add_five">+5 Min</string>
+    <string name="notification_action_cancel">Abbrechen</string>
+</resources>

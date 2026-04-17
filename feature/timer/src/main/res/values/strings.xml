@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SleepTimer</string>
+    <string name="minutes_label">MINUTES</string>
+    <string name="start_timer">Start timer</string>
+    <string name="stop_timer">Stop timer</string>
+    <string name="settings">Settings</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="category_sleep_timer">Sleep Timer</string>
+    <string name="playback_title">Playback</string>
+    <string name="playback_description">Stop audio and video playback</string>
+    <string name="fade_out_title">Fade-out duration</string>
+    <string name="fade_out_seconds">%d seconds</string>
+    <string name="screen_title">Screen</string>
+    <string name="screen_description">Lock screen when timer ends</string>
+    <string name="screen_admin_required">Device admin permission required</string>
+    <string name="category_notification">Notification</string>
+    <string name="notification_title">Enable notification</string>
+    <string name="notification_description">Show remaining time and quick actions</string>
+    <string name="category_haptic">Haptic Feedback</string>
+    <string name="haptic_title">Haptic feedback</string>
+    <string name="haptic_description">Vibrate when using timer and controls</string>
+</resources>
