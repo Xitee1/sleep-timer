@@ -22,12 +22,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.mato.sleeptimer.feature.timer.R
-import dev.mato.sleeptimer.feature.timer.theme.DesignTokens
+import dev.mato.sleeptimer.feature.timer.theme.appTheme
 
-/**
- * Big primary round button (84 dp) filled with the accent colour, with a warm colored
- * glow and an inner highlight. Icon tint = midnight ink.
- */
 @Composable
 fun PlayButton(
     isRunning: Boolean,
@@ -46,24 +42,25 @@ fun RoundAccentButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val theme = appTheme()
     Box(
         modifier = modifier
             .size(84.dp)
             .shadow(
                 elevation = 20.dp,
                 shape = CircleShape,
-                ambientColor = DesignTokens.Accent,
-                spotColor = DesignTokens.Accent,
+                ambientColor = theme.accent,
+                spotColor = theme.accent,
             )
             .clip(CircleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Canvas(modifier = Modifier.size(84.dp)) {
-            drawCircle(color = DesignTokens.Accent)
+            drawCircle(color = theme.accent)
             drawCircle(
                 brush = Brush.verticalGradient(
-                    0f to Color.White.copy(alpha = 0.45f),
+                    0f to Color.White.copy(alpha = if (theme.isDark) 0.45f else 0.30f),
                     1f to Color.White.copy(alpha = 0f),
                     startY = 0f,
                     endY = size.height * 0.55f,
@@ -75,15 +72,12 @@ fun RoundAccentButton(
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = DesignTokens.BgMid,
+            tint = theme.accentInk,
             modifier = Modifier.size(34.dp),
         )
     }
 }
 
-/**
- * Secondary round button (56 dp) — soft surface with a thin border.
- */
 @Composable
 fun SecondaryRoundButton(
     icon: ImageVector,
@@ -92,6 +86,7 @@ fun SecondaryRoundButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
+    val theme = appTheme()
     Box(
         modifier = modifier
             .size(56.dp)
@@ -100,13 +95,13 @@ fun SecondaryRoundButton(
         contentAlignment = Alignment.Center,
     ) {
         Canvas(modifier = Modifier.size(56.dp)) {
-            drawCircle(color = DesignTokens.Surface2)
-            drawCircle(color = DesignTokens.Stroke, style = Stroke(width = 1.dp.toPx()))
+            drawCircle(color = theme.surface2)
+            drawCircle(color = theme.stroke, style = Stroke(width = 1.dp.toPx()))
         }
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = if (enabled) Color.White else Color.White.copy(alpha = 0.35f),
+            tint = if (enabled) theme.textPrimary else theme.textFaint,
             modifier = Modifier.size(22.dp),
         )
     }

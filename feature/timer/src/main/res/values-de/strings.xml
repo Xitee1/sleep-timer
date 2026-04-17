@@ -8,6 +8,10 @@
 
     <!-- Settings Screen -->
     <string name="settings_title">Einstellungen</string>
+    <string name="category_appearance">Erscheinungsbild</string>
+    <string name="stars_title">Sternen-Hintergrund</string>
+    <string name="stars_description">Driftendes Sternenfeld hinter dem Dial</string>
+    <string name="stars_unavailable">Für dieses Theme nicht verfügbar</string>
     <string name="category_sleep_timer">Sleep Timer</string>
     <string name="playback_title">Wiedergabe</string>
     <string name="playback_description">Audio- und Videowiedergabe stoppen</string>

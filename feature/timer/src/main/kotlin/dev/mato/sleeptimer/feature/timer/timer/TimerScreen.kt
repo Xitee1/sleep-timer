@@ -27,6 +27,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -38,7 +39,9 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mato.sleeptimer.feature.timer.R
-import dev.mato.sleeptimer.feature.timer.theme.DesignTokens
+import dev.mato.sleeptimer.feature.timer.theme.AppThemes
+import dev.mato.sleeptimer.feature.timer.theme.LocalAppTheme
+import dev.mato.sleeptimer.feature.timer.theme.appTheme
 import dev.mato.sleeptimer.feature.timer.timer.components.CircularDial
 import dev.mato.sleeptimer.feature.timer.timer.components.PlayButton
 import dev.mato.sleeptimer.feature.timer.timer.components.SecondaryRoundButton
@@ -50,6 +53,20 @@ import dev.mato.sleeptimer.feature.timer.timer.components.rememberCircularDialSt
 fun TimerScreen(
     onNavigateToSettings: () -> Unit,
     viewModel: TimerViewModel = hiltViewModel(),
+) {
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    CompositionLocalProvider(LocalAppTheme provides AppThemes.byId(settings.theme)) {
+        TimerContent(
+            onNavigateToSettings = onNavigateToSettings,
+            viewModel = viewModel,
+        )
+    }
+}
+
+@Composable
+private fun TimerContent(
+    onNavigateToSettings: () -> Unit,
+    viewModel: TimerViewModel,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -79,7 +96,11 @@ fun TimerScreen(
         else -> 0f
     }
 
-    TimerBackground(animating = isRunning, modifier = Modifier.fillMaxSize()) {
+    TimerBackground(
+        animating = isRunning,
+        starsEnabled = settings.starsEnabled,
+        modifier = Modifier.fillMaxSize(),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -173,7 +194,7 @@ private fun HomeTopBar(onOpenSettings: () -> Unit) {
         Text(
             text = stringResource(R.string.app_name),
             style = MaterialTheme.typography.titleLarge,
-            color = DesignTokens.TextPrimary,
+            color = appTheme().textPrimary,
             modifier = Modifier.align(Alignment.Center),
         )
         IconButton(
@@ -185,7 +206,7 @@ private fun HomeTopBar(onOpenSettings: () -> Unit) {
             Icon(
                 imageVector = Icons.Default.Settings,
                 contentDescription = stringResource(R.string.settings),
-                tint = DesignTokens.TextPrimary,
+                tint = appTheme().textPrimary,
             )
         }
     }

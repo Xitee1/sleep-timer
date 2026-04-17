@@ -22,15 +22,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
-import dev.mato.sleeptimer.feature.timer.theme.DesignTokens
+import dev.mato.sleeptimer.feature.timer.theme.AppTheme
+import dev.mato.sleeptimer.feature.timer.theme.appTheme
 import kotlin.math.cos
 import kotlin.math.sin
 
-/**
- * The tactile sleep-timer dial. Drag anywhere inside to set the time; each full revolution
- * adds one hour (up to 5 h). Minute ticks on the outer ring, filled hour dots on the inner
- * ring, lavender progress arc with glow, and a halo'd knob.
- */
 @Composable
 fun CircularDial(
     state: CircularDialState,
@@ -40,10 +36,10 @@ fun CircularDial(
     onMinutesChanged: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val theme = appTheme()
     val hapticFeedback = LocalHapticFeedback.current
     var lastReportedMinutes by remember { mutableStateOf(state.totalMinutes) }
 
-    // Source of truth for what the ring/knob should show.
     val displayMinutes: Float = if (isRunning) runningMinutes else state.totalMinutes.toFloat()
     val minuteInRing = ((displayMinutes % 60f) + 60f) % 60f
     val ringFraction = minuteInRing / 60f
@@ -102,12 +98,12 @@ fun CircularDial(
             val radius = (size.minDimension - strokeWidth - plateInset * 2f) / 2f
             val center = Offset(size.width / 2f, size.height / 2f)
 
-            // Outer glow (fades a bit while idle; softer when running)
+            // Outer glow
             val glowOuter = radius + strokeWidth * 0.5f + 8.dp.toPx()
             drawCircle(
                 brush = Brush.radialGradient(
                     0.65f to Color.Transparent,
-                    1.00f to DesignTokens.Accent.copy(alpha = if (isRunning) 0.28f else 0.14f),
+                    1.00f to theme.accent.copy(alpha = if (isRunning) 0.28f else 0.14f),
                     center = center,
                     radius = glowOuter,
                 ),
@@ -115,11 +111,11 @@ fun CircularDial(
                 center = center,
             )
 
-            // Dial plate: faint top-to-bottom white gradient + inner well
+            // Plate
             drawCircle(
                 brush = Brush.verticalGradient(
-                    0.0f to Color.White.copy(alpha = 0.06f),
-                    1.0f to Color.White.copy(alpha = 0.015f),
+                    0.0f to theme.dialPlateTop,
+                    1.0f to theme.dialPlateBot,
                     startY = center.y - radius,
                     endY = center.y + radius,
                 ),
@@ -127,66 +123,61 @@ fun CircularDial(
                 center = center,
             )
             drawCircle(
-                color = Color.White.copy(alpha = 0.06f),
+                color = theme.stroke,
                 radius = radius + strokeWidth * 0.5f,
                 center = center,
                 style = Stroke(width = 1.dp.toPx()),
             )
             drawCircle(
-                color = Color.Black.copy(alpha = 0.25f),
+                color = theme.dialWell,
                 radius = radius - strokeWidth * 0.5f - 6.dp.toPx(),
                 center = center,
             )
 
-            // Tick marks (60, with every 5th accented)
-            drawTicks(center, radius, strokeWidth)
+            drawTicks(center, radius, strokeWidth, theme)
 
-            // Background ring
             drawCircle(
-                color = Color.White.copy(alpha = 0.06f),
+                color = theme.dialTrack,
                 radius = radius,
                 center = center,
                 style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
             )
 
-            // Progress arc (current revolution 0..1)
             if (ringFraction > 0f) {
                 drawProgressArc(
                     center = center,
                     radius = radius,
                     strokeWidth = strokeWidth,
                     fraction = ringFraction,
-                    accent = DesignTokens.Accent,
+                    accent = theme.accent,
                 )
             }
 
-            // Inner hour dots
-            drawHourDots(center, radius, hoursComplete)
+            drawHourDots(center, radius, hoursComplete, theme)
 
-            // Knob
             drawKnob(
                 center = center,
                 radius = radius,
                 fraction = ringFraction,
-                accent = DesignTokens.Accent,
+                theme = theme,
                 dimmed = isRunning,
             )
         }
     }
 }
 
-private fun DrawScope.drawTicks(center: Offset, radius: Float, strokeWidth: Float) {
+private fun DrawScope.drawTicks(center: Offset, radius: Float, strokeWidth: Float, theme: AppTheme) {
     for (i in 0 until 60) {
         val big = i % 5 == 0
         val angle = (i / 60f) * (2f * Math.PI.toFloat()) - (Math.PI.toFloat() / 2f)
         val inner = radius - strokeWidth * 0.5f - (if (big) 10.dp.toPx() else 6.dp.toPx())
-        val outer = radius - strokeWidth * 0.5f - (if (big) 3.dp.toPx() else 3.dp.toPx())
+        val outer = radius - strokeWidth * 0.5f - 3.dp.toPx()
         val x1 = center.x + inner * cos(angle)
         val y1 = center.y + inner * sin(angle)
         val x2 = center.x + outer * cos(angle)
         val y2 = center.y + outer * sin(angle)
         drawLine(
-            color = if (big) Color.White.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.12f),
+            color = if (big) theme.dialTickMajor else theme.dialTickMinor,
             start = Offset(x1, y1),
             end = Offset(x2, y2),
             strokeWidth = if (big) 1.5.dp.toPx() else 1.dp.toPx(),
@@ -206,7 +197,6 @@ private fun DrawScope.drawProgressArc(
     val arcSize = Size(radius * 2, radius * 2)
     val sweep = 360f * fraction.coerceIn(0f, 1f)
 
-    // Glow underlay — widened stroke with low alpha
     drawArc(
         color = accent.copy(alpha = 0.35f),
         startAngle = -90f,
@@ -227,7 +217,7 @@ private fun DrawScope.drawProgressArc(
     )
 }
 
-private fun DrawScope.drawHourDots(center: Offset, radius: Float, hoursComplete: Int) {
+private fun DrawScope.drawHourDots(center: Offset, radius: Float, hoursComplete: Int, theme: AppTheme) {
     val rDot = radius - 42.dp.toPx()
     for (i in 0 until 5) {
         val active = i < hoursComplete
@@ -235,7 +225,7 @@ private fun DrawScope.drawHourDots(center: Offset, radius: Float, hoursComplete:
         val x = center.x + rDot * cos(angle)
         val y = center.y + rDot * sin(angle)
         drawCircle(
-            color = if (active) DesignTokens.Accent else Color.White.copy(alpha = 0.18f),
+            color = if (active) theme.accent else theme.hourDotInactive,
             radius = if (active) 3.dp.toPx() else 2.dp.toPx(),
             center = Offset(x, y),
         )
@@ -246,7 +236,7 @@ private fun DrawScope.drawKnob(
     center: Offset,
     radius: Float,
     fraction: Float,
-    accent: Color,
+    theme: AppTheme,
     dimmed: Boolean,
 ) {
     val angle = fraction * (2f * Math.PI.toFloat()) - (Math.PI.toFloat() / 2f)
@@ -254,36 +244,30 @@ private fun DrawScope.drawKnob(
     val ky = center.y + radius * sin(angle)
 
     val alpha = if (dimmed) 0.6f else 1f
-    // halo
     drawCircle(
-        color = accent.copy(alpha = 0.15f * alpha),
+        color = theme.accent.copy(alpha = 0.15f * alpha),
         radius = 16.dp.toPx(),
         center = Offset(kx, ky),
     )
-    // drop shadow
     drawCircle(
-        color = accent.copy(alpha = 0.45f * alpha),
+        color = theme.accent.copy(alpha = 0.45f * alpha),
         radius = 12.dp.toPx(),
         center = Offset(kx, ky + 2.dp.toPx()),
     )
-    // body
     drawCircle(
-        color = Color.White.copy(alpha = alpha),
+        color = theme.knobBody.copy(alpha = alpha),
         radius = 10.dp.toPx(),
         center = Offset(kx, ky),
     )
-    // accent ring
     drawCircle(
-        color = accent.copy(alpha = alpha),
+        color = theme.accent.copy(alpha = alpha),
         radius = 10.dp.toPx(),
         center = Offset(kx, ky),
         style = Stroke(width = 2.dp.toPx()),
     )
-    // center dot
     drawCircle(
-        color = accent.copy(alpha = alpha),
+        color = theme.accent.copy(alpha = alpha),
         radius = 3.dp.toPx(),
         center = Offset(kx, ky),
     )
 }
-

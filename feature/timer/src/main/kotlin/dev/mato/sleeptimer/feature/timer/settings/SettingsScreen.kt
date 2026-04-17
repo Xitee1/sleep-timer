@@ -21,6 +21,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.MusicOff
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhoneAndroid
@@ -30,6 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,7 +43,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mato.sleeptimer.feature.timer.R
 import dev.mato.sleeptimer.feature.timer.settings.components.FadeOutSlider
 import dev.mato.sleeptimer.feature.timer.settings.components.SettingsToggleRow
-import dev.mato.sleeptimer.feature.timer.theme.DesignTokens
+import dev.mato.sleeptimer.feature.timer.settings.components.ThemeSelector
+import dev.mato.sleeptimer.feature.timer.theme.AppThemes
+import dev.mato.sleeptimer.feature.timer.theme.LocalAppTheme
+import dev.mato.sleeptimer.feature.timer.theme.appTheme
 import dev.mato.sleeptimer.feature.timer.timer.components.TimerBackground
 
 @Composable
@@ -50,6 +55,22 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    CompositionLocalProvider(LocalAppTheme provides AppThemes.byId(uiState.settings.theme)) {
+        SettingsContent(
+            uiState = uiState,
+            onBack = onBack,
+            viewModel = viewModel,
+        )
+    }
+}
+
+@Composable
+private fun SettingsContent(
+    uiState: SettingsUiState,
+    onBack: () -> Unit,
+    viewModel: SettingsViewModel,
+) {
     val context = LocalContext.current
 
     val deviceAdminLauncher = rememberLauncherForActivityResult(
@@ -58,7 +79,11 @@ fun SettingsScreen(
         // after return, state refresh is driven by the flow
     }
 
-    TimerBackground(animating = false, modifier = Modifier.fillMaxSize()) {
+    TimerBackground(
+        animating = false,
+        starsEnabled = uiState.settings.starsEnabled,
+        modifier = Modifier.fillMaxSize(),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -71,6 +96,25 @@ fun SettingsScreen(
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState()),
             ) {
+                SectionHeader(stringResource(R.string.category_appearance))
+                ThemeSelector(
+                    selected = uiState.settings.theme,
+                    onSelect = { viewModel.updateTheme(it) },
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                SettingsToggleRow(
+                    icon = Icons.Default.AutoAwesome,
+                    title = stringResource(R.string.stars_title),
+                    description = if (AppThemes.byId(uiState.settings.theme).allowStars) {
+                        stringResource(R.string.stars_description)
+                    } else {
+                        stringResource(R.string.stars_unavailable)
+                    },
+                    checked = uiState.settings.starsEnabled,
+                    onCheckedChange = { viewModel.updateStarsEnabled(it) },
+                    enabled = AppThemes.byId(uiState.settings.theme).allowStars,
+                )
+
                 SectionHeader(stringResource(R.string.category_sleep_timer))
                 SettingsToggleRow(
                     icon = Icons.Default.MusicOff,
@@ -140,6 +184,7 @@ fun SettingsScreen(
 
 @Composable
 private fun SettingsTopBar(onBack: () -> Unit) {
+    val theme = appTheme()
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -155,13 +200,13 @@ private fun SettingsTopBar(onBack: () -> Unit) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = null,
-                tint = DesignTokens.TextPrimary,
+                tint = theme.textPrimary,
             )
         }
         Text(
             text = stringResource(R.string.settings_title),
             style = MaterialTheme.typography.titleLarge,
-            color = DesignTokens.TextPrimary,
+            color = theme.textPrimary,
             modifier = Modifier.align(Alignment.Center),
         )
     }
@@ -169,6 +214,7 @@ private fun SettingsTopBar(onBack: () -> Unit) {
 
 @Composable
 private fun SectionHeader(text: String) {
+    val theme = appTheme()
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -178,7 +224,7 @@ private fun SectionHeader(text: String) {
         Text(
             text = text.uppercase(),
             style = MaterialTheme.typography.labelLarge,
-            color = DesignTokens.TextMuted,
+            color = theme.textMuted,
         )
     }
 }

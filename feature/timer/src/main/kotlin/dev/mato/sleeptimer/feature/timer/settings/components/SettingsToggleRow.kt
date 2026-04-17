@@ -27,7 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import dev.mato.sleeptimer.feature.timer.theme.DesignTokens
+import dev.mato.sleeptimer.feature.timer.theme.appTheme
 
 @Composable
 fun SettingsToggleRow(
@@ -39,6 +39,7 @@ fun SettingsToggleRow(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
+    val theme = appTheme()
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -52,12 +53,12 @@ fun SettingsToggleRow(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
-                color = if (enabled) DesignTokens.TextPrimary else DesignTokens.TextFaint,
+                color = if (enabled) theme.textPrimary else theme.textFaint,
             )
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (enabled) DesignTokens.TextDim else DesignTokens.TextFaint,
+                color = if (enabled) theme.textDim else theme.textFaint,
             )
         }
         Spacer(modifier = Modifier.width(12.dp))
@@ -66,51 +67,19 @@ fun SettingsToggleRow(
 }
 
 @Composable
-fun SettingsInfoRow(
-    icon: ImageVector,
-    title: String,
-    description: String,
-    trailing: @Composable () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        RowIcon(icon)
-        Spacer(modifier = Modifier.width(14.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = DesignTokens.TextPrimary,
-            )
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = DesignTokens.TextDim,
-            )
-        }
-        Spacer(modifier = Modifier.width(12.dp))
-        trailing()
-    }
-}
-
-@Composable
 private fun RowIcon(icon: ImageVector) {
+    val theme = appTheme()
     Box(
         modifier = Modifier
             .size(40.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(DesignTokens.Surface1),
+            .background(theme.surface1),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = DesignTokens.Accent.copy(alpha = 0.9f),
+            tint = theme.accent,
             modifier = Modifier.size(20.dp),
         )
     }
@@ -123,11 +92,12 @@ fun AccentToggle(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
+    val theme = appTheme()
     val track by animateColorAsState(
         targetValue = when {
-            !enabled -> Color.White.copy(alpha = 0.08f)
-            checked -> DesignTokens.Accent
-            else -> Color.White.copy(alpha = 0.15f)
+            !enabled -> theme.stroke
+            checked -> theme.accent
+            else -> theme.strokeStrong
         },
         label = "toggleTrack",
     )
@@ -151,7 +121,6 @@ fun AccentToggle(
                 .clip(CircleShape)
                 .background(Color.White),
         )
-        // ensures the Box owns its intrinsic dimensions
         Spacer(Modifier.height(28.dp).width(48.dp))
     }
 }

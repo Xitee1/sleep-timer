@@ -23,7 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.mato.sleeptimer.feature.timer.R
-import dev.mato.sleeptimer.feature.timer.theme.DesignTokens
+import dev.mato.sleeptimer.feature.timer.theme.appTheme
 import kotlin.math.roundToInt
 
 @Composable
@@ -32,6 +32,7 @@ fun FadeOutSlider(
     onDurationChanged: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val theme = appTheme()
     var sliderValue by remember(durationSeconds) { mutableFloatStateOf(durationSeconds.toFloat()) }
 
     Column(
@@ -39,20 +40,20 @@ fun FadeOutSlider(
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 8.dp)
             .clip(RoundedCornerShape(18.dp))
-            .background(DesignTokens.Surface1)
+            .background(theme.surface1)
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = stringResource(R.string.fade_out_title),
                 style = MaterialTheme.typography.titleMedium,
-                color = DesignTokens.TextPrimary,
+                color = theme.textPrimary,
                 modifier = Modifier.weight(1f),
             )
             Text(
                 text = stringResource(R.string.fade_out_seconds, sliderValue.roundToInt()),
                 style = MaterialTheme.typography.bodyMedium,
-                color = DesignTokens.Accent,
+                color = theme.accent,
             )
         }
         Spacer(modifier = Modifier.height(4.dp))
@@ -63,11 +64,11 @@ fun FadeOutSlider(
             valueRange = 0f..120f,
             steps = 23,
             colors = SliderDefaults.colors(
-                thumbColor = DesignTokens.Accent,
-                activeTrackColor = DesignTokens.Accent,
-                inactiveTrackColor = DesignTokens.Stroke,
-                activeTickColor = DesignTokens.Accent,
-                inactiveTickColor = DesignTokens.Stroke,
+                thumbColor = theme.accent,
+                activeTrackColor = theme.accent,
+                inactiveTrackColor = theme.stroke,
+                activeTickColor = theme.accent,
+                inactiveTickColor = theme.stroke,
             ),
             modifier = Modifier.fillMaxWidth(),
         )

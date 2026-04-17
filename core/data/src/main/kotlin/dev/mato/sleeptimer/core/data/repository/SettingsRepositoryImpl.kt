@@ -5,6 +5,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import dev.mato.sleeptimer.core.data.model.ThemeId
 import dev.mato.sleeptimer.core.data.model.UserSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -22,6 +24,8 @@ class SettingsRepositoryImpl @Inject constructor(
         val SCREEN_OFF = booleanPreferencesKey("screen_off")
         val NOTIFICATION_ENABLED = booleanPreferencesKey("notification_enabled")
         val HAPTIC_FEEDBACK = booleanPreferencesKey("haptic_feedback")
+        val THEME = stringPreferencesKey("theme")
+        val STARS_ENABLED = booleanPreferencesKey("stars_enabled")
     }
 
     override val settings: Flow<UserSettings> = dataStore.data.map { prefs ->
@@ -31,6 +35,8 @@ class SettingsRepositoryImpl @Inject constructor(
             screenOff = prefs[SCREEN_OFF] ?: false,
             notificationEnabled = prefs[NOTIFICATION_ENABLED] ?: true,
             hapticFeedbackEnabled = prefs[HAPTIC_FEEDBACK] ?: true,
+            theme = ThemeId.fromStorage(prefs[THEME]),
+            starsEnabled = prefs[STARS_ENABLED] ?: true,
         )
     }
 
@@ -52,5 +58,13 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun updateHapticFeedback(enabled: Boolean) {
         dataStore.edit { it[HAPTIC_FEEDBACK] = enabled }
+    }
+
+    override suspend fun updateTheme(theme: ThemeId) {
+        dataStore.edit { it[THEME] = theme.name }
+    }
+
+    override suspend fun updateStarsEnabled(enabled: Boolean) {
+        dataStore.edit { it[STARS_ENABLED] = enabled }
     }
 }

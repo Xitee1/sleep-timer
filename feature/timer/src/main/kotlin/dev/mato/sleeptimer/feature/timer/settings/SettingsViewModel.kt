@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.mato.sleeptimer.core.data.model.ThemeId
 import dev.mato.sleeptimer.core.data.repository.SettingsRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -61,5 +62,13 @@ class SettingsViewModel @Inject constructor(
 
     fun updateHapticFeedback(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.updateHapticFeedback(enabled) }
+    }
+
+    fun updateTheme(theme: ThemeId) {
+        viewModelScope.launch { settingsRepository.updateTheme(theme) }
+    }
+
+    fun updateStarsEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.updateStarsEnabled(enabled) }
     }
 }

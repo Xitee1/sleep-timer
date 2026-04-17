@@ -9,18 +9,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import dev.mato.sleeptimer.feature.timer.theme.DesignTokens
+import dev.mato.sleeptimer.feature.timer.theme.appTheme
 
-/**
- * Big center readout. Shows either a single number (e.g. "30") or a compound "h:mm" once
- * the timer crosses one hour. A small caption below describes the unit in quiet caps.
- */
 @Composable
 fun TimeDisplay(
     totalMinutes: Int,
     label: String,
     modifier: Modifier = Modifier,
 ) {
+    val theme = appTheme()
     val hours = totalMinutes / 60
     val remMin = totalMinutes % 60
 
@@ -48,13 +45,13 @@ fun TimeDisplay(
         Text(
             text = big,
             style = MaterialTheme.typography.displayLarge,
-            color = DesignTokens.TextPrimary,
+            color = theme.textPrimary,
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = label.ifEmpty { small }.uppercase(),
             style = MaterialTheme.typography.labelLarge,
-            color = DesignTokens.TextDim,
+            color = theme.textDim,
         )
     }
 }
