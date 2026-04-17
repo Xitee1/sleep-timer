@@ -88,12 +88,12 @@ private fun DrawScope.drawAuroraBlob(center: Offset, radius: Float, color: Color
 private fun StarField(animating: Boolean) {
     val configuration = LocalConfiguration.current
     val screenMinDp = min(configuration.screenWidthDp, configuration.screenHeightDp)
-    // Scale stars and count by screen size. 360 dp phone = 1x, tablets go up to ~1.7x.
-    val sizeScale = (screenMinDp / 360f).coerceIn(0.9f, 1.7f)
-    // More stars on larger screens.
-    val starCount = (40 * sizeScale).toInt().coerceIn(40, 80)
+    // 360 dp phone = 1x, tablets up to ~1.4x.
+    val sizeScale = (screenMinDp / 360f).coerceIn(0.9f, 1.4f)
+    // Dense starfield. ~90 on a standard phone, more on larger displays.
+    val starCount = (90 * sizeScale).toInt().coerceIn(70, 160)
 
-    // Each star: (relative x 0..1, relative y 0..1, opacity 0..1, size multiplier 0.7..1.4)
+    // Each star: position (0..1), opacity, per-star size jitter.
     val seed = remember(starCount) {
         List(starCount) { i ->
             val r = { k: Int ->
@@ -103,8 +103,8 @@ private fun StarField(animating: Boolean) {
             StarSeed(
                 x = r(0),
                 y = r(1),
-                opacity = 0.35f + r(2) * 0.55f,
-                sizeMul = 0.7f + r(3) * 0.7f,
+                opacity = 0.30f + r(2) * 0.55f,
+                sizeMul = 0.8f + r(3) * 0.5f,
             )
         }
     }
@@ -171,27 +171,21 @@ private fun StarField(animating: Boolean) {
     ) {
         // Read frameTick so Compose redraws on every integration step.
         @Suppress("UNUSED_EXPRESSION") frameTick
-        val coreBase = 2.2.dp.toPx() * sizeScale
-        val haloBase = 7.0.dp.toPx() * sizeScale
+        val coreBase = 1.1.dp.toPx() * sizeScale
+        val haloBase = 2.6.dp.toPx() * sizeScale
         for (i in seed.indices) {
             val s = seed[i]
             val cx = s.x * size.width + positions[i * 2]
             val cy = s.y * size.height + positions[i * 2 + 1]
             val core = coreBase * s.sizeMul
             val halo = haloBase * s.sizeMul
-            // soft outer halo
+            // faint glow halo — the "twinkle" edge
             drawCircle(
-                color = Color.White.copy(alpha = s.opacity * 0.18f),
+                color = Color.White.copy(alpha = s.opacity * 0.25f),
                 radius = halo,
                 center = Offset(cx, cy),
             )
-            // brighter mid halo
-            drawCircle(
-                color = Color.White.copy(alpha = s.opacity * 0.35f),
-                radius = core * 1.8f,
-                center = Offset(cx, cy),
-            )
-            // bright core
+            // bright pin-prick core
             drawCircle(
                 color = Color.White.copy(alpha = s.opacity),
                 radius = core,
