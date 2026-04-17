@@ -9,20 +9,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,12 +37,16 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mato.sleeptimer.feature.timer.R
+import dev.mato.sleeptimer.feature.timer.theme.DesignTokens
 import dev.mato.sleeptimer.feature.timer.timer.components.CircularDial
 import dev.mato.sleeptimer.feature.timer.timer.components.PlayButton
+import dev.mato.sleeptimer.feature.timer.timer.components.Preset
+import dev.mato.sleeptimer.feature.timer.timer.components.PresetRow
+import dev.mato.sleeptimer.feature.timer.timer.components.SecondaryRoundButton
 import dev.mato.sleeptimer.feature.timer.timer.components.TimeDisplay
+import dev.mato.sleeptimer.feature.timer.timer.components.TimerBackground
 import dev.mato.sleeptimer.feature.timer.timer.components.rememberCircularDialState
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimerScreen(
     onNavigateToSettings: () -> Unit,
@@ -51,8 +57,6 @@ fun TimerScreen(
     val dialState = rememberCircularDialState()
     val context = LocalContext.current
 
-    // Notification permission launcher for Android 13+
-    // Timer starts after permission dialog resolves (regardless of result)
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { _ ->
@@ -61,7 +65,6 @@ fun TimerScreen(
 
     val isRunning = uiState is TimerUiState.Running || uiState is TimerUiState.FadingOut
 
-    // Sync dial state with selected minutes when idle
     LaunchedEffect(uiState) {
         if (uiState is TimerUiState.Idle) {
             val idle = uiState as TimerUiState.Idle
@@ -71,108 +74,170 @@ fun TimerScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = stringResource(R.string.settings),
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                ),
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { paddingValues ->
+    val runningMinutes: Float = when (val s = uiState) {
+        is TimerUiState.Running -> s.remainingMinutes + s.remainingSeconds / 60f
+        is TimerUiState.FadingOut -> 0f
+        else -> 0f
+    }
+
+    TimerBackground(animating = isRunning, modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .windowInsetsPadding(WindowInsets.systemBars),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            HomeTopBar(onOpenSettings = onNavigateToSettings)
 
-            // Circular dial with time display overlay
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = 32.dp),
+                    .padding(horizontal = 24.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 CircularDial(
                     state = dialState,
                     isRunning = isRunning,
-                    progress = when (val state = uiState) {
-                        is TimerUiState.Running -> state.progress
-                        else -> 0f
-                    },
+                    runningMinutes = runningMinutes,
                     hapticEnabled = settings.hapticFeedbackEnabled,
                     onMinutesChanged = { viewModel.setMinutes(it) },
                     modifier = Modifier.fillMaxSize(),
                 )
 
-                // Time display in center of dial
-                when (val state = uiState) {
-                    is TimerUiState.Idle -> {
-                        TimeDisplay(
-                            minutes = state.selectedMinutes,
-                            seconds = null,
-                        )
-                    }
-                    is TimerUiState.Running -> {
-                        TimeDisplay(
-                            minutes = state.remainingMinutes,
-                            seconds = state.remainingSeconds,
-                        )
-                    }
-                    is TimerUiState.FadingOut -> {
-                        TimeDisplay(
-                            minutes = 0,
-                            seconds = 0,
-                        )
-                    }
+                when (val s = uiState) {
+                    is TimerUiState.Idle -> TimeDisplay(
+                        totalMinutes = s.selectedMinutes,
+                        label = "",
+                    )
+                    is TimerUiState.Running -> TimeDisplay(
+                        totalMinutes = s.remainingMinutes.coerceAtLeast(if (s.remainingSeconds > 0) 1 else 0),
+                        label = "remaining",
+                    )
+                    is TimerUiState.FadingOut -> TimeDisplay(
+                        totalMinutes = 0,
+                        label = "fading out",
+                    )
                 }
             }
 
-            // Play/Stop button
-            PlayButton(
+            if (uiState is TimerUiState.Idle) {
+                PresetRow(
+                    active = (uiState as TimerUiState.Idle).selectedMinutes,
+                    presets = listOf(
+                        Preset(5, "5m"),
+                        Preset(15, "15m"),
+                        Preset(30, "30m"),
+                        Preset(60, "1h"),
+                    ),
+                    onSelect = { viewModel.setMinutes(it) },
+                )
+            } else {
+                Spacer(modifier = Modifier.height(40.dp))
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            ActionRow(
                 isRunning = isRunning,
-                onClick = {
+                onToggle = {
                     if (isRunning) {
                         viewModel.stopTimer()
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.POST_NOTIFICATIONS,
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                     } else {
-                        // Request notification permission if needed on Android 13+
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                            ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.POST_NOTIFICATIONS,
-                            ) != PackageManager.PERMISSION_GRANTED
-                        ) {
-                            // Timer starts in the launcher callback after permission resolves
-                            notificationPermissionLauncher.launch(
-                                Manifest.permission.POST_NOTIFICATIONS,
-                            )
-                        } else {
-                            viewModel.startTimer()
-                        }
+                        viewModel.startTimer()
                     }
                 },
+                onMinusFive = {
+                    val next = ((dialState.totalMinutes - 5) / 5) * 5
+                    viewModel.setMinutes(next.coerceAtLeast(0))
+                },
+                onPlusFive = {
+                    if (isRunning) {
+                        viewModel.addFiveMinutes()
+                    } else {
+                        val next = ((dialState.totalMinutes + 5) / 5) * 5
+                        viewModel.setMinutes(next.coerceAtMost(300))
+                    }
+                },
+                isMinusEnabled = !isRunning && dialState.totalMinutes > 0,
+                isPlusEnabled = !isRunning && dialState.totalMinutes < 300,
+                plusFiveVisibleWhileRunning = true,
             )
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(32.dp))
         }
+    }
+}
+
+@Composable
+private fun HomeTopBar(onOpenSettings: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .padding(horizontal = 8.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.app_name),
+            style = MaterialTheme.typography.titleLarge,
+            color = DesignTokens.TextPrimary,
+            modifier = Modifier.align(Alignment.Center),
+        )
+        IconButton(
+            onClick = onOpenSettings,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .size(44.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Settings,
+                contentDescription = stringResource(R.string.settings),
+                tint = DesignTokens.TextPrimary,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionRow(
+    isRunning: Boolean,
+    onToggle: () -> Unit,
+    onMinusFive: () -> Unit,
+    onPlusFive: () -> Unit,
+    isMinusEnabled: Boolean,
+    isPlusEnabled: Boolean,
+    plusFiveVisibleWhileRunning: Boolean,
+) {
+    androidx.compose.foundation.layout.Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (isRunning) {
+            Spacer(modifier = Modifier.size(56.dp))
+        } else {
+            SecondaryRoundButton(
+                icon = Icons.Default.Remove,
+                contentDescription = "Minus 5 minutes",
+                onClick = onMinusFive,
+                enabled = isMinusEnabled,
+            )
+        }
+        PlayButton(isRunning = isRunning, onClick = onToggle)
+        SecondaryRoundButton(
+            icon = Icons.Default.Add,
+            contentDescription = "Plus 5 minutes",
+            onClick = onPlusFive,
+            enabled = if (isRunning) plusFiveVisibleWhileRunning else isPlusEnabled,
+        )
     }
 }

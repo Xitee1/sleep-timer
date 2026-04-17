@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#5B5FE6</color>
+    <color name="midnight_bg">#1A1830</color>
 </resources>

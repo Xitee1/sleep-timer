@@ -20,7 +20,7 @@ class CircularDialState {
     private var previousAngle = 90f
     private var isDragging = false
 
-    val maxRevolutions = 3
+    val maxRevolutions = 5 // 5 hours
     private val maxMinutes = maxRevolutions * 60
 
     fun onDragStart(centerX: Float, centerY: Float, x: Float, y: Float) {
@@ -34,19 +34,10 @@ class CircularDialState {
         val newAngle = computeAngle(centerX, centerY, x, y)
         val rawDelta = newAngle - previousAngle
 
-        // Detect revolution crossing (passing through 0/360 boundary)
-        // Raw delta > 180 means the angle jumped backwards across 0° (counterclockwise wrap)
-        // Raw delta < -180 means the angle jumped forwards across 360° (clockwise wrap)
         if (rawDelta > 180f) {
-            // Crossed boundary counterclockwise — decrease revolution
-            if (revolutions > 0) {
-                revolutions--
-            }
+            if (revolutions > 0) revolutions--
         } else if (rawDelta < -180f) {
-            // Crossed boundary clockwise — increase revolution
-            if (revolutions < maxRevolutions) {
-                revolutions++
-            }
+            if (revolutions < maxRevolutions) revolutions++
         }
 
         angleDegrees = newAngle
@@ -56,7 +47,6 @@ class CircularDialState {
 
     fun onDragEnd() {
         isDragging = false
-        // Snap to nearest minute
         val minuteInRevolution = ((angleDegrees / 360f) * 60f).roundToInt().coerceIn(0, 59)
         angleDegrees = (minuteInRevolution / 60f) * 360f
         recalculateMinutes()
@@ -76,14 +66,12 @@ class CircularDialState {
     }
 
     private fun computeAngle(centerX: Float, centerY: Float, x: Float, y: Float): Float {
-        // Angle in degrees, 0 = top (12 o'clock), clockwise
         val dx = x - centerX
         val dy = y - centerY
         val radians = atan2(dx.toDouble(), -dy.toDouble())
         val degrees = Math.toDegrees(radians).toFloat()
         return ((degrees % 360f) + 360f) % 360f
     }
-
 }
 
 @Composable

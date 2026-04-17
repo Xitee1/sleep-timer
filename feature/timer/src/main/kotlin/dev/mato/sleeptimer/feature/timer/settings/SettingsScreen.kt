@@ -4,11 +4,19 @@ import android.app.admin.DevicePolicyManager
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -17,16 +25,13 @@ import androidx.compose.material.icons.filled.MusicOff
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Vibration
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -36,8 +41,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mato.sleeptimer.feature.timer.R
 import dev.mato.sleeptimer.feature.timer.settings.components.FadeOutSlider
 import dev.mato.sleeptimer.feature.timer.settings.components.SettingsToggleRow
+import dev.mato.sleeptimer.feature.timer.theme.DesignTokens
+import dev.mato.sleeptimer.feature.timer.timer.components.TimerBackground
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
@@ -49,119 +55,130 @@ fun SettingsScreen(
     val deviceAdminLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) {
-        // After returning from device admin enrollment, the state will update
-        // via the uiState flow when it re-checks isAdminActive
+        // after return, state refresh is driven by the flow
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null,
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                ),
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { paddingValues ->
+    TimerBackground(animating = false, modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState()),
+                .windowInsetsPadding(WindowInsets.systemBars),
         ) {
-            // Category: Sleep Timer
-            CategoryHeader(text = stringResource(R.string.category_sleep_timer))
+            SettingsTopBar(onBack = onBack)
 
-            SettingsToggleRow(
-                icon = Icons.Default.MusicOff,
-                title = stringResource(R.string.playback_title),
-                description = stringResource(R.string.playback_description),
-                checked = uiState.settings.stopMediaPlayback,
-                onCheckedChange = { viewModel.updateStopMediaPlayback(it) },
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                SectionHeader(stringResource(R.string.category_sleep_timer))
+                SettingsToggleRow(
+                    icon = Icons.Default.MusicOff,
+                    title = stringResource(R.string.playback_title),
+                    description = stringResource(R.string.playback_description),
+                    checked = uiState.settings.stopMediaPlayback,
+                    onCheckedChange = { viewModel.updateStopMediaPlayback(it) },
+                )
+                FadeOutSlider(
+                    durationSeconds = uiState.settings.fadeOutDurationSeconds,
+                    onDurationChanged = { viewModel.updateFadeOutDuration(it) },
+                )
 
-            FadeOutSlider(
-                durationSeconds = uiState.settings.fadeOutDurationSeconds,
-                onDurationChanged = { viewModel.updateFadeOutDuration(it) },
-                modifier = Modifier.padding(start = 40.dp),
-            )
+                Spacer(modifier = Modifier.height(4.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            SettingsToggleRow(
-                icon = Icons.Default.PhoneAndroid,
-                title = stringResource(R.string.screen_title),
-                description = if (uiState.isDeviceAdminEnabled) {
-                    stringResource(R.string.screen_description)
-                } else {
-                    stringResource(R.string.screen_admin_required)
-                },
-                checked = uiState.settings.screenOff,
-                onCheckedChange = { enabled ->
-                    if (enabled && !viewModel.isDeviceAdminActive()) {
-                        // Launch device admin enrollment
-                        val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
-                            putExtra(
-                                DevicePolicyManager.EXTRA_DEVICE_ADMIN,
-                                viewModel.getAdminComponent(),
-                            )
-                            putExtra(
-                                DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                                context.getString(R.string.screen_description),
-                            )
-                        }
-                        deviceAdminLauncher.launch(intent)
+                SettingsToggleRow(
+                    icon = Icons.Default.PhoneAndroid,
+                    title = stringResource(R.string.screen_title),
+                    description = if (uiState.isDeviceAdminEnabled) {
+                        stringResource(R.string.screen_description)
                     } else {
-                        viewModel.updateScreenOff(enabled)
-                    }
-                },
-            )
+                        stringResource(R.string.screen_admin_required)
+                    },
+                    checked = uiState.settings.screenOff,
+                    onCheckedChange = { enabled ->
+                        if (enabled && !viewModel.isDeviceAdminActive()) {
+                            val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+                                putExtra(
+                                    DevicePolicyManager.EXTRA_DEVICE_ADMIN,
+                                    viewModel.getAdminComponent(),
+                                )
+                                putExtra(
+                                    DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                                    context.getString(R.string.screen_description),
+                                )
+                            }
+                            deviceAdminLauncher.launch(intent)
+                        } else {
+                            viewModel.updateScreenOff(enabled)
+                        }
+                    },
+                )
 
-            // Category: Notification
-            CategoryHeader(text = stringResource(R.string.category_notification))
+                SectionHeader(stringResource(R.string.category_notification))
+                SettingsToggleRow(
+                    icon = Icons.Default.Notifications,
+                    title = stringResource(R.string.notification_title),
+                    description = stringResource(R.string.notification_description),
+                    checked = uiState.settings.notificationEnabled,
+                    onCheckedChange = { viewModel.updateNotificationEnabled(it) },
+                )
 
-            SettingsToggleRow(
-                icon = Icons.Default.Notifications,
-                title = stringResource(R.string.notification_title),
-                description = stringResource(R.string.notification_description),
-                checked = uiState.settings.notificationEnabled,
-                onCheckedChange = { viewModel.updateNotificationEnabled(it) },
-            )
+                SectionHeader(stringResource(R.string.category_haptic))
+                SettingsToggleRow(
+                    icon = Icons.Default.Vibration,
+                    title = stringResource(R.string.haptic_title),
+                    description = stringResource(R.string.haptic_description),
+                    checked = uiState.settings.hapticFeedbackEnabled,
+                    onCheckedChange = { viewModel.updateHapticFeedback(it) },
+                )
 
-            // Category: Haptic Feedback
-            CategoryHeader(text = stringResource(R.string.category_haptic))
-
-            SettingsToggleRow(
-                icon = Icons.Default.Vibration,
-                title = stringResource(R.string.haptic_title),
-                description = stringResource(R.string.haptic_description),
-                checked = uiState.settings.hapticFeedbackEnabled,
-                onCheckedChange = { viewModel.updateHapticFeedback(it) },
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(32.dp))
+            }
         }
     }
 }
 
 @Composable
-private fun CategoryHeader(
-    text: String,
-    modifier: Modifier = Modifier,
-) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = modifier.padding(start = 56.dp, top = 24.dp, bottom = 8.dp),
-    )
+private fun SettingsTopBar(onBack: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .padding(horizontal = 8.dp),
+    ) {
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .size(44.dp),
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = null,
+                tint = DesignTokens.TextPrimary,
+            )
+        }
+        Text(
+            text = stringResource(R.string.settings_title),
+            style = MaterialTheme.typography.titleLarge,
+            color = DesignTokens.TextPrimary,
+            modifier = Modifier.align(Alignment.Center),
+        )
+    }
+}
+
+@Composable
+private fun SectionHeader(text: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 8.dp),
+        horizontalArrangement = Arrangement.Start,
+    ) {
+        Text(
+            text = text.uppercase(),
+            style = MaterialTheme.typography.labelLarge,
+            color = DesignTokens.TextMuted,
+        )
+    }
 }

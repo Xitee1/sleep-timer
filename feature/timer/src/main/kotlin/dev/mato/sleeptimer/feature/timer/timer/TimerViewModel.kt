@@ -57,7 +57,7 @@ class TimerViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TimerUiState.Idle())
 
     fun setMinutes(minutes: Int) {
-        _selectedMinutes.value = minutes.coerceIn(0, 180)
+        _selectedMinutes.value = minutes.coerceIn(0, 300)
     }
 
     fun startTimer() {
