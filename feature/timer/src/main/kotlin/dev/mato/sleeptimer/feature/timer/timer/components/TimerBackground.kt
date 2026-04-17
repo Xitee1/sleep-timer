@@ -92,7 +92,7 @@ private fun StarField(animating: Boolean) {
     val configuration = LocalConfiguration.current
     val screenMinDp = min(configuration.screenWidthDp, configuration.screenHeightDp)
     val sizeScale = (screenMinDp / 360f).coerceIn(0.9f, 1.4f)
-    val starCount = (75 * sizeScale).toInt().coerceIn(60, 130)
+    val starCount = (50 * sizeScale).toInt().coerceIn(40, 90)
 
     val seeds = remember(starCount) {
         List(starCount) { i ->
@@ -105,8 +105,8 @@ private fun StarField(animating: Boolean) {
                 initY = r(1),
                 opacity = 0.35f + r(2) * 0.55f,
                 sizeMul = 0.8f + r(3) * 0.5f,
-                // idle speed: 2..6 dp/s; with drive multiplier up to ~4× when running
-                speedDp = 2f + r(4) * 4f,
+                // idle speed: 0.3..1.0 dp/s (barely perceptible); drive ×2.5 when running
+                speedDp = 0.3f + r(4) * 0.7f,
                 angle = r(5) * (2f * Math.PI.toFloat()),
                 twinkleFreq = 0.8f + r(6) * 1.6f, // 0.8..2.4 Hz
                 twinklePhase = r(7) * (2f * Math.PI.toFloat()),
@@ -129,13 +129,13 @@ private fun StarField(animating: Boolean) {
         }
     }
 
-    // 1.0 idle, ~4.0 running — smoothly ramped.
+    // 1.0 idle, ~2.5 running — smoothly ramped.
     val drive = remember { Animatable(1f) }
     // 0 idle, 1 running — scales the twinkle depth.
     val twinkle = remember { Animatable(0f) }
     LaunchedEffect(animating) {
         val spec = tween<Float>(durationMillis = 5_000, easing = LinearEasing)
-        drive.animateTo(if (animating) 4f else 1f, spec)
+        drive.animateTo(if (animating) 2.5f else 1f, spec)
     }
     LaunchedEffect(animating) {
         val spec = tween<Float>(durationMillis = 5_000, easing = LinearEasing)
@@ -192,8 +192,8 @@ private fun StarField(animating: Boolean) {
 
         if (!initialized) return@Canvas
 
-        val coreBase = 0.85.dp.toPx() * sizeScale
-        val haloBase = 2.0.dp.toPx() * sizeScale
+        val coreBase = 0.7.dp.toPx() * sizeScale
+        val haloBase = 1.6.dp.toPx() * sizeScale
         val tw = twinkle.value
         val tSec = frameTick / 1_000_000_000f
 
