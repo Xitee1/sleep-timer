@@ -7,6 +7,35 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+// Resolves the app version from the current git tag.
+// CI tag pushes use GITHUB_REF_NAME; locally we accept HEAD only if it sits exactly
+// on a tag, so dev builds always fall through to "0.0.0-dev" (versionCode 1).
+// Tag format: "vMAJOR.MINOR.PATCH" with optional "-suffix" (e.g. v1.0.0-beta).
+// versionCode schema: major * 100000 + minor * 1000 + patch * 10.
+fun resolveAppVersion(): Pair<String, Int> {
+    val tag = if (System.getenv("GITHUB_REF_TYPE") == "tag") {
+        System.getenv("GITHUB_REF_NAME")
+    } else {
+        runCatching {
+            val process = ProcessBuilder("git", "describe", "--tags", "--exact-match", "HEAD")
+                .redirectErrorStream(true)
+                .start()
+            val out = process.inputStream.bufferedReader().readText().trim()
+            if (process.waitFor() == 0 && out.isNotBlank()) out else null
+        }.getOrNull()
+    }
+
+    if (tag == null) return "0.0.0-dev" to 1
+
+    val name = tag.removePrefix("v")
+    val semver = name.substringBefore("-").split(".").mapNotNull { it.toIntOrNull() }
+    require(semver.size >= 3) { "Tag '$tag' is not in expected vMAJOR.MINOR.PATCH[-suffix] form" }
+    val code = (semver[0] * 100000 + semver[1] * 1000 + semver[2] * 10).coerceAtLeast(1)
+    return name to code
+}
+
+val (appVersionName, appVersionCode) = resolveAppVersion()
+
 android {
     namespace = "dev.xitee.sleeptimer"
     compileSdk = 35
@@ -15,9 +44,8 @@ android {
         applicationId = "dev.xitee.sleeptimer"
         minSdk = 26
         targetSdk = 35
-        // Schema: major * 100000 + minor * 1000 + patch * 10 (last digit reserved for hotfixes)
-        versionCode = 1 * 100000 + 0 * 1000 + 0 * 10
-        versionName = "1.0.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
     }
 
     signingConfigs {
