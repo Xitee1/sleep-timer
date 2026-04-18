@@ -16,6 +16,10 @@ import dev.xitee.sleeptimer.core.data.util.remainingMillisToDisplayMinutes
 import dev.xitee.sleeptimer.core.service.media.MediaVolumeController
 import dev.xitee.sleeptimer.core.service.notification.TimerNotificationManager
 import dev.xitee.sleeptimer.core.service.screen.ScreenLockHelper
+import dev.xitee.sleeptimer.core.service.shizuku.ShizukuBluetoothController
+import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
+import dev.xitee.sleeptimer.core.service.shizuku.ShizukuScreenOffHelper
+import dev.xitee.sleeptimer.core.service.shizuku.ShizukuWifiController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,6 +40,10 @@ class SleepTimerService : Service() {
     @Inject lateinit var notificationManager: TimerNotificationManager
     @Inject lateinit var mediaVolumeController: MediaVolumeController
     @Inject lateinit var screenLockHelper: ScreenLockHelper
+    @Inject lateinit var shizukuManager: ShizukuManager
+    @Inject lateinit var shizukuScreenOffHelper: ShizukuScreenOffHelper
+    @Inject lateinit var shizukuWifiController: ShizukuWifiController
+    @Inject lateinit var shizukuBluetoothController: ShizukuBluetoothController
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var countdownJob: Job? = null
@@ -182,12 +190,28 @@ class SleepTimerService : Service() {
             if (settings.stopMediaPlayback) {
                 updateTimerState(TimerPhase.FADING_OUT)
                 notificationManager.updateNotification(0, stepMinutes)
-
                 mediaVolumeController.fadeOutAndPause(settings.fadeOutDurationSeconds)
             }
 
+            if (settings.turnOffWifi && shizukuManager.isReady()) {
+                shizukuWifiController.disableWifi()
+            }
+
+            if (settings.turnOffBluetooth && shizukuManager.isReady()) {
+                shizukuBluetoothController.disableBluetooth()
+            }
+
             if (settings.screenOff) {
-                screenLockHelper.lockScreen()
+                val usedShizuku = if (settings.softScreenOff && shizukuManager.isReady()) {
+                    shizukuScreenOffHelper.turnOffScreen()
+                } else {
+                    false
+                }
+                if (!usedShizuku) {
+                    // Hard-lock fallback: also the path when softScreenOff is off, or
+                    // when the Shizuku attempt failed. Forces credential on next unlock.
+                    screenLockHelper.lockScreen()
+                }
             }
 
             // Reset state before stopping foreground to avoid race with onDestroy

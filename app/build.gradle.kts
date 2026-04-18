@@ -87,4 +87,9 @@ dependencies {
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
+
+    // shizuku-provider is declared in this module's AndroidManifest (<provider>),
+    // so the artifact must be directly visible on :app's compile classpath for lint
+    // to find the class. core:service only uses shizuku-api.
+    implementation(libs.shizuku.provider)
 }

@@ -15,7 +15,7 @@
     <string name="fade_out_title">Fade-out duration</string>
     <string name="fade_out_seconds">%d seconds</string>
     <string name="screen_title">Screen</string>
-    <string name="screen_description">Lock screen when timer ends</string>
+    <string name="screen_description">Lock screen when timer ends (Shizuku optional)</string>
     <string name="screen_admin_required">Device admin permission required</string>
     <string name="category_haptic">Haptic Feedback</string>
     <string name="haptic_title">Haptic feedback</string>

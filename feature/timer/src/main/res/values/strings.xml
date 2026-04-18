@@ -28,7 +28,7 @@
     <string name="step_minutes_title">+/− step</string>
     <string name="step_minutes_value">%d min</string>
     <string name="screen_title">Screen</string>
-    <string name="screen_description">Lock screen when timer ends</string>
+    <string name="screen_description">Lock screen when timer ends (Shizuku optional)</string>
     <string name="screen_admin_required">Device admin permission required</string>
     <string name="category_haptic">Haptic Feedback</string>
     <string name="haptic_title">Haptic feedback</string>
@@ -40,4 +40,36 @@
     <string name="theme_ember">Ember</string>
     <string name="theme_light">Light</string>
     <string name="theme_basic">Basic</string>
+
+    <!-- Shizuku dialog -->
+    <string name="shizuku_dialog_title">Shizuku required</string>
+    <string name="shizuku_body_not_installed">Shizuku is not installed. Tap below to learn how to install and set it up.</string>
+    <string name="shizuku_body_not_running">Shizuku is installed but not running. Open the Shizuku app and start the service.</string>
+    <string name="shizuku_body_permission">SleepTimer needs permission to use Shizuku.</string>
+    <string name="shizuku_body_ready">Shizuku is ready.</string>
+    <string name="shizuku_action_install">Install guide</string>
+    <string name="shizuku_action_open">Open Shizuku</string>
+    <string name="shizuku_action_grant">Grant permission</string>
+    <string name="shizuku_action_ok">OK</string>
+    <string name="shizuku_action_cancel">Cancel</string>
+
+    <!-- Shizuku feature explanations (per-toggle) -->
+    <string name="shizuku_feature_soft_screen_off">Soft screen-off simulates a power-button press via Shizuku, so biometric unlock keeps working.</string>
+    <string name="shizuku_feature_wifi">Turning off Wi-Fi after the timer ends requires Shizuku because modern Android versions block apps from toggling Wi-Fi directly.</string>
+    <string name="shizuku_feature_bluetooth">Turning off Bluetooth after the timer ends requires Shizuku because modern Android versions block apps from toggling Bluetooth directly.</string>
+
+    <!-- Shizuku feature toggles -->
+    <string name="wifi_off_title">Turn off Wi-Fi</string>
+    <string name="wifi_off_description">Disable Wi-Fi when timer ends (requires Shizuku)</string>
+    <string name="bluetooth_off_title">Turn off Bluetooth</string>
+    <string name="bluetooth_off_description">Disable Bluetooth when timer ends (requires Shizuku)</string>
+
+    <!-- Screen-lock method dialog -->
+    <string name="screen_method_dialog_title">Choose lock method</string>
+    <string name="screen_method_hard_title">Device admin</string>
+    <string name="screen_method_hard_description">Standard Android lock. Requires credential to unlock.</string>
+    <string name="screen_method_soft_title">Shizuku (soft)</string>
+    <string name="screen_method_soft_description">Simulates power button. Biometric unlock stays active.</string>
+    <string name="screen_method_active_hard">Device admin — credential required to unlock</string>
+    <string name="screen_method_active_soft">Shizuku — biometric unlock stays active</string>
 </resources>

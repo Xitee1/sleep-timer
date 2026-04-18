@@ -9,9 +9,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.xitee.sleeptimer.core.data.model.ThemeId
 import dev.xitee.sleeptimer.core.data.repository.SettingsRepository
+import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -19,6 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
+    private val shizukuManager: ShizukuManager,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -29,20 +31,23 @@ class SettingsViewModel @Inject constructor(
         "dev.xitee.sleeptimer.receiver.SleepTimerDeviceAdminReceiver",
     )
 
-    val uiState: StateFlow<SettingsUiState?> = settingsRepository.settings
-        .map { settings ->
+    val uiState: StateFlow<SettingsUiState?> =
+        combine(settingsRepository.settings, shizukuManager.state) { settings, shizukuState ->
             SettingsUiState(
                 settings = settings,
                 isDeviceAdminEnabled = devicePolicyManager.isAdminActive(adminComponent),
+                shizukuState = shizukuState,
             )
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    fun isDeviceAdminActive(): Boolean {
-        return devicePolicyManager.isAdminActive(adminComponent)
-    }
+    fun isDeviceAdminActive(): Boolean =
+        devicePolicyManager.isAdminActive(adminComponent)
 
     fun getAdminComponent(): ComponentName = adminComponent
+
+    fun refreshShizuku() = shizukuManager.refresh()
+    fun requestShizukuPermission() = shizukuManager.requestPermission()
+    fun isShizukuReady(): Boolean = shizukuManager.isReady()
 
     fun updateStopMediaPlayback(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.updateStopMediaPlayback(enabled) }
@@ -54,6 +59,18 @@ class SettingsViewModel @Inject constructor(
 
     fun updateScreenOff(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.updateScreenOff(enabled) }
+    }
+
+    fun updateSoftScreenOff(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.updateSoftScreenOff(enabled) }
+    }
+
+    fun updateTurnOffWifi(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.updateTurnOffWifi(enabled) }
+    }
+
+    fun updateTurnOffBluetooth(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.updateTurnOffBluetooth(enabled) }
     }
 
     fun updateHapticFeedback(enabled: Boolean) {
