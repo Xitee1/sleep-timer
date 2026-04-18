@@ -5,8 +5,16 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -17,7 +25,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
@@ -30,10 +40,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -52,6 +65,8 @@ import dev.xitee.sleeptimer.feature.timer.timer.components.SecondaryRoundButton
 import dev.xitee.sleeptimer.feature.timer.timer.components.TimeDisplay
 import dev.xitee.sleeptimer.feature.timer.timer.components.TimerBackground
 import dev.xitee.sleeptimer.feature.timer.timer.components.rememberCircularDialState
+
+private const val ROTATION_DURATION_MS = 350
 
 @Composable
 fun TimerScreen(
@@ -77,6 +92,11 @@ private fun TimerContent(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val dialState = rememberCircularDialState()
     val context = LocalContext.current
+
+    val orientation by rememberDeviceOrientation()
+    val isLandscape = orientation == DeviceOrientation.LANDSCAPE_LEFT ||
+        orientation == DeviceOrientation.LANDSCAPE_RIGHT
+    val animatedAngle = animatedRotationAngle(orientation)
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -112,7 +132,11 @@ private fun TimerContent(
                 .windowInsetsPadding(WindowInsets.systemBars),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            HomeTopBar(onOpenSettings = onNavigateToSettings)
+            HomeTopBar(
+                onOpenSettings = onNavigateToSettings,
+                iconRotation = animatedAngle,
+                showInlineTitle = !isLandscape,
+            )
 
             val nowMillis by produceState(initialValue = System.currentTimeMillis()) {
                 while (true) {
@@ -130,19 +154,41 @@ private fun TimerContent(
                 android.text.format.DateFormat.getTimeFormat(context)
             }
 
-            Box(
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .padding(horizontal = 40.dp),
                 contentAlignment = Alignment.Center,
             ) {
+                // In landscape, "Endet um" should sit exactly at the midpoint between
+                // the dial's bottom and the flex area's bottom (= button row top), with
+                // equal air above and below it. The required shift depends on the flex
+                // area height and the actual dial size, so compute it from constraints
+                // rather than picking a fixed value.
+                val dialSize = minOf(maxWidth, 360.dp)
+                val endetHeight = 24.dp
+                val dialToEndetGap = 20.dp
+                val groupTop = (maxHeight - dialSize - dialToEndetGap - endetHeight) / 2
+                val dialBottom = groupTop + dialSize
+                val portraitEndetCenter = dialBottom + dialToEndetGap + endetHeight / 2
+                val landscapeEndetCenter = (dialBottom + maxHeight) / 2
+                val targetShift = (landscapeEndetCenter - portraitEndetCenter)
+                    .coerceAtLeast(0.dp)
+                val endetShift by animateDpAsState(
+                    targetValue = if (isLandscape) targetShift else 0.dp,
+                    animationSpec = tween(ROTATION_DURATION_MS, easing = FastOutSlowInEasing),
+                    label = "endetShift",
+                )
+
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Box(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .graphicsLayer { rotationZ = animatedAngle },
                         contentAlignment = Alignment.Center,
                     ) {
                         CircularDial(
@@ -165,12 +211,12 @@ private fun TimerContent(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(dialToEndetGap))
 
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(24.dp),
+                            .height(endetHeight),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (endMillis != null) {
@@ -181,6 +227,10 @@ private fun TimerContent(
                                 ),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = appTheme().textDim,
+                                modifier = Modifier.graphicsLayer {
+                                    rotationZ = animatedAngle
+                                    translationY = endetShift.toPx()
+                                },
                             )
                         }
                     }
@@ -197,6 +247,7 @@ private fun TimerContent(
             ActionRow(
                 isRunning = isRunning,
                 hapticEnabled = settings.hapticFeedbackEnabled,
+                iconRotation = animatedAngle,
                 onToggle = {
                     if (isRunning) {
                         viewModel.stopTimer()
@@ -242,23 +293,87 @@ private fun TimerContent(
 
             Spacer(modifier = Modifier.height(32.dp))
         }
+
+        // Landscape title: appears on the right edge, immediately below the settings
+        // icon. The container is 44dp wide (matches settings icon) and right-padded
+        // by 8dp (matches TopBar's horizontal padding), so the title's centre sits on
+        // the same device x as the settings icon — i.e. inline with it from the user's
+        // tilted perspective. wrapContentSize(unbounded = true) lets the text measure
+        // its natural width instead of being clipped to the 44dp container.
+        AnimatedVisibility(
+            visible = isLandscape,
+            enter = fadeIn(animationSpec = tween(ROTATION_DURATION_MS)),
+            exit = fadeOut(animationSpec = tween(ROTATION_DURATION_MS)),
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .windowInsetsPadding(WindowInsets.systemBars)
+                .padding(top = 56.dp, end = 8.dp)
+                .width(44.dp)
+                .height(160.dp),
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = appTheme().textPrimary,
+                    softWrap = false,
+                    modifier = Modifier
+                        .wrapContentSize(unbounded = true)
+                        .graphicsLayer { rotationZ = animatedAngle },
+                )
+            }
+        }
     }
 }
 
 @Composable
-private fun HomeTopBar(onOpenSettings: () -> Unit) {
+private fun animatedRotationAngle(orientation: DeviceOrientation): Float {
+    // Shortest-path guard: when the bucket jumps, pick the equivalent target (±360°)
+    // closest to the previous value so the animation continues rotating rather than
+    // reversing through 0°.
+    val continuousTarget = remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(orientation) {
+        val raw = orientation.counterRotationDegrees()
+        val last = continuousTarget.floatValue
+        val candidates = listOf(raw, raw + 360f, raw - 360f)
+        continuousTarget.floatValue = candidates.minBy { kotlin.math.abs(it - last) }
+    }
+    val animated by animateFloatAsState(
+        targetValue = continuousTarget.floatValue,
+        animationSpec = tween(ROTATION_DURATION_MS, easing = FastOutSlowInEasing),
+        label = "rotationAngle",
+    )
+    return animated
+}
+
+@Composable
+private fun HomeTopBar(
+    onOpenSettings: () -> Unit,
+    iconRotation: Float,
+    showInlineTitle: Boolean,
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
             .padding(horizontal = 8.dp),
     ) {
-        Text(
-            text = stringResource(R.string.app_name),
-            style = MaterialTheme.typography.titleLarge,
-            color = appTheme().textPrimary,
+        AnimatedVisibility(
+            visible = showInlineTitle,
+            enter = fadeIn(animationSpec = tween(ROTATION_DURATION_MS)),
+            exit = fadeOut(animationSpec = tween(ROTATION_DURATION_MS)),
             modifier = Modifier.align(Alignment.Center),
-        )
+        ) {
+            Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.titleLarge,
+                color = appTheme().textPrimary,
+                modifier = Modifier.graphicsLayer { rotationZ = iconRotation },
+            )
+        }
         IconButton(
             onClick = onOpenSettings,
             modifier = Modifier
@@ -269,6 +384,7 @@ private fun HomeTopBar(onOpenSettings: () -> Unit) {
                 imageVector = Icons.Default.Settings,
                 contentDescription = stringResource(R.string.settings),
                 tint = appTheme().textPrimary,
+                modifier = Modifier.graphicsLayer { rotationZ = iconRotation },
             )
         }
     }
@@ -278,6 +394,7 @@ private fun HomeTopBar(onOpenSettings: () -> Unit) {
 private fun ActionRow(
     isRunning: Boolean,
     hapticEnabled: Boolean,
+    iconRotation: Float,
     onToggle: () -> Unit,
     onMinusStep: () -> Unit,
     onPlusStep: () -> Unit,
@@ -298,11 +415,13 @@ private fun ActionRow(
             onClick = onMinusStep,
             hapticEnabled = hapticEnabled,
             enabled = isMinusEnabled,
+            iconRotation = iconRotation,
         )
         PlayButton(
             isRunning = isRunning,
             hapticEnabled = hapticEnabled,
             onClick = onToggle,
+            iconRotation = iconRotation,
         )
         SecondaryRoundButton(
             icon = Icons.Default.Add,
@@ -310,6 +429,7 @@ private fun ActionRow(
             onClick = onPlusStep,
             hapticEnabled = hapticEnabled,
             enabled = if (isRunning) plusStepVisibleWhileRunning else isPlusEnabled,
+            iconRotation = iconRotation,
         )
     }
 }

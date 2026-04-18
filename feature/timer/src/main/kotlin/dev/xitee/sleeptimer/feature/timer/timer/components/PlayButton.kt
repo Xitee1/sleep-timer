@@ -26,6 +26,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -39,6 +40,7 @@ fun PlayButton(
     hapticEnabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    iconRotation: Float = 0f,
 ) {
     val theme = appTheme()
     val view = LocalView.current
@@ -104,7 +106,9 @@ fun PlayButton(
                 imageVector = icon,
                 contentDescription = desc,
                 tint = theme.accentInk,
-                modifier = Modifier.size(34.dp),
+                modifier = Modifier
+                    .size(34.dp)
+                    .graphicsLayer { rotationZ = iconRotation },
             )
         }
     }
@@ -118,6 +122,7 @@ fun SecondaryRoundButton(
     hapticEnabled: Boolean,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    iconRotation: Float = 0f,
 ) {
     val theme = appTheme()
     val view = LocalView.current
@@ -141,7 +146,9 @@ fun SecondaryRoundButton(
             imageVector = icon,
             contentDescription = contentDescription,
             tint = if (enabled) theme.textPrimary else theme.textFaint,
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier
+                .size(22.dp)
+                .graphicsLayer { rotationZ = iconRotation },
         )
     }
 }
