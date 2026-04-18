@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dev.xitee.sleeptimer.feature.timer.about.AboutScreen
 import dev.xitee.sleeptimer.feature.timer.settings.SettingsScreen
+import dev.xitee.sleeptimer.feature.timer.settings.ThemePickerScreen
 import dev.xitee.sleeptimer.feature.timer.timer.TimerScreen
 
 @Composable
@@ -24,7 +25,13 @@ fun SleepTimerNavHost() {
         composable<SettingsRoute> {
             SettingsScreen(
                 onBack = { navController.popBackStack() },
+                onNavigateToThemePicker = { navController.navigate(ThemePickerRoute) },
                 onNavigateToAbout = { navController.navigate(AboutRoute) },
+            )
+        }
+        composable<ThemePickerRoute> {
+            ThemePickerScreen(
+                onBack = { navController.popBackStack() },
             )
         }
         composable<AboutRoute> {

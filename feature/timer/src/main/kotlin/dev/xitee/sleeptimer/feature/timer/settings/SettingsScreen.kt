@@ -5,8 +5,8 @@ import android.app.admin.DevicePolicyManager
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,11 +21,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Info
@@ -33,10 +32,7 @@ import androidx.compose.material.icons.filled.MusicOff
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.Wifi
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,6 +44,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -58,27 +56,32 @@ import dev.xitee.sleeptimer.feature.timer.R
 import dev.xitee.sleeptimer.feature.timer.settings.components.FadeOutSlider
 import dev.xitee.sleeptimer.feature.timer.settings.components.ScreenLockMethodDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.SettingsToggleRow
+import dev.xitee.sleeptimer.feature.timer.settings.components.SettingsTopBar
 import dev.xitee.sleeptimer.feature.timer.settings.components.ShizukuRequiredDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.StepMinutesSlider
-import dev.xitee.sleeptimer.feature.timer.settings.components.ThemeSelector
+import dev.xitee.sleeptimer.feature.timer.settings.components.ThemeRow
 import dev.xitee.sleeptimer.feature.timer.theme.AppThemes
 import dev.xitee.sleeptimer.feature.timer.theme.LocalAppTheme
 import dev.xitee.sleeptimer.feature.timer.theme.appTheme
+import dev.xitee.sleeptimer.feature.timer.theme.rememberAnimatedAppTheme
 import dev.xitee.sleeptimer.feature.timer.timer.components.TimerBackground
 
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onNavigateToThemePicker: () -> Unit,
     onNavigateToAbout: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val ready = uiState ?: return
 
-    CompositionLocalProvider(LocalAppTheme provides AppThemes.byId(ready.settings.theme)) {
+    val animatedTheme = rememberAnimatedAppTheme(AppThemes.byId(ready.settings.theme))
+    CompositionLocalProvider(LocalAppTheme provides animatedTheme) {
         SettingsContent(
             uiState = ready,
             onBack = onBack,
+            onNavigateToThemePicker = onNavigateToThemePicker,
             onNavigateToAbout = onNavigateToAbout,
             viewModel = viewModel,
         )
@@ -89,6 +92,7 @@ fun SettingsScreen(
 private fun SettingsContent(
     uiState: SettingsUiState,
     onBack: () -> Unit,
+    onNavigateToThemePicker: () -> Unit,
     onNavigateToAbout: () -> Unit,
     viewModel: SettingsViewModel,
 ) {
@@ -181,7 +185,10 @@ private fun SettingsContent(
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.systemBars),
         ) {
-            SettingsTopBar(onBack = onBack)
+            SettingsTopBar(
+                title = stringResource(R.string.settings_title),
+                onBack = onBack,
+            )
 
             Column(
                 modifier = Modifier
@@ -189,11 +196,10 @@ private fun SettingsContent(
                     .verticalScroll(rememberScrollState()),
             ) {
                 SectionHeader(stringResource(R.string.category_appearance))
-                ThemeSelector(
+                ThemeRow(
                     selected = uiState.settings.theme,
-                    onSelect = { viewModel.updateTheme(it) },
+                    onClick = onNavigateToThemePicker,
                 )
-                Spacer(modifier = Modifier.height(8.dp))
                 SettingsToggleRow(
                     icon = Icons.Default.AutoAwesome,
                     title = stringResource(R.string.stars_title),
@@ -342,36 +348,6 @@ private fun SettingsNavigationRow(
                 color = theme.textDim,
             )
         }
-    }
-}
-
-@Composable
-private fun SettingsTopBar(onBack: () -> Unit) {
-    val theme = appTheme()
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .padding(horizontal = 8.dp),
-    ) {
-        IconButton(
-            onClick = onBack,
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .size(44.dp),
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = null,
-                tint = theme.textPrimary,
-            )
-        }
-        Text(
-            text = stringResource(R.string.settings_title),
-            style = MaterialTheme.typography.titleLarge,
-            color = theme.textPrimary,
-            modifier = Modifier.align(Alignment.Center),
-        )
     }
 }
 

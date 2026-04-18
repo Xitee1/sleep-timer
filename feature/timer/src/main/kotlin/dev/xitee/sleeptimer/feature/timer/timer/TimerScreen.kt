@@ -43,6 +43,7 @@ import dev.xitee.sleeptimer.feature.timer.R
 import dev.xitee.sleeptimer.feature.timer.theme.AppThemes
 import dev.xitee.sleeptimer.feature.timer.theme.LocalAppTheme
 import dev.xitee.sleeptimer.feature.timer.theme.appTheme
+import dev.xitee.sleeptimer.feature.timer.theme.rememberAnimatedAppTheme
 import dev.xitee.sleeptimer.feature.timer.timer.components.CircularDial
 import dev.xitee.sleeptimer.feature.timer.timer.components.PlayButton
 import dev.xitee.sleeptimer.feature.timer.timer.components.SecondaryRoundButton
@@ -56,7 +57,8 @@ fun TimerScreen(
     viewModel: TimerViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
-    CompositionLocalProvider(LocalAppTheme provides AppThemes.byId(settings.theme)) {
+    val animatedTheme = rememberAnimatedAppTheme(AppThemes.byId(settings.theme))
+    CompositionLocalProvider(LocalAppTheme provides animatedTheme) {
         TimerContent(
             onNavigateToSettings = onNavigateToSettings,
             viewModel = viewModel,
