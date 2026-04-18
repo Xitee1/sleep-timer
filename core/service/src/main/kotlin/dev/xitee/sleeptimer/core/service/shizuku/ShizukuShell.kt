@@ -1,6 +1,7 @@
 package dev.xitee.sleeptimer.core.service.shizuku
 
 import android.util.Log
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import moe.shizuku.server.IShizukuService
@@ -26,11 +27,17 @@ class ShizukuShell @Inject constructor(
             val binder = Shizuku.getBinder() ?: return@withContext false
             val service = IShizukuService.Stub.asInterface(binder)
             val remote = service.newProcess(args, null, null)
-            val exit = remote.waitFor()
-            if (exit != 0) {
-                Log.w(TAG, "cmd=${args.joinToString(" ")} exit=$exit")
+            try {
+                val exit = remote.waitFor()
+                if (exit != 0) {
+                    Log.w(TAG, "cmd=${args.joinToString(" ")} exit=$exit")
+                }
+                exit == 0
+            } finally {
+                try { remote.destroy() } catch (_: Exception) { /* best-effort cleanup */ }
             }
-            exit == 0
+        } catch (ce: CancellationException) {
+            throw ce
         } catch (t: Exception) {
             Log.e(TAG, "exec failed: ${args.joinToString(" ")}", t)
             false
