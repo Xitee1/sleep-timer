@@ -189,7 +189,7 @@ class SleepTimerService : Service() {
 
             if (settings.stopMediaPlayback) {
                 updateTimerState(TimerPhase.FADING_OUT)
-                notificationManager.updateNotification(0, stepMinutes)
+                notificationManager.updateNotification(0, stepMinutes, TimerPhase.FADING_OUT)
                 mediaVolumeController.fadeOutAndPause(settings.fadeOutDurationSeconds)
             }
 
