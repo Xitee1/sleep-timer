@@ -5,8 +5,6 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -23,6 +22,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
+import dev.mato.sleeptimer.feature.timer.theme.AppTheme
+import dev.mato.sleeptimer.feature.timer.theme.appTheme
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -30,23 +31,22 @@ import kotlin.math.sin
 fun CircularDial(
     state: CircularDialState,
     isRunning: Boolean,
-    progress: Float,
+    runningMinutes: Float,
     hapticEnabled: Boolean,
     onMinutesChanged: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val primary = MaterialTheme.colorScheme.primary
-    val primaryVariant = MaterialTheme.colorScheme.tertiary
-    val trackColor = MaterialTheme.colorScheme.surfaceVariant
-    val thumbColor = MaterialTheme.colorScheme.onSurface
+    val theme = appTheme()
     val hapticFeedback = LocalHapticFeedback.current
-
     var lastReportedMinutes by remember { mutableStateOf(state.totalMinutes) }
 
+    val displayMinutes: Float = if (isRunning) runningMinutes else state.totalMinutes.toFloat()
+    val minuteInRing = ((displayMinutes % 60f) + 60f) % 60f
+    val ringFraction = minuteInRing / 60f
+    val hoursComplete = (displayMinutes / 60f).toInt().coerceIn(0, 5)
+
     Box(
-        modifier = modifier
-            .aspectRatio(1f)
-            .padding(24.dp),
+        modifier = modifier.aspectRatio(1f),
         contentAlignment = Alignment.Center,
     ) {
         Canvas(
@@ -93,53 +93,96 @@ fun CircularDial(
                     },
                 ),
         ) {
-            val strokeWidth = 16.dp.toPx()
-            val thumbRadius = 14.dp.toPx()
-            val radius = (size.minDimension - strokeWidth - thumbRadius * 2) / 2f
+            val strokeWidth = 14.dp.toPx()
+            val plateInset = 6.dp.toPx()
+            val radius = (size.minDimension - strokeWidth - plateInset * 2f) / 2f
             val center = Offset(size.width / 2f, size.height / 2f)
 
-            // Draw background track
+            // Outer glow
+            val glowOuter = radius + strokeWidth * 0.5f + 8.dp.toPx()
             drawCircle(
-                color = trackColor,
+                brush = Brush.radialGradient(
+                    0.65f to Color.Transparent,
+                    1.00f to theme.accent.copy(alpha = if (isRunning) 0.28f else 0.14f),
+                    center = center,
+                    radius = glowOuter,
+                ),
+                radius = glowOuter,
+                center = center,
+            )
+
+            // Plate
+            drawCircle(
+                brush = Brush.verticalGradient(
+                    0.0f to theme.dialPlateTop,
+                    1.0f to theme.dialPlateBot,
+                    startY = center.y - radius,
+                    endY = center.y + radius,
+                ),
+                radius = radius + strokeWidth * 0.5f,
+                center = center,
+            )
+            drawCircle(
+                color = theme.stroke,
+                radius = radius + strokeWidth * 0.5f,
+                center = center,
+                style = Stroke(width = 1.dp.toPx()),
+            )
+            drawCircle(
+                color = theme.dialWell,
+                radius = radius - strokeWidth * 0.5f - 6.dp.toPx(),
+                center = center,
+            )
+
+            drawTicks(center, radius, strokeWidth, theme)
+
+            drawCircle(
+                color = theme.dialTrack,
                 radius = radius,
                 center = center,
                 style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
             )
 
-            if (isRunning) {
-                // When running, show progress arc
-                drawProgressArc(center, radius, strokeWidth, progress, primary, primaryVariant)
-            } else {
-                // When idle, show selected time arcs
-                drawSelectionArcs(
+            if (ringFraction > 0f) {
+                drawProgressArc(
                     center = center,
                     radius = radius,
                     strokeWidth = strokeWidth,
-                    state = state,
-                    primary = primary,
-                    primaryVariant = primaryVariant,
-                    trackColor = trackColor,
-                )
-
-                // Draw thumb
-                val thumbAngleRad = Math.toRadians((state.angleDegrees - 90.0)).toFloat()
-                val thumbX = center.x + radius * cos(thumbAngleRad)
-                val thumbY = center.y + radius * sin(thumbAngleRad)
-
-                // Thumb shadow
-                drawCircle(
-                    color = Color.Black.copy(alpha = 0.2f),
-                    radius = thumbRadius + 2.dp.toPx(),
-                    center = Offset(thumbX + 1.dp.toPx(), thumbY + 2.dp.toPx()),
-                )
-                // Thumb
-                drawCircle(
-                    color = thumbColor,
-                    radius = thumbRadius,
-                    center = Offset(thumbX, thumbY),
+                    fraction = ringFraction,
+                    accent = theme.accent,
                 )
             }
+
+            drawHourDots(center, radius, hoursComplete, theme)
+
+            drawKnob(
+                center = center,
+                radius = radius,
+                fraction = ringFraction,
+                theme = theme,
+                dimmed = isRunning,
+            )
         }
+    }
+}
+
+private fun DrawScope.drawTicks(center: Offset, radius: Float, strokeWidth: Float, theme: AppTheme) {
+    for (i in 0 until 60) {
+        val big = i % 5 == 0
+        val angle = (i / 60f) * (2f * Math.PI.toFloat()) - (Math.PI.toFloat() / 2f)
+        val inner = radius - strokeWidth * 0.5f - (if (big) 10.dp.toPx() else 6.dp.toPx())
+        val outer = radius - strokeWidth * 0.5f - 3.dp.toPx()
+        val x1 = center.x + inner * cos(angle)
+        val y1 = center.y + inner * sin(angle)
+        val x2 = center.x + outer * cos(angle)
+        val y2 = center.y + outer * sin(angle)
+        drawLine(
+            color = if (big) theme.dialTickMajor else theme.dialTickMinor,
+            start = Offset(x1, y1),
+            end = Offset(x2, y2),
+            strokeWidth = if (big) 1.5.dp.toPx() else 1.dp.toPx(),
+            cap = StrokeCap.Round,
+        )
     }
 }
 
@@ -147,21 +190,26 @@ private fun DrawScope.drawProgressArc(
     center: Offset,
     radius: Float,
     strokeWidth: Float,
-    progress: Float,
-    primary: Color,
-    primaryVariant: Color,
+    fraction: Float,
+    accent: Color,
 ) {
-    val sweepAngle = 360f * progress
     val topLeft = Offset(center.x - radius, center.y - radius)
-    val arcSize = androidx.compose.ui.geometry.Size(radius * 2, radius * 2)
+    val arcSize = Size(radius * 2, radius * 2)
+    val sweep = 360f * fraction.coerceIn(0f, 1f)
 
     drawArc(
-        brush = Brush.sweepGradient(
-            colors = listOf(primaryVariant, primary, primaryVariant),
-            center = center,
-        ),
+        color = accent.copy(alpha = 0.35f),
         startAngle = -90f,
-        sweepAngle = sweepAngle,
+        sweepAngle = sweep,
+        useCenter = false,
+        topLeft = topLeft,
+        size = arcSize,
+        style = Stroke(width = strokeWidth + 8.dp.toPx(), cap = StrokeCap.Round),
+    )
+    drawArc(
+        color = accent,
+        startAngle = -90f,
+        sweepAngle = sweep,
         useCenter = false,
         topLeft = topLeft,
         size = arcSize,
@@ -169,68 +217,57 @@ private fun DrawScope.drawProgressArc(
     )
 }
 
-private fun DrawScope.drawSelectionArcs(
+private fun DrawScope.drawHourDots(center: Offset, radius: Float, hoursComplete: Int, theme: AppTheme) {
+    val rDot = radius - 42.dp.toPx()
+    for (i in 0 until 5) {
+        val active = i < hoursComplete
+        val angle = (i / 5f) * (2f * Math.PI.toFloat()) - (Math.PI.toFloat() / 2f)
+        val x = center.x + rDot * cos(angle)
+        val y = center.y + rDot * sin(angle)
+        drawCircle(
+            color = if (active) theme.accent else theme.hourDotInactive,
+            radius = if (active) 3.dp.toPx() else 2.dp.toPx(),
+            center = Offset(x, y),
+        )
+    }
+}
+
+private fun DrawScope.drawKnob(
     center: Offset,
     radius: Float,
-    strokeWidth: Float,
-    state: CircularDialState,
-    primary: Color,
-    primaryVariant: Color,
-    trackColor: Color,
+    fraction: Float,
+    theme: AppTheme,
+    dimmed: Boolean,
 ) {
-    val topLeft = Offset(center.x - radius, center.y - radius)
-    val arcSize = androidx.compose.ui.geometry.Size(radius * 2, radius * 2)
+    val angle = fraction * (2f * Math.PI.toFloat()) - (Math.PI.toFloat() / 2f)
+    val kx = center.x + radius * cos(angle)
+    val ky = center.y + radius * sin(angle)
 
-    // Draw completed revolutions as full circles with decreasing opacity
-    for (rev in 0 until state.revolutions) {
-        val alpha = 0.3f + (rev.toFloat() / state.maxRevolutions) * 0.3f
-        drawArc(
-            color = primaryVariant.copy(alpha = alpha),
-            startAngle = -90f,
-            sweepAngle = 360f,
-            useCenter = false,
-            topLeft = topLeft,
-            size = arcSize,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-        )
-    }
-
-    // Draw current revolution arc
-    val currentSweep = state.angleDegrees
-    if (currentSweep > 0f) {
-        drawArc(
-            brush = Brush.sweepGradient(
-                colors = listOf(primaryVariant, primary),
-                center = center,
-            ),
-            startAngle = -90f,
-            sweepAngle = currentSweep,
-            useCenter = false,
-            topLeft = topLeft,
-            size = arcSize,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-        )
-    }
-
-    // Draw tick marks every 5 minutes
-    for (i in 0 until 12) {
-        val tickAngle = (i * 30f) - 90f
-        val tickAngleRad = Math.toRadians(tickAngle.toDouble()).toFloat()
-        val innerRadius = radius - strokeWidth / 2f - 4.dp.toPx()
-        val outerRadius = radius - strokeWidth / 2f + 4.dp.toPx()
-        val startPoint = Offset(
-            center.x + innerRadius * cos(tickAngleRad),
-            center.y + innerRadius * sin(tickAngleRad),
-        )
-        val endPoint = Offset(
-            center.x + outerRadius * cos(tickAngleRad),
-            center.y + outerRadius * sin(tickAngleRad),
-        )
-        drawLine(
-            color = trackColor.copy(alpha = 0.5f),
-            start = startPoint,
-            end = endPoint,
-            strokeWidth = 2.dp.toPx(),
-        )
-    }
+    val alpha = if (dimmed) 0.6f else 1f
+    drawCircle(
+        color = theme.accent.copy(alpha = 0.15f * alpha),
+        radius = 16.dp.toPx(),
+        center = Offset(kx, ky),
+    )
+    drawCircle(
+        color = theme.accent.copy(alpha = 0.45f * alpha),
+        radius = 12.dp.toPx(),
+        center = Offset(kx, ky + 2.dp.toPx()),
+    )
+    drawCircle(
+        color = theme.knobBody.copy(alpha = alpha),
+        radius = 10.dp.toPx(),
+        center = Offset(kx, ky),
+    )
+    drawCircle(
+        color = theme.accent.copy(alpha = alpha),
+        radius = 10.dp.toPx(),
+        center = Offset(kx, ky),
+        style = Stroke(width = 2.dp.toPx()),
+    )
+    drawCircle(
+        color = theme.accent.copy(alpha = alpha),
+        radius = 3.dp.toPx(),
+        center = Offset(kx, ky),
+    )
 }

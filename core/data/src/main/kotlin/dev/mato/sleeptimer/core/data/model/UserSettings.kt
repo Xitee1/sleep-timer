@@ -6,4 +6,6 @@ data class UserSettings(
     val screenOff: Boolean = false,
     val notificationEnabled: Boolean = true,
     val hapticFeedbackEnabled: Boolean = true,
+    val theme: ThemeId = ThemeId.Default,
+    val starsEnabled: Boolean = true,
 )

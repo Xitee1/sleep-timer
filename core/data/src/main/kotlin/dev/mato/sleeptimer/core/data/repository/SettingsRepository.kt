@@ -1,5 +1,6 @@
 package dev.mato.sleeptimer.core.data.repository
 
+import dev.mato.sleeptimer.core.data.model.ThemeId
 import dev.mato.sleeptimer.core.data.model.UserSettings
 import kotlinx.coroutines.flow.Flow
 
@@ -10,4 +11,6 @@ interface SettingsRepository {
     suspend fun updateScreenOff(enabled: Boolean)
     suspend fun updateNotificationEnabled(enabled: Boolean)
     suspend fun updateHapticFeedback(enabled: Boolean)
+    suspend fun updateTheme(theme: ThemeId)
+    suspend fun updateStarsEnabled(enabled: Boolean)
 }
