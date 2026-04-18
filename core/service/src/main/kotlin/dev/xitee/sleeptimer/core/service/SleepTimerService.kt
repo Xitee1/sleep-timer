@@ -25,6 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -57,6 +58,7 @@ class SleepTimerService : Service() {
         const val ACTION_ADD_MINUTES = "dev.xitee.sleeptimer.action.ADD_MINUTES"
         const val ACTION_SUBTRACT_MINUTES = "dev.xitee.sleeptimer.action.SUBTRACT_MINUTES"
         const val EXTRA_DURATION_MILLIS = "dev.xitee.sleeptimer.extra.DURATION_MILLIS"
+        private const val FADE_IN_SECONDS = 2
     }
 
     override fun onCreate() {
@@ -122,103 +124,130 @@ class SleepTimerService : Service() {
         // Update repository
         updateTimerState(TimerPhase.RUNNING)
 
-        // Start countdown
+        // Start countdown. onTimerExpired runs inside this job so that cancelling
+        // the job also cancels the fade-out — lets + and Cancel interrupt the fade.
         countdownJob = serviceScope.launch {
-            while (remainingMillis > 0) {
-                delay(1000L)
-                remainingMillis -= 1000L
-
-                if (remainingMillis <= 0) {
-                    remainingMillis = 0
-                }
-
-                updateTimerState(TimerPhase.RUNNING)
-
-                val remainingMinutes = remainingMillisToDisplayMinutes(remainingMillis)
-                notificationManager.updateNotification(remainingMinutes, stepMinutes)
-            }
-
-            // Timer expired — handle completion
-            onTimerExpired()
+            runCountdownAndExpire()
         }
     }
 
-    private fun addStep() {
-        if (countdownJob?.isActive == true) {
-            val stepMillis = stepMinutes * 60 * 1000L
-            remainingMillis += stepMillis
-            totalDurationMillis += stepMillis
+    private suspend fun runCountdownAndExpire() {
+        while (remainingMillis > 0) {
+            delay(1000L)
+            remainingMillis -= 1000L
+
+            if (remainingMillis <= 0) {
+                remainingMillis = 0
+            }
+
             updateTimerState(TimerPhase.RUNNING)
-            notificationManager.updateNotification(
-                remainingMillisToDisplayMinutes(remainingMillis),
-                stepMinutes,
-            )
+
+            val remainingMinutes = remainingMillisToDisplayMinutes(remainingMillis)
+            notificationManager.updateNotification(remainingMinutes, stepMinutes)
+        }
+
+        onTimerExpired()
+    }
+
+    private fun addStep() {
+        when (timerRepository.timerState.value.phase) {
+            TimerPhase.RUNNING -> {
+                if (countdownJob?.isActive != true) return
+                val stepMillis = stepMinutes * 60 * 1000L
+                remainingMillis += stepMillis
+                totalDurationMillis += stepMillis
+                updateTimerState(TimerPhase.RUNNING)
+                notificationManager.updateNotification(
+                    remainingMillisToDisplayMinutes(remainingMillis),
+                    stepMinutes,
+                )
+            }
+            TimerPhase.FADING_OUT -> {
+                // Replace countdownJob with the fade-in + restart so Cancel during
+                // the 2 s fade-in window cancels this whole sequence, not just the
+                // already-finished fade-out.
+                val oldJob = countdownJob ?: return
+                val stepMillis = stepMinutes * 60 * 1000L
+                countdownJob = serviceScope.launch {
+                    oldJob.cancelAndJoin()
+                    mediaVolumeController.fadeInToOriginal(FADE_IN_SECONDS)
+                    totalDurationMillis = stepMillis
+                    remainingMillis = stepMillis
+                    updateTimerState(TimerPhase.RUNNING)
+                    notificationManager.updateNotification(
+                        remainingMillisToDisplayMinutes(remainingMillis),
+                        stepMinutes,
+                    )
+                    runCountdownAndExpire()
+                }
+            }
+            else -> {}
         }
     }
 
     private fun subtractStep() {
-        if (countdownJob?.isActive == true) {
-            val stepMillis = stepMinutes * 60 * 1000L
-            if (remainingMillis <= stepMillis) return
-            remainingMillis -= stepMillis
-            totalDurationMillis = (totalDurationMillis - stepMillis).coerceAtLeast(remainingMillis)
-            updateTimerState(TimerPhase.RUNNING)
-            notificationManager.updateNotification(
-                remainingMillisToDisplayMinutes(remainingMillis),
-                stepMinutes,
-            )
-        }
+        if (timerRepository.timerState.value.phase != TimerPhase.RUNNING) return
+        if (countdownJob?.isActive != true) return
+        val stepMillis = stepMinutes * 60 * 1000L
+        if (remainingMillis <= stepMillis) return
+        remainingMillis -= stepMillis
+        totalDurationMillis = (totalDurationMillis - stepMillis).coerceAtLeast(remainingMillis)
+        updateTimerState(TimerPhase.RUNNING)
+        notificationManager.updateNotification(
+            remainingMillisToDisplayMinutes(remainingMillis),
+            stepMinutes,
+        )
     }
 
     private fun cancelTimer() {
-        countdownJob?.cancel()
+        val job = countdownJob
         countdownJob = null
-
-        // Restore volume if fading was in progress
-        mediaVolumeController.restoreVolume()
-
-        updateTimerState(TimerPhase.IDLE)
-        notificationManager.cancelNotification()
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
-    }
-
-    private fun onTimerExpired() {
         serviceScope.launch {
-            val settings: UserSettings = settingsRepository.settings.first()
-
-            if (settings.stopMediaPlayback) {
-                updateTimerState(TimerPhase.FADING_OUT)
-                notificationManager.updateNotification(0, stepMinutes, TimerPhase.FADING_OUT)
-                mediaVolumeController.fadeOutAndPause(settings.fadeOutDurationSeconds)
-            }
-
-            if (settings.turnOffWifi && shizukuManager.isReady()) {
-                shizukuWifiController.disableWifi()
-            }
-
-            if (settings.turnOffBluetooth && shizukuManager.isReady()) {
-                shizukuBluetoothController.disableBluetooth()
-            }
-
-            if (settings.screenOff) {
-                val usedShizuku = if (settings.softScreenOff && shizukuManager.isReady()) {
-                    shizukuScreenOffHelper.turnOffScreen()
-                } else {
-                    false
-                }
-                if (!usedShizuku) {
-                    // Hard-lock fallback: also the path when softScreenOff is off, or
-                    // when the Shizuku attempt failed. Forces credential on next unlock.
-                    screenLockHelper.lockScreen()
-                }
-            }
-
-            // Reset state before stopping foreground to avoid race with onDestroy
-            timerRepository.updateState(TimerState())
+            // Join the fade-out before restoring volume, otherwise the still-running
+            // fade coroutine would overwrite the restored volume at its next step.
+            job?.cancelAndJoin()
+            mediaVolumeController.restoreVolume()
+            updateTimerState(TimerPhase.IDLE)
+            notificationManager.cancelNotification()
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
+    }
+
+    private suspend fun onTimerExpired() {
+        val settings: UserSettings = settingsRepository.settings.first()
+
+        if (settings.stopMediaPlayback) {
+            updateTimerState(TimerPhase.FADING_OUT)
+            notificationManager.updateNotification(0, stepMinutes, TimerPhase.FADING_OUT)
+            mediaVolumeController.fadeOutAndPause(settings.fadeOutDurationSeconds)
+        }
+
+        if (settings.turnOffWifi && shizukuManager.isReady()) {
+            shizukuWifiController.disableWifi()
+        }
+
+        if (settings.turnOffBluetooth && shizukuManager.isReady()) {
+            shizukuBluetoothController.disableBluetooth()
+        }
+
+        if (settings.screenOff) {
+            val usedShizuku = if (settings.softScreenOff && shizukuManager.isReady()) {
+                shizukuScreenOffHelper.turnOffScreen()
+            } else {
+                false
+            }
+            if (!usedShizuku) {
+                // Hard-lock fallback: also the path when softScreenOff is off, or
+                // when the Shizuku attempt failed. Forces credential on next unlock.
+                screenLockHelper.lockScreen()
+            }
+        }
+
+        // Reset state before stopping foreground to avoid race with onDestroy
+        timerRepository.updateState(TimerState())
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     private fun updateTimerState(phase: TimerPhase) {
