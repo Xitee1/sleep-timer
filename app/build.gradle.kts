@@ -15,7 +15,8 @@ android {
         applicationId = "dev.xitee.sleeptimer"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
+        // Schema: major * 100000 + minor * 1000 + patch * 10 (last digit reserved for hotfixes)
+        versionCode = 1 * 100000 + 0 * 1000 + 0 * 10
         versionName = "1.0.0"
     }
 
