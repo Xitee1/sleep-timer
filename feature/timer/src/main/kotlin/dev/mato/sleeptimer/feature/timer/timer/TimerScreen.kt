@@ -145,6 +145,11 @@ private fun TimerContent(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            val runningRemainingSeconds: Int = when (val s = uiState) {
+                is TimerUiState.Running -> s.remainingMinutes * 60 + s.remainingSeconds
+                else -> 0
+            }
+
             ActionRow(
                 isRunning = isRunning,
                 onToggle = {
@@ -162,8 +167,12 @@ private fun TimerContent(
                     }
                 },
                 onMinusFive = {
-                    val next = ((dialState.totalMinutes - 5) / 5) * 5
-                    viewModel.setMinutes(next.coerceAtLeast(0))
+                    if (isRunning) {
+                        viewModel.subtractFiveMinutes()
+                    } else {
+                        val next = ((dialState.totalMinutes - 5) / 5) * 5
+                        viewModel.setMinutes(next.coerceAtLeast(0))
+                    }
                 },
                 onPlusFive = {
                     if (isRunning) {
@@ -173,7 +182,11 @@ private fun TimerContent(
                         viewModel.setMinutes(next.coerceAtMost(300))
                     }
                 },
-                isMinusEnabled = !isRunning && dialState.totalMinutes > 0,
+                isMinusEnabled = if (isRunning) {
+                    runningRemainingSeconds >= 5 * 60
+                } else {
+                    dialState.totalMinutes > 0
+                },
                 isPlusEnabled = !isRunning && dialState.totalMinutes < 300,
                 plusFiveVisibleWhileRunning = true,
             )
@@ -229,16 +242,12 @@ private fun ActionRow(
         horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (isRunning) {
-            Spacer(modifier = Modifier.size(56.dp))
-        } else {
-            SecondaryRoundButton(
-                icon = Icons.Default.Remove,
-                contentDescription = "Minus 5 minutes",
-                onClick = onMinusFive,
-                enabled = isMinusEnabled,
-            )
-        }
+        SecondaryRoundButton(
+            icon = Icons.Default.Remove,
+            contentDescription = "Minus 5 minutes",
+            onClick = onMinusFive,
+            enabled = isMinusEnabled,
+        )
         PlayButton(isRunning = isRunning, onClick = onToggle)
         SecondaryRoundButton(
             icon = Icons.Default.Add,

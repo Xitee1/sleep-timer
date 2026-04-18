@@ -43,6 +43,7 @@ class SleepTimerService : Service() {
         const val ACTION_START = "dev.mato.sleeptimer.action.START"
         const val ACTION_CANCEL = "dev.mato.sleeptimer.action.CANCEL"
         const val ACTION_ADD_FIVE = "dev.mato.sleeptimer.action.ADD_FIVE"
+        const val ACTION_SUBTRACT_FIVE = "dev.mato.sleeptimer.action.SUBTRACT_FIVE"
         const val EXTRA_DURATION_MILLIS = "dev.mato.sleeptimer.extra.DURATION_MILLIS"
     }
 
@@ -58,6 +59,9 @@ class SleepTimerService : Service() {
             }
             ACTION_ADD_FIVE -> {
                 addFiveMinutes()
+            }
+            ACTION_SUBTRACT_FIVE -> {
+                subtractFiveMinutes()
             }
             ACTION_CANCEL -> {
                 cancelTimer()
@@ -119,6 +123,17 @@ class SleepTimerService : Service() {
         if (countdownJob?.isActive == true) {
             remainingMillis += 5 * 60 * 1000L
             totalDurationMillis += 5 * 60 * 1000L
+            updateTimerState(TimerPhase.RUNNING)
+            notificationManager.updateNotification((remainingMillis / 60_000).toInt())
+        }
+    }
+
+    private fun subtractFiveMinutes() {
+        if (countdownJob?.isActive == true) {
+            val fiveMinutesMillis = 5 * 60 * 1000L
+            if (remainingMillis <= fiveMinutesMillis) return
+            remainingMillis -= fiveMinutesMillis
+            totalDurationMillis = (totalDurationMillis - fiveMinutesMillis).coerceAtLeast(remainingMillis)
             updateTimerState(TimerPhase.RUNNING)
             notificationManager.updateNotification((remainingMillis / 60_000).toInt())
         }
