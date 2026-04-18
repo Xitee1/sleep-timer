@@ -30,6 +30,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -112,6 +114,22 @@ private fun TimerContent(
         ) {
             HomeTopBar(onOpenSettings = onNavigateToSettings)
 
+            val nowMillis by produceState(initialValue = System.currentTimeMillis()) {
+                while (true) {
+                    value = System.currentTimeMillis()
+                    kotlinx.coroutines.delay(10_000L)
+                }
+            }
+            val endMillis: Long? = when (val s = uiState) {
+                is TimerUiState.Idle ->
+                    if (s.selectedMinutes > 0) nowMillis + s.selectedMinutes * 60_000L else null
+                is TimerUiState.Running -> nowMillis + s.remainingMillis
+                is TimerUiState.FadingOut -> null
+            }
+            val timeFormatter = remember(context) {
+                android.text.format.DateFormat.getTimeFormat(context)
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -119,23 +137,53 @@ private fun TimerContent(
                     .padding(horizontal = 40.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularDial(
-                    state = dialState,
-                    isRunning = isRunning,
-                    runningMinutes = runningMinutes,
-                    hapticEnabled = settings.hapticFeedbackEnabled,
-                    onMinutesChanged = { viewModel.setMinutes(it) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .sizeIn(maxWidth = 360.dp, maxHeight = 360.dp),
-                )
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularDial(
+                            state = dialState,
+                            isRunning = isRunning,
+                            runningMinutes = runningMinutes,
+                            hapticEnabled = settings.hapticFeedbackEnabled,
+                            onMinutesChanged = { viewModel.setMinutes(it) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .sizeIn(maxWidth = 360.dp, maxHeight = 360.dp),
+                        )
 
-                when (val s = uiState) {
-                    is TimerUiState.Idle -> TimeDisplay(totalMinutes = s.selectedMinutes)
-                    is TimerUiState.Running -> TimeDisplay(
-                        totalMinutes = remainingMillisToDisplayMinutes(s.remainingMillis),
-                    )
-                    is TimerUiState.FadingOut -> TimeDisplay(totalMinutes = 0)
+                        when (val s = uiState) {
+                            is TimerUiState.Idle -> TimeDisplay(totalMinutes = s.selectedMinutes)
+                            is TimerUiState.Running -> TimeDisplay(
+                                totalMinutes = remainingMillisToDisplayMinutes(s.remainingMillis),
+                            )
+                            is TimerUiState.FadingOut -> TimeDisplay(totalMinutes = 0)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(24.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (endMillis != null) {
+                            Text(
+                                text = stringResource(
+                                    R.string.ends_at_time,
+                                    timeFormatter.format(java.util.Date(endMillis)),
+                                ),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = appTheme().textDim,
+                            )
+                        }
+                    }
                 }
             }
 

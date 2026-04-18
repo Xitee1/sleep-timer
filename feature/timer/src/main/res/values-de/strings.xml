@@ -13,6 +13,7 @@
     <string name="time_unit_hour">stunde</string>
     <string name="time_unit_hours">stunden</string>
     <string name="time_unit_hr_min">std · min</string>
+    <string name="ends_at_time">Endet um %1$s</string>
 
     <!-- Settings Screen -->
     <string name="settings_title">Einstellungen</string>
@@ -22,13 +23,13 @@
     <string name="stars_unavailable">Für dieses Theme nicht verfügbar</string>
     <string name="category_sleep_timer">Sleep Timer</string>
     <string name="playback_title">Wiedergabe</string>
-    <string name="playback_description">Audio- und Videowiedergabe stoppen</string>
+    <string name="playback_description">Medienwiedergabe stoppen</string>
     <string name="fade_out_title">Fade-out-Dauer</string>
     <string name="fade_out_seconds">%d Sekunden</string>
     <string name="step_minutes_title">+/− Schrittweite</string>
     <string name="step_minutes_value">%d Min</string>
     <string name="screen_title">Bildschirm</string>
-    <string name="screen_description">Bildschirm sperren wenn Timer endet (Shizuku optional)</string>
+    <string name="screen_description">Display ausschalten (Shizuku optional)</string>
     <string name="screen_admin_required">Geräteadministrator-Berechtigung erforderlich</string>
     <string name="category_haptic">Haptisches Feedback</string>
     <string name="haptic_title">Haptisches Feedback</string>
@@ -61,9 +62,9 @@
 
     <!-- Shizuku-Funktionen -->
     <string name="wifi_off_title">WLAN ausschalten</string>
-    <string name="wifi_off_description">WLAN deaktivieren wenn Timer endet (benötigt Shizuku)</string>
+    <string name="wifi_off_description">WLAN deaktivieren (Shizuku benötigt)</string>
     <string name="bluetooth_off_title">Bluetooth ausschalten</string>
-    <string name="bluetooth_off_description">Bluetooth deaktivieren wenn Timer endet (benötigt Shizuku)</string>
+    <string name="bluetooth_off_description">Bluetooth deaktivieren (Shizuku benötigt)</string>
 
     <!-- Sperrmethoden-Dialog -->
     <string name="screen_method_dialog_title">Sperrmethode wählen</string>
