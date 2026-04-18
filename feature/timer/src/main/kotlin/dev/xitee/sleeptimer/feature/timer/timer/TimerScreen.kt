@@ -134,7 +134,7 @@ private fun TimerContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = 56.dp),
+                    .padding(horizontal = 40.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(
@@ -153,7 +153,7 @@ private fun TimerContent(
                             onMinutesChanged = { viewModel.setMinutes(it) },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .sizeIn(maxWidth = 320.dp, maxHeight = 320.dp),
+                                .sizeIn(maxWidth = 360.dp, maxHeight = 360.dp),
                         )
 
                         when (val s = uiState) {
