@@ -19,50 +19,53 @@ class CircularDialState {
 
     private var previousAngle = 90f
     private var isDragging = false
+    private var cumulativeDegrees = 0f
 
     val maxRevolutions = 5 // 5 hours
     private val maxMinutes = maxRevolutions * 60
+    private val maxDegrees = maxRevolutions * 360f
+
+    init {
+        // Sync cumulative with default totalMinutes (15)
+        cumulativeDegrees = (totalMinutes / 60f) * 360f
+        revolutions = totalMinutes / 60
+        angleDegrees = cumulativeDegrees - revolutions * 360f
+    }
 
     fun onDragStart(centerX: Float, centerY: Float, x: Float, y: Float) {
         isDragging = true
         previousAngle = computeAngle(centerX, centerY, x, y)
+        cumulativeDegrees = (revolutions * 360f + angleDegrees).coerceIn(0f, maxDegrees)
     }
 
     fun onDrag(centerX: Float, centerY: Float, x: Float, y: Float) {
         if (!isDragging) return
 
         val newAngle = computeAngle(centerX, centerY, x, y)
-        val rawDelta = newAngle - previousAngle
+        var delta = newAngle - previousAngle
+        if (delta > 180f) delta -= 360f
+        else if (delta < -180f) delta += 360f
 
-        if (rawDelta > 180f) {
-            if (revolutions > 0) revolutions--
-        } else if (rawDelta < -180f) {
-            if (revolutions < maxRevolutions) revolutions++
-        }
-
-        angleDegrees = newAngle
+        cumulativeDegrees = (cumulativeDegrees + delta).coerceIn(0f, maxDegrees)
         previousAngle = newAngle
-        recalculateMinutes()
+
+        revolutions = (cumulativeDegrees / 360f).toInt().coerceAtMost(maxRevolutions)
+        angleDegrees = cumulativeDegrees - revolutions * 360f
+        totalMinutes = ((cumulativeDegrees / 360f) * 60f).roundToInt().coerceIn(0, maxMinutes)
     }
 
     fun onDragEnd() {
         isDragging = false
-        val minuteInRevolution = ((angleDegrees / 360f) * 60f).roundToInt().coerceIn(0, 59)
-        angleDegrees = (minuteInRevolution / 60f) * 360f
-        recalculateMinutes()
+        setMinutes(totalMinutes)
     }
 
     fun setMinutes(minutes: Int) {
         val clamped = minutes.coerceIn(0, maxMinutes)
+        totalMinutes = clamped
+        cumulativeDegrees = (clamped / 60f) * 360f
         revolutions = clamped / 60
         val remainder = clamped % 60
         angleDegrees = (remainder / 60f) * 360f
-        totalMinutes = clamped
-    }
-
-    private fun recalculateMinutes() {
-        val minuteInRevolution = ((angleDegrees / 360f) * 60f).roundToInt().coerceIn(0, 59)
-        totalMinutes = (revolutions * 60 + minuteInRevolution).coerceIn(0, maxMinutes)
     }
 
     private fun computeAngle(centerX: Float, centerY: Float, x: Float, y: Float): Float {

@@ -18,9 +18,6 @@
     <string name="screen_title">Screen</string>
     <string name="screen_description">Lock screen when timer ends</string>
     <string name="screen_admin_required">Device admin permission required</string>
-    <string name="category_notification">Notification</string>
-    <string name="notification_title">Enable notification</string>
-    <string name="notification_description">Show remaining time and quick actions</string>
     <string name="category_haptic">Haptic Feedback</string>
     <string name="haptic_title">Haptic feedback</string>
     <string name="haptic_description">Vibrate when using timer and controls</string>

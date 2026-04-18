@@ -23,7 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.MusicOff
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.Icon
@@ -55,10 +54,11 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val ready = uiState ?: return
 
-    CompositionLocalProvider(LocalAppTheme provides AppThemes.byId(uiState.settings.theme)) {
+    CompositionLocalProvider(LocalAppTheme provides AppThemes.byId(ready.settings.theme)) {
         SettingsContent(
-            uiState = uiState,
+            uiState = ready,
             onBack = onBack,
             viewModel = viewModel,
         )
@@ -156,15 +156,6 @@ private fun SettingsContent(
                             viewModel.updateScreenOff(enabled)
                         }
                     },
-                )
-
-                SectionHeader(stringResource(R.string.category_notification))
-                SettingsToggleRow(
-                    icon = Icons.Default.Notifications,
-                    title = stringResource(R.string.notification_title),
-                    description = stringResource(R.string.notification_description),
-                    checked = uiState.settings.notificationEnabled,
-                    onCheckedChange = { viewModel.updateNotificationEnabled(it) },
                 )
 
                 SectionHeader(stringResource(R.string.category_haptic))

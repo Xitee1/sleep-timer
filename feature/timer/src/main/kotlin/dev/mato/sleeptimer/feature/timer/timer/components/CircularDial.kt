@@ -1,5 +1,7 @@
 package dev.mato.sleeptimer.feature.timer.timer.components
 
+import android.os.Build
+import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
@@ -20,7 +22,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import dev.mato.sleeptimer.feature.timer.theme.AppTheme
 import dev.mato.sleeptimer.feature.timer.theme.appTheme
@@ -37,7 +39,14 @@ fun CircularDial(
     modifier: Modifier = Modifier,
 ) {
     val theme = appTheme()
-    val hapticFeedback = LocalHapticFeedback.current
+    val view = LocalView.current
+    val tickHapticType = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            HapticFeedbackConstants.SEGMENT_TICK
+        } else {
+            HapticFeedbackConstants.CLOCK_TICK
+        }
+    }
     var lastReportedMinutes by remember { mutableStateOf(state.totalMinutes) }
 
     val displayMinutes: Float = if (isRunning) runningMinutes else state.totalMinutes.toFloat()
@@ -74,9 +83,7 @@ fun CircularDial(
                                     )
                                     if (state.totalMinutes != lastReportedMinutes) {
                                         if (hapticEnabled) {
-                                            hapticFeedback.performHapticFeedback(
-                                                androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove,
-                                            )
+                                            view.performHapticFeedback(tickHapticType)
                                         }
                                         lastReportedMinutes = state.totalMinutes
                                         onMinutesChanged(state.totalMinutes)

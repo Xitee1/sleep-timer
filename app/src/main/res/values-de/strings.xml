@@ -18,9 +18,6 @@
     <string name="screen_title">Bildschirm</string>
     <string name="screen_description">Bildschirm sperren wenn Timer endet</string>
     <string name="screen_admin_required">Geräteadministrator-Berechtigung erforderlich</string>
-    <string name="category_notification">Benachrichtigung</string>
-    <string name="notification_title">Benachrichtigung aktivieren</string>
-    <string name="notification_description">Verbleibende Zeit und Schnellzugriff anzeigen</string>
     <string name="category_haptic">Haptisches Feedback</string>
     <string name="haptic_title">Haptisches Feedback</string>
     <string name="haptic_description">Vibrieren bei Verwendung von Timer und Bedienelementen</string>
