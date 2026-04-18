@@ -208,10 +208,13 @@ class SleepTimerService : Service() {
                     false
                 }
                 if (!usedShizuku) {
+                    // Hard-lock fallback: also the path when softScreenOff is off, or
+                    // when the Shizuku attempt failed. Forces credential on next unlock.
                     screenLockHelper.lockScreen()
                 }
             }
 
+            // Reset state before stopping foreground to avoid race with onDestroy
             timerRepository.updateState(TimerState())
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
