@@ -2,12 +2,16 @@ package dev.mato.sleeptimer.feature.timer.timer.components
 
 import android.os.Build
 import android.view.HapticFeedbackConstants
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,7 +53,22 @@ fun CircularDial(
     }
     var lastReportedMinutes by remember { mutableStateOf(state.totalMinutes) }
 
-    val displayMinutes: Float = if (isRunning) runningMinutes else state.totalMinutes.toFloat()
+    val targetMinutes: Float = if (isRunning) runningMinutes else state.totalMinutes.toFloat()
+    val animatedMinutes = remember { Animatable(targetMinutes) }
+    LaunchedEffect(targetMinutes, state.isDragging) {
+        val delta = kotlin.math.abs(targetMinutes - animatedMinutes.value)
+        val snap = state.isDragging || delta < 1f
+        if (snap) {
+            animatedMinutes.snapTo(targetMinutes)
+        } else {
+            animatedMinutes.animateTo(
+                targetValue = targetMinutes,
+                animationSpec = tween(durationMillis = 360, easing = FastOutSlowInEasing),
+            )
+        }
+    }
+
+    val displayMinutes: Float = animatedMinutes.value
     val minuteInRing = ((displayMinutes % 60f) + 60f) % 60f
     val ringFraction = minuteInRing / 60f
     val hoursComplete = (displayMinutes / 60f).toInt().coerceIn(0, 5)

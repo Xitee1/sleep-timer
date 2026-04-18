@@ -17,9 +17,11 @@ class TimerNotificationManager @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
     companion object {
-        const val CHANNEL_ID = "sleep_timer"
+        const val CHANNEL_ID = "sleep_timer_v2"
+        private const val LEGACY_CHANNEL_ID = "sleep_timer"
         const val NOTIFICATION_ID = 1
         private const val ACTION_ADD_FIVE = "dev.mato.sleeptimer.action.ADD_FIVE"
+        private const val ACTION_SUBTRACT_FIVE = "dev.mato.sleeptimer.action.SUBTRACT_FIVE"
         private const val ACTION_CANCEL = "dev.mato.sleeptimer.action.CANCEL"
         private const val SERVICE_CLASS = "dev.mato.sleeptimer.core.service.SleepTimerService"
     }
@@ -28,13 +30,17 @@ class TimerNotificationManager @Inject constructor(
         context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
     fun createNotificationChannel() {
+        notificationManager.deleteNotificationChannel(LEGACY_CHANNEL_ID)
         val channel = NotificationChannel(
             CHANNEL_ID,
             context.getString(R.string.notification_channel_name),
-            NotificationManager.IMPORTANCE_LOW,
+            NotificationManager.IMPORTANCE_HIGH,
         ).apply {
             description = context.getString(R.string.notification_channel_description)
             setShowBadge(false)
+            setSound(null, null)
+            enableVibration(false)
+            enableLights(false)
         }
         notificationManager.createNotificationChannel(channel)
     }
@@ -58,29 +64,9 @@ class TimerNotificationManager @Inject constructor(
                 )
             }
 
-        // +5 min action
-        val addFiveIntent = Intent().apply {
-            action = ACTION_ADD_FIVE
-            setClassName(context, SERVICE_CLASS)
-        }
-        val addFivePendingIntent = PendingIntent.getService(
-            context,
-            1,
-            addFiveIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-
-        // Cancel action
-        val cancelIntent = Intent().apply {
-            action = ACTION_CANCEL
-            setClassName(context, SERVICE_CLASS)
-        }
-        val cancelPendingIntent = PendingIntent.getService(
-            context,
-            2,
-            cancelIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val subtractFivePendingIntent = servicePendingIntent(ACTION_SUBTRACT_FIVE, requestCode = 1)
+        val addFivePendingIntent = servicePendingIntent(ACTION_ADD_FIVE, requestCode = 2)
+        val cancelPendingIntent = servicePendingIntent(ACTION_CANCEL, requestCode = 3)
 
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_timer)
@@ -88,11 +74,27 @@ class TimerNotificationManager @Inject constructor(
             .setContentText(contentText)
             .setContentIntent(contentIntent)
             .setOngoing(true)
-            .setSilent(true)
+            .setOnlyAlertOnce(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .addAction(0, context.getString(R.string.notification_action_subtract_five), subtractFivePendingIntent)
             .addAction(0, context.getString(R.string.notification_action_add_five), addFivePendingIntent)
             .addAction(0, context.getString(R.string.notification_action_cancel), cancelPendingIntent)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
+    }
+
+    private fun servicePendingIntent(actionName: String, requestCode: Int): PendingIntent {
+        val intent = Intent().apply {
+            action = actionName
+            setClassName(context, SERVICE_CLASS)
+        }
+        return PendingIntent.getService(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
     }
 
     fun updateNotification(remainingMinutes: Int) {

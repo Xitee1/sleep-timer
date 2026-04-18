@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlin.math.atan2
@@ -16,9 +17,10 @@ class CircularDialState {
         private set
     var totalMinutes by mutableIntStateOf(15)
         private set
+    var isDragging by mutableStateOf(false)
+        private set
 
     private var previousAngle = 90f
-    private var isDragging = false
     private var cumulativeDegrees = 0f
 
     val maxRevolutions = 5 // 5 hours

@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.mato.sleeptimer.core.data.util.remainingMillisToDisplayMinutes
 import dev.mato.sleeptimer.feature.timer.R
 import dev.mato.sleeptimer.feature.timer.theme.AppThemes
 import dev.mato.sleeptimer.feature.timer.theme.LocalAppTheme
@@ -91,7 +92,7 @@ private fun TimerContent(
     }
 
     val runningMinutes: Float = when (val s = uiState) {
-        is TimerUiState.Running -> s.remainingMinutes + s.remainingSeconds / 60f
+        is TimerUiState.Running -> s.remainingMillis / 60_000f
         is TimerUiState.FadingOut -> 0f
         else -> 0f
     }
@@ -130,7 +131,7 @@ private fun TimerContent(
                 when (val s = uiState) {
                     is TimerUiState.Idle -> TimeDisplay(totalMinutes = s.selectedMinutes)
                     is TimerUiState.Running -> TimeDisplay(
-                        totalMinutes = s.remainingMinutes + if (s.remainingSeconds > 0) 1 else 0,
+                        totalMinutes = remainingMillisToDisplayMinutes(s.remainingMillis),
                     )
                     is TimerUiState.FadingOut -> TimeDisplay(totalMinutes = 0)
                 }
@@ -139,12 +140,13 @@ private fun TimerContent(
             Spacer(modifier = Modifier.height(16.dp))
 
             val runningRemainingSeconds: Int = when (val s = uiState) {
-                is TimerUiState.Running -> s.remainingMinutes * 60 + s.remainingSeconds
+                is TimerUiState.Running -> (s.remainingMillis / 1000L).toInt()
                 else -> 0
             }
 
             ActionRow(
                 isRunning = isRunning,
+                hapticEnabled = settings.hapticFeedbackEnabled,
                 onToggle = {
                     if (isRunning) {
                         viewModel.stopTimer()
@@ -221,6 +223,7 @@ private fun HomeTopBar(onOpenSettings: () -> Unit) {
 @Composable
 private fun ActionRow(
     isRunning: Boolean,
+    hapticEnabled: Boolean,
     onToggle: () -> Unit,
     onMinusFive: () -> Unit,
     onPlusFive: () -> Unit,
@@ -239,13 +242,19 @@ private fun ActionRow(
             icon = Icons.Default.Remove,
             contentDescription = "Minus 5 minutes",
             onClick = onMinusFive,
+            hapticEnabled = hapticEnabled,
             enabled = isMinusEnabled,
         )
-        PlayButton(isRunning = isRunning, onClick = onToggle)
+        PlayButton(
+            isRunning = isRunning,
+            hapticEnabled = hapticEnabled,
+            onClick = onToggle,
+        )
         SecondaryRoundButton(
             icon = Icons.Default.Add,
             contentDescription = "Plus 5 minutes",
             onClick = onPlusFive,
+            hapticEnabled = hapticEnabled,
             enabled = if (isRunning) plusFiveVisibleWhileRunning else isPlusEnabled,
         )
     }
