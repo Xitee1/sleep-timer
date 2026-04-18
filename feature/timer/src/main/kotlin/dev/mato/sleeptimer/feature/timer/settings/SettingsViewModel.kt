@@ -67,4 +67,8 @@ class SettingsViewModel @Inject constructor(
     fun updateStarsEnabled(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.updateStarsEnabled(enabled) }
     }
+
+    fun updateStepMinutes(minutes: Int) {
+        viewModelScope.launch { settingsRepository.updateStepMinutes(minutes) }
+    }
 }

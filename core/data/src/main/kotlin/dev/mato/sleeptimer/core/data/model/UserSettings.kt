@@ -7,4 +7,5 @@ data class UserSettings(
     val hapticFeedbackEnabled: Boolean = true,
     val theme: ThemeId = ThemeId.Default,
     val starsEnabled: Boolean = true,
+    val stepMinutes: Int = 5,
 )

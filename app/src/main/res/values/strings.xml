@@ -28,7 +28,7 @@
     <string name="notification_content_title">Sleep Timer</string>
     <string name="notification_minutes_remaining">%d minutes remaining</string>
     <string name="notification_less_than_minute">Less than a minute remaining</string>
-    <string name="notification_action_add_five">+5 min</string>
+    <string name="notification_action_add_minutes">+%d min</string>
     <string name="notification_action_cancel">Cancel</string>
 
     <!-- Device Admin -->

@@ -17,6 +17,8 @@
     <string name="playback_description">Audio- und Videowiedergabe stoppen</string>
     <string name="fade_out_title">Fade-out-Dauer</string>
     <string name="fade_out_seconds">%d Sekunden</string>
+    <string name="step_minutes_title">+/− Schrittweite</string>
+    <string name="step_minutes_value">%d Min</string>
     <string name="screen_title">Bildschirm</string>
     <string name="screen_description">Bildschirm sperren wenn Timer endet</string>
     <string name="screen_admin_required">Geräteadministrator-Berechtigung erforderlich</string>

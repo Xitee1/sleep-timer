@@ -80,17 +80,17 @@ class TimerViewModel @Inject constructor(
         context.startService(intent)
     }
 
-    fun addFiveMinutes() {
+    fun addStep() {
         val intent = Intent().apply {
-            action = ACTION_ADD_FIVE
+            action = ACTION_ADD_MINUTES
             setClassName(context, SERVICE_CLASS)
         }
         context.startService(intent)
     }
 
-    fun subtractFiveMinutes() {
+    fun subtractStep() {
         val intent = Intent().apply {
-            action = ACTION_SUBTRACT_FIVE
+            action = ACTION_SUBTRACT_MINUTES
             setClassName(context, SERVICE_CLASS)
         }
         context.startService(intent)
@@ -100,8 +100,8 @@ class TimerViewModel @Inject constructor(
         const val SERVICE_CLASS = "dev.mato.sleeptimer.core.service.SleepTimerService"
         const val ACTION_START = "dev.mato.sleeptimer.action.START"
         const val ACTION_CANCEL = "dev.mato.sleeptimer.action.CANCEL"
-        const val ACTION_ADD_FIVE = "dev.mato.sleeptimer.action.ADD_FIVE"
-        const val ACTION_SUBTRACT_FIVE = "dev.mato.sleeptimer.action.SUBTRACT_FIVE"
+        const val ACTION_ADD_MINUTES = "dev.mato.sleeptimer.action.ADD_MINUTES"
+        const val ACTION_SUBTRACT_MINUTES = "dev.mato.sleeptimer.action.SUBTRACT_MINUTES"
         const val EXTRA_DURATION_MILLIS = "dev.mato.sleeptimer.extra.DURATION_MILLIS"
     }
 }
