@@ -184,7 +184,7 @@ private fun TimerContent(
                 isMinusEnabled = if (isRunning) {
                     runningRemainingSeconds > settings.stepMinutes * 60
                 } else {
-                    dialState.totalMinutes > 0
+                    dialState.totalMinutes > 1
                 },
                 isPlusEnabled = !isRunning && dialState.totalMinutes < 300,
                 plusStepVisibleWhileRunning = true,
