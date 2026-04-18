@@ -1,6 +1,10 @@
 package dev.xitee.sleeptimer.feature.timer.timer
 
 import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -38,6 +42,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -92,6 +97,8 @@ private fun TimerContent(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val dialState = rememberCircularDialState()
     val context = LocalContext.current
+
+    LockActivityOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
 
     val orientation by rememberDeviceOrientation()
     val isLandscape = orientation == DeviceOrientation.LANDSCAPE_LEFT ||
@@ -328,6 +335,30 @@ private fun TimerContent(
             }
         }
     }
+}
+
+@Composable
+private fun LockActivityOrientation(orientation: Int) {
+    val context = LocalContext.current
+    DisposableEffect(context, orientation) {
+        val activity = context.findActivity()
+        if (activity == null) {
+            onDispose { }
+        } else {
+            val previous = activity.requestedOrientation
+            activity.requestedOrientation = orientation
+            onDispose { activity.requestedOrientation = previous }
+        }
+    }
+}
+
+private fun Context.findActivity(): Activity? {
+    var ctx: Context? = this
+    while (ctx is ContextWrapper) {
+        if (ctx is Activity) return ctx
+        ctx = ctx.baseContext
+    }
+    return null
 }
 
 @Composable
