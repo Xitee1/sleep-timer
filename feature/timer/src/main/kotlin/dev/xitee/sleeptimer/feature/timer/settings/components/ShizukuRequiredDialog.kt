@@ -54,7 +54,10 @@ fun ShizukuRequiredDialog(
         ShizukuManager.State.PermissionRequired -> Triple(
             R.string.shizuku_body_permission,
             R.string.shizuku_action_grant,
-            { onRequestPermission(); onDismiss() },
+            // Keep dialog open; parent's LaunchedEffect auto-dismisses on state→Ready
+            // and invokes the pending toggle action. Denial leaves state unchanged
+            // so the user can still Cancel.
+            onRequestPermission,
         )
         ShizukuManager.State.Ready -> Triple(
             R.string.shizuku_body_ready,
