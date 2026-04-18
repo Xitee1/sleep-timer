@@ -2,12 +2,13 @@ package dev.xitee.sleeptimer.feature.timer.theme
 
 import androidx.compose.ui.graphics.Color
 import dev.xitee.sleeptimer.core.data.model.ThemeId
+import dev.xitee.sleeptimer.feature.timer.R
 
 object AppThemes {
 
     val Midnight: AppTheme = darkThemeOf(
         id = ThemeId.Midnight,
-        label = "Midnight",
+        labelRes = R.string.theme_midnight,
         bgTop = Color(0xFF2A2550),
         bgMid = Color(0xFF1A1830),
         bgBot = Color(0xFF0F0D1F),
@@ -16,7 +17,7 @@ object AppThemes {
 
     val Ocean: AppTheme = darkThemeOf(
         id = ThemeId.Ocean,
-        label = "Ocean",
+        labelRes = R.string.theme_ocean,
         bgTop = Color(0xFF0F3A55),
         bgMid = Color(0xFF0A2438),
         bgBot = Color(0xFF05121E),
@@ -25,7 +26,7 @@ object AppThemes {
 
     val Ember: AppTheme = darkThemeOf(
         id = ThemeId.Ember,
-        label = "Ember",
+        labelRes = R.string.theme_ember,
         bgTop = Color(0xFF3A1810),
         bgMid = Color(0xFF22110A),
         bgBot = Color(0xFF0E0705),
@@ -34,7 +35,7 @@ object AppThemes {
 
     val Light: AppTheme = AppTheme(
         id = ThemeId.Light,
-        label = "Light",
+        labelRes = R.string.theme_light,
         hasGradient = true,
         bgTop = Color(0xFFF4F1EC),
         bgMid = Color(0xFFEAE4DA),
@@ -66,7 +67,7 @@ object AppThemes {
 
     val Basic: AppTheme = darkThemeOf(
         id = ThemeId.Basic,
-        label = "Basic",
+        labelRes = R.string.theme_basic,
         bgTop = Color(0xFF1B1B1F),
         bgMid = Color(0xFF1B1B1F),
         bgBot = Color(0xFF1B1B1F),
@@ -91,14 +92,14 @@ object AppThemes {
 /** Factory for dark-on-gradient themes that only differ in their 3 gradient stops + accent. */
 private fun darkThemeOf(
     id: ThemeId,
-    label: String,
+    labelRes: Int,
     bgTop: Color,
     bgMid: Color,
     bgBot: Color,
     accent: Color,
 ): AppTheme = AppTheme(
     id = id,
-    label = label,
+    labelRes = labelRes,
     hasGradient = true,
     bgTop = bgTop,
     bgMid = bgMid,

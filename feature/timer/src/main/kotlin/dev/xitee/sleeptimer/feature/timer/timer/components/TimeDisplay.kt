@@ -8,7 +8,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import dev.xitee.sleeptimer.feature.timer.R
 import dev.xitee.sleeptimer.feature.timer.theme.appTheme
 
 @Composable
@@ -25,15 +27,19 @@ fun TimeDisplay(
     when {
         hours == 0 -> {
             big = remMin.toString()
-            small = if (remMin == 1) "minute" else "minutes"
+            small = stringResource(
+                if (remMin == 1) R.string.time_unit_minute else R.string.time_unit_minutes,
+            )
         }
         remMin == 0 -> {
             big = hours.toString()
-            small = if (hours == 1) "hour" else "hours"
+            small = stringResource(
+                if (hours == 1) R.string.time_unit_hour else R.string.time_unit_hours,
+            )
         }
         else -> {
             big = "$hours:${remMin.toString().padStart(2, '0')}"
-            small = "hr · min"
+            small = stringResource(R.string.time_unit_hr_min)
         }
     }
 
