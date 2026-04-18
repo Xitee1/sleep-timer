@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Backup/restore rules. DataStore stores all settings in one protobuf file, so we
+  can't selectively exclude the device-specific gate keys (screen_off, Shizuku
+  toggles). Compromise: allow device-transfer (local setup wizard) so a user's
+  prefs follow them to a new phone, but exclude from cloud-backup so a cold
+  restore onto a different account/device doesn't carry over toggles whose
+  underlying grants (device admin, Shizuku) are device-local anyway.
+  The toggles are already silent no-ops at use-time if permissions aren't
+  granted, so at worst the UI shows stale `on` states until the user reconfigures.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="datastore/settings.preferences_pb" />
+    </cloud-backup>
+    <!-- device-transfer: default include keeps all prefs on local-to-local migration. -->
+</data-extraction-rules>
