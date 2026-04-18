@@ -25,6 +25,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -40,7 +41,7 @@ class SleepTimerService : Service() {
     private var countdownJob: Job? = null
     private var remainingMillis: Long = 0L
     private var totalDurationMillis: Long = 0L
-    private var stepMinutes: Int = 5
+    private var stepMinutes: Int = 0
 
     companion object {
         const val ACTION_START = "dev.mato.sleeptimer.action.START"
@@ -52,6 +53,9 @@ class SleepTimerService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        // Prime synchronously so the first notification uses the saved step,
+        // not a default from before the settings flow has emitted.
+        stepMinutes = runBlocking { settingsRepository.settings.first().stepMinutes }
         serviceScope.launch {
             settingsRepository.settings
                 .map { it.stepMinutes }
