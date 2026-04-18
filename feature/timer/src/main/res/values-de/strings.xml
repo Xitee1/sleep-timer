@@ -43,7 +43,7 @@
 
     <!-- Shizuku Dialog -->
     <string name="shizuku_dialog_title">Shizuku erforderlich</string>
-    <string name="shizuku_body_not_installed">Shizuku ist nicht installiert. Tippe unten, um eine Installations- und Einrichtungsanleitung zu öffnen.</string>
+    <string name="shizuku_body_not_installed">Shizuku ist nicht installiert. Tippe auf „Anleitung öffnen“, um zu Installations- und Einrichtungsinfos zu gelangen.</string>
     <string name="shizuku_body_not_running">Shizuku ist installiert, aber nicht aktiv. Öffne die Shizuku-App und starte den Dienst.</string>
     <string name="shizuku_body_permission">SleepTimer benötigt die Berechtigung, Shizuku zu verwenden.</string>
     <string name="shizuku_body_ready">Shizuku ist bereit.</string>
