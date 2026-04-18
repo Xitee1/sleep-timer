@@ -33,18 +33,21 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override val settings: Flow<UserSettings> = dataStore.data.map { prefs ->
+        // Single source of truth: defaults come from UserSettings(), so adding a new
+        // field only requires updating the data class.
+        val d = UserSettings()
         UserSettings(
-            stopMediaPlayback = prefs[STOP_MEDIA] ?: true,
-            fadeOutDurationSeconds = prefs[FADE_OUT_DURATION] ?: 30,
-            screenOff = prefs[SCREEN_OFF] ?: false,
-            softScreenOff = prefs[SOFT_SCREEN_OFF] ?: false,
-            turnOffWifi = prefs[TURN_OFF_WIFI] ?: false,
-            turnOffBluetooth = prefs[TURN_OFF_BLUETOOTH] ?: false,
-            hapticFeedbackEnabled = prefs[HAPTIC_FEEDBACK] ?: true,
+            stopMediaPlayback = prefs[STOP_MEDIA] ?: d.stopMediaPlayback,
+            fadeOutDurationSeconds = prefs[FADE_OUT_DURATION] ?: d.fadeOutDurationSeconds,
+            screenOff = prefs[SCREEN_OFF] ?: d.screenOff,
+            softScreenOff = prefs[SOFT_SCREEN_OFF] ?: d.softScreenOff,
+            turnOffWifi = prefs[TURN_OFF_WIFI] ?: d.turnOffWifi,
+            turnOffBluetooth = prefs[TURN_OFF_BLUETOOTH] ?: d.turnOffBluetooth,
+            hapticFeedbackEnabled = prefs[HAPTIC_FEEDBACK] ?: d.hapticFeedbackEnabled,
             theme = ThemeId.fromStorage(prefs[THEME]),
-            starsEnabled = prefs[STARS_ENABLED] ?: true,
-            stepMinutes = prefs[STEP_MINUTES] ?: 5,
-            presetMinutes = prefs[PRESET_MINUTES] ?: 15,
+            starsEnabled = prefs[STARS_ENABLED] ?: d.starsEnabled,
+            stepMinutes = prefs[STEP_MINUTES] ?: d.stepMinutes,
+            presetMinutes = prefs[PRESET_MINUTES] ?: d.presetMinutes,
         )
     }
 

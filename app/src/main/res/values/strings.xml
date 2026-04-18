@@ -21,15 +21,7 @@
     <string name="haptic_title">Haptic feedback</string>
     <string name="haptic_description">Vibrate when using timer and controls</string>
 
-    <!-- Notification -->
-    <string name="notification_channel_name">Sleep Timer</string>
-    <string name="notification_channel_description">Shows remaining time for sleep timer</string>
-    <string name="notification_content_title">Sleep Timer</string>
-    <string name="notification_minutes_remaining">%d minutes remaining</string>
-    <string name="notification_less_than_minute">Less than a minute remaining</string>
-    <string name="notification_action_add_minutes">+%d min</string>
-    <string name="notification_action_subtract_minutes">-%d min</string>
-    <string name="notification_action_cancel">Cancel</string>
+    <!-- Notification strings live in :core:service to keep them next to the consumer. -->
 
     <!-- Device Admin -->
     <string name="device_admin_description">Required to lock the screen when the sleep timer ends.</string>

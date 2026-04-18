@@ -50,6 +50,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import dev.xitee.sleeptimer.feature.timer.R
@@ -173,6 +175,13 @@ private fun SettingsContent(
 
     LaunchedEffect(Unit) {
         viewModel.refreshShizuku()
+    }
+
+    // Device admin can be revoked from system Settings without any broadcast we're
+    // subscribed to — re-query on resume so the "Screen" row description reflects
+    // the current admin state if the user came back from Settings → Device admin.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshDeviceAdminState()
     }
 
     TimerBackground(

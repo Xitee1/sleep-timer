@@ -11,7 +11,7 @@ import dev.xitee.sleeptimer.core.data.model.TimerPhase
 import dev.xitee.sleeptimer.core.data.model.TimerState
 import dev.xitee.sleeptimer.core.data.model.UserSettings
 import dev.xitee.sleeptimer.core.data.repository.SettingsRepository
-import dev.xitee.sleeptimer.core.data.repository.TimerRepository
+import dev.xitee.sleeptimer.core.data.repository.TimerRepositoryImpl
 import dev.xitee.sleeptimer.core.data.util.remainingMillisToDisplayMinutes
 import dev.xitee.sleeptimer.core.service.media.MediaVolumeController
 import dev.xitee.sleeptimer.core.service.notification.TimerNotificationManager
@@ -36,7 +36,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class SleepTimerService : Service() {
 
-    @Inject lateinit var timerRepository: TimerRepository
+    @Inject lateinit var timerRepository: TimerRepositoryImpl
     @Inject lateinit var settingsRepository: SettingsRepository
     @Inject lateinit var notificationManager: TimerNotificationManager
     @Inject lateinit var mediaVolumeController: MediaVolumeController
@@ -76,7 +76,17 @@ class SleepTimerService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
+        val action = intent?.action
+        // If the service was restarted by the OS (or by a stale PendingIntent from a
+        // notification that survived process death) for any action other than START,
+        // there is no countdown to modify. Skip straight to stopSelf — otherwise we
+        // would never call startForeground within the 5-second window and crash with
+        // ForegroundServiceDidNotStartInTimeException.
+        if (action != ACTION_START && countdownJob == null) {
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
+        when (action) {
             ACTION_START -> {
                 val durationMillis = intent.getLongExtra(EXTRA_DURATION_MILLIS, 0L)
                 if (durationMillis > 0) {

@@ -10,6 +10,7 @@ import androidx.core.app.NotificationCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.xitee.sleeptimer.core.data.model.TimerPhase
 import dev.xitee.sleeptimer.core.service.R
+import dev.xitee.sleeptimer.core.service.SleepTimerService
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -21,10 +22,6 @@ class TimerNotificationManager @Inject constructor(
         const val CHANNEL_ID = "sleep_timer_v2"
         private const val LEGACY_CHANNEL_ID = "sleep_timer"
         const val NOTIFICATION_ID = 1
-        private const val ACTION_ADD_MINUTES = "dev.xitee.sleeptimer.action.ADD_MINUTES"
-        private const val ACTION_SUBTRACT_MINUTES = "dev.xitee.sleeptimer.action.SUBTRACT_MINUTES"
-        private const val ACTION_CANCEL = "dev.xitee.sleeptimer.action.CANCEL"
-        private const val SERVICE_CLASS = "dev.xitee.sleeptimer.core.service.SleepTimerService"
     }
 
     private val notificationManager =
@@ -73,9 +70,9 @@ class TimerNotificationManager @Inject constructor(
                 )
             }
 
-        val subtractPendingIntent = servicePendingIntent(ACTION_SUBTRACT_MINUTES, requestCode = 1)
-        val addPendingIntent = servicePendingIntent(ACTION_ADD_MINUTES, requestCode = 2)
-        val cancelPendingIntent = servicePendingIntent(ACTION_CANCEL, requestCode = 3)
+        val subtractPendingIntent = servicePendingIntent(SleepTimerService.ACTION_SUBTRACT_MINUTES, requestCode = 1)
+        val addPendingIntent = servicePendingIntent(SleepTimerService.ACTION_ADD_MINUTES, requestCode = 2)
+        val cancelPendingIntent = servicePendingIntent(SleepTimerService.ACTION_CANCEL, requestCode = 3)
 
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_timer)
@@ -104,7 +101,7 @@ class TimerNotificationManager @Inject constructor(
     private fun servicePendingIntent(actionName: String, requestCode: Int): PendingIntent {
         val intent = Intent().apply {
             action = actionName
-            setClassName(context, SERVICE_CLASS)
+            setClassName(context, SleepTimerService::class.java.name)
         }
         return PendingIntent.getService(
             context,

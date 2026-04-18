@@ -10,6 +10,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.xitee.sleeptimer.core.data.model.ThemeId
 import dev.xitee.sleeptimer.core.data.repository.SettingsRepository
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -31,8 +32,18 @@ class SettingsViewModel @Inject constructor(
         "dev.xitee.sleeptimer.receiver.SleepTimerDeviceAdminReceiver",
     )
 
+    // Tick to re-query isAdminActive. Admin grants can be revoked from system Settings
+    // without any callback into the app, so nothing else drives a refresh. Bumped from
+    // SettingsScreen on ON_RESUME so returning from Settings → Security → Device admin
+    // reflects the current state.
+    private val adminRefreshTicker = MutableStateFlow(0)
+
     val uiState: StateFlow<SettingsUiState?> =
-        combine(settingsRepository.settings, shizukuManager.state) { settings, shizukuState ->
+        combine(
+            settingsRepository.settings,
+            shizukuManager.state,
+            adminRefreshTicker,
+        ) { settings, shizukuState, _ ->
             SettingsUiState(
                 settings = settings,
                 isDeviceAdminEnabled = devicePolicyManager.isAdminActive(adminComponent),
@@ -46,6 +57,11 @@ class SettingsViewModel @Inject constructor(
     fun getAdminComponent(): ComponentName = adminComponent
 
     fun refreshShizuku() = shizukuManager.refresh()
+
+    /** Triggers a re-read of the device-admin active flag. */
+    fun refreshDeviceAdminState() {
+        adminRefreshTicker.value = adminRefreshTicker.value + 1
+    }
     fun requestShizukuPermission() = shizukuManager.requestPermission()
     fun isShizukuReady(): Boolean = shizukuManager.isReady()
 

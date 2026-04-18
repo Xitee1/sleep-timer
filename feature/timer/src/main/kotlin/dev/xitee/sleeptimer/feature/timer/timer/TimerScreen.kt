@@ -151,6 +151,7 @@ private fun TimerContent(
                             runningMinutes = runningMinutes,
                             hapticEnabled = settings.hapticFeedbackEnabled,
                             onMinutesChanged = { viewModel.setMinutes(it) },
+                            onMinutesCommitted = { viewModel.commitMinutes(it) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .sizeIn(maxWidth = 360.dp, maxHeight = 360.dp),
@@ -218,7 +219,7 @@ private fun TimerContent(
                         val step = settings.stepMinutes
                         val current = dialState.totalMinutes
                         val next = ((current - 1).coerceAtLeast(0) / step) * step
-                        viewModel.setMinutes(next)
+                        viewModel.commitMinutes(next)
                     }
                 },
                 onPlusStep = {
@@ -228,7 +229,7 @@ private fun TimerContent(
                         val step = settings.stepMinutes
                         val current = dialState.totalMinutes
                         val next = (current / step + 1) * step
-                        viewModel.setMinutes(next.coerceAtMost(300))
+                        viewModel.commitMinutes(next.coerceAtMost(300))
                     }
                 },
                 isMinusEnabled = if (isRunning) {

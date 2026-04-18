@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import dev.xitee.sleeptimer.feature.timer.theme.AppTheme
@@ -145,7 +146,10 @@ private fun StarField(animating: Boolean, theme: AppTheme) {
         twinkle.animateTo(if (animating) 1f else 0f, spec)
     }
 
-    var dpToPx by remember { mutableStateOf(1f) }
+    // Read density once from the composable body — previous impl wrote this from inside
+    // a Canvas draw lambda while the LaunchedEffect below was reading it, which is the
+    // classic "state read during draw" Compose anti-pattern and can cause invalidation loops.
+    val dpToPx = with(LocalDensity.current) { 1.dp.toPx() }
 
     var frameTick by remember { mutableLongStateOf(0L) }
     LaunchedEffect(initialized) {
@@ -187,7 +191,6 @@ private fun StarField(animating: Boolean, theme: AppTheme) {
             .onSizeChanged { canvasSize = it }
             .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen },
     ) {
-        dpToPx = 1.dp.toPx()
         @Suppress("UNUSED_EXPRESSION") frameTick
 
         if (!initialized) return@Canvas

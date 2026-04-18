@@ -41,6 +41,7 @@ fun CircularDial(
     runningMinutes: Float,
     hapticEnabled: Boolean,
     onMinutesChanged: (Int) -> Unit,
+    onMinutesCommitted: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val theme = appTheme()
@@ -111,7 +112,9 @@ fun CircularDial(
                                 },
                                 onDragEnd = {
                                     state.onDragEnd()
-                                    onMinutesChanged(state.totalMinutes)
+                                    // Persist only at drag end to avoid DataStore write flood
+                                    // during the gesture (30+ writes/sec otherwise).
+                                    onMinutesCommitted(state.totalMinutes)
                                 },
                             )
                         }
