@@ -57,7 +57,9 @@ class SleepTimerService : Service() {
         const val ACTION_CANCEL = "dev.xitee.sleeptimer.action.CANCEL"
         const val ACTION_ADD_MINUTES = "dev.xitee.sleeptimer.action.ADD_MINUTES"
         const val ACTION_SUBTRACT_MINUTES = "dev.xitee.sleeptimer.action.SUBTRACT_MINUTES"
+        const val ACTION_SET_MINUTES = "dev.xitee.sleeptimer.action.SET_MINUTES"
         const val EXTRA_DURATION_MILLIS = "dev.xitee.sleeptimer.extra.DURATION_MILLIS"
+        const val EXTRA_MINUTES = "dev.xitee.sleeptimer.extra.MINUTES"
         private const val FADE_IN_SECONDS = 2
     }
 
@@ -98,6 +100,10 @@ class SleepTimerService : Service() {
             }
             ACTION_SUBTRACT_MINUTES -> {
                 subtractStep()
+            }
+            ACTION_SET_MINUTES -> {
+                val minutes = intent.getIntExtra(EXTRA_MINUTES, 0)
+                if (minutes > 0) setRemainingMinutes(minutes)
             }
             ACTION_CANCEL -> {
                 cancelTimer()
@@ -195,6 +201,19 @@ class SleepTimerService : Service() {
             }
             else -> {}
         }
+    }
+
+    private fun setRemainingMinutes(minutes: Int) {
+        if (timerRepository.timerState.value.phase != TimerPhase.RUNNING) return
+        if (countdownJob?.isActive != true) return
+        val newRemaining = minutes * 60 * 1000L
+        remainingMillis = newRemaining
+        totalDurationMillis = maxOf(totalDurationMillis, newRemaining)
+        updateTimerState(TimerPhase.RUNNING)
+        notificationManager.updateNotification(
+            remainingMillisToDisplayMinutes(remainingMillis),
+            stepMinutes,
+        )
     }
 
     private fun subtractStep() {

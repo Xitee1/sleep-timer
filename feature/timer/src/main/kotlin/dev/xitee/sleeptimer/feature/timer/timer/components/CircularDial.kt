@@ -55,7 +55,11 @@ fun CircularDial(
     }
     var lastReportedMinutes by remember { mutableStateOf(state.totalMinutes) }
 
-    val targetMinutes: Float = if (isRunning) runningMinutes else state.totalMinutes.toFloat()
+    val targetMinutes: Float = if (isRunning && !state.isDragging) {
+        runningMinutes
+    } else {
+        state.totalMinutes.toFloat()
+    }
     val animatedMinutes = remember { Animatable(targetMinutes) }
     LaunchedEffect(targetMinutes, state.isDragging) {
         val delta = kotlin.math.abs(targetMinutes - animatedMinutes.value)
@@ -82,46 +86,48 @@ fun CircularDial(
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .then(
-                    if (!isRunning) {
-                        Modifier.pointerInput(Unit) {
-                            detectDragGestures(
-                                onDragStart = { offset ->
-                                    state.onDragStart(
-                                        centerX = size.width / 2f,
-                                        centerY = size.height / 2f,
-                                        x = offset.x,
-                                        y = offset.y,
-                                    )
-                                },
-                                onDrag = { change, _ ->
-                                    change.consume()
-                                    state.onDrag(
-                                        centerX = size.width / 2f,
-                                        centerY = size.height / 2f,
-                                        x = change.position.x,
-                                        y = change.position.y,
-                                    )
-                                    if (state.totalMinutes != lastReportedMinutes) {
-                                        if (hapticEnabled) {
-                                            view.performHapticFeedback(tickHapticType)
-                                        }
-                                        lastReportedMinutes = state.totalMinutes
-                                        onMinutesChanged(state.totalMinutes)
-                                    }
-                                },
-                                onDragEnd = {
-                                    state.onDragEnd()
-                                    // Persist only at drag end to avoid DataStore write flood
-                                    // during the gesture (30+ writes/sec otherwise).
-                                    onMinutesCommitted(state.totalMinutes)
-                                },
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            // While running, dialState tracks the last idle preset, not
+                            // the ticking remaining time. Seed it to the currently-shown
+                            // minutes so the drag continues from the right position.
+                            if (isRunning) {
+                                val seed = kotlin.math.ceil(runningMinutes.coerceAtLeast(0f))
+                                    .toInt().coerceIn(1, 300)
+                                state.setMinutes(seed)
+                            }
+                            state.onDragStart(
+                                centerX = size.width / 2f,
+                                centerY = size.height / 2f,
+                                x = offset.x,
+                                y = offset.y,
                             )
-                        }
-                    } else {
-                        Modifier
-                    },
-                ),
+                        },
+                        onDrag = { change, _ ->
+                            change.consume()
+                            state.onDrag(
+                                centerX = size.width / 2f,
+                                centerY = size.height / 2f,
+                                x = change.position.x,
+                                y = change.position.y,
+                            )
+                            if (state.totalMinutes != lastReportedMinutes) {
+                                if (hapticEnabled) {
+                                    view.performHapticFeedback(tickHapticType)
+                                }
+                                lastReportedMinutes = state.totalMinutes
+                                onMinutesChanged(state.totalMinutes)
+                            }
+                        },
+                        onDragEnd = {
+                            state.onDragEnd()
+                            // Persist only at drag end to avoid DataStore write flood
+                            // during the gesture (30+ writes/sec otherwise).
+                            onMinutesCommitted(state.totalMinutes)
+                        },
+                    )
+                },
         ) {
             val strokeWidth = 14.dp.toPx()
             val plateInset = 6.dp.toPx()
@@ -192,7 +198,7 @@ fun CircularDial(
                 radius = radius,
                 fraction = ringFraction,
                 theme = theme,
-                dimmed = isRunning,
+                dimmed = isRunning && !state.isDragging,
             )
         }
     }

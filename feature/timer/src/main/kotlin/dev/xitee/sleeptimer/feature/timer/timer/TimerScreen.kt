@@ -122,6 +122,14 @@ private fun TimerContent(
         else -> 0f
     }
 
+    val displayMinutes: Int = if (dialState.isDragging) {
+        dialState.totalMinutes
+    } else when (val s = uiState) {
+        is TimerUiState.Idle -> s.selectedMinutes
+        is TimerUiState.Running -> remainingMillisToDisplayMinutes(s.remainingMillis)
+        is TimerUiState.FadingOut -> 0
+    }
+
     TimerBackground(
         animating = isRunning,
         starsEnabled = settings.starsEnabled,
@@ -145,11 +153,10 @@ private fun TimerContent(
                     kotlinx.coroutines.delay(10_000L)
                 }
             }
-            val endMillis: Long? = when (val s = uiState) {
-                is TimerUiState.Idle ->
-                    if (s.selectedMinutes > 0) nowMillis + s.selectedMinutes * 60_000L else null
-                is TimerUiState.Running -> nowMillis + s.remainingMillis
-                is TimerUiState.FadingOut -> null
+            val endMillis: Long? = if (uiState is TimerUiState.FadingOut || displayMinutes <= 0) {
+                null
+            } else {
+                nowMillis + displayMinutes * 60_000L
             }
             val timeFormatter = remember(context) {
                 android.text.format.DateFormat.getTimeFormat(context)
@@ -222,18 +229,12 @@ private fun TimerContent(
                             isRunning = isRunning,
                             runningMinutes = runningMinutes,
                             hapticEnabled = settings.hapticFeedbackEnabled,
-                            onMinutesChanged = { viewModel.setMinutes(it) },
-                            onMinutesCommitted = { viewModel.commitMinutes(it) },
+                            onMinutesChanged = viewModel::setMinutes,
+                            onMinutesCommitted = viewModel::commitMinutes,
                             modifier = Modifier.fillMaxSize(),
                         )
 
-                        when (val s = uiState) {
-                            is TimerUiState.Idle -> TimeDisplay(totalMinutes = s.selectedMinutes)
-                            is TimerUiState.Running -> TimeDisplay(
-                                totalMinutes = remainingMillisToDisplayMinutes(s.remainingMillis),
-                            )
-                            is TimerUiState.FadingOut -> TimeDisplay(totalMinutes = 0)
-                        }
+                        TimeDisplay(totalMinutes = displayMinutes)
                     }
 
                     Spacer(modifier = Modifier.height(dialToEndetGap))
