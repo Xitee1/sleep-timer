@@ -9,4 +9,7 @@ data object TimerRoute
 data object SettingsRoute
 
 @Serializable
+data object ThemePickerRoute
+
+@Serializable
 data object AboutRoute

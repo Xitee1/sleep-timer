@@ -48,17 +48,13 @@ fun TimerBackground(
     val theme = appTheme()
     Box(modifier = modifier.fillMaxSize()) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            if (theme.hasGradient) {
-                drawRect(
-                    brush = Brush.verticalGradient(
-                        0.00f to theme.bgTop,
-                        0.45f to theme.bgMid,
-                        1.00f to theme.bgBot,
-                    ),
-                )
-            } else {
-                drawRect(color = theme.bgSolid)
-            }
+            drawRect(
+                brush = Brush.verticalGradient(
+                    0.00f to theme.bgTop,
+                    0.45f to theme.bgMid,
+                    1.00f to theme.bgBot,
+                ),
+            )
             if (theme.auroraColor.alpha > 0f) {
                 drawAuroraBlob(
                     center = Offset(size.width * -0.10f, size.height * -0.05f),

@@ -78,7 +78,19 @@ object AppThemes {
         auroraColor = Color.Transparent,
     )
 
-    val All: List<AppTheme> = listOf(Midnight, Ocean, Ember, Light, Basic)
+    val Amoled: AppTheme = darkThemeOf(
+        id = ThemeId.Amoled,
+        labelRes = R.string.theme_amoled,
+        bgTop = Color(0xFF000000),
+        bgMid = Color(0xFF000000),
+        bgBot = Color(0xFF000000),
+        accent = Color(0xFFBFC2FF),
+    ).copy(
+        hasGradient = false,
+        auroraColor = Color.Transparent,
+    )
+
+    val All: List<AppTheme> = listOf(Midnight, Ocean, Ember, Light, Basic, Amoled)
 
     fun byId(id: ThemeId): AppTheme = when (id) {
         ThemeId.Midnight -> Midnight
@@ -86,6 +98,7 @@ object AppThemes {
         ThemeId.Ember -> Ember
         ThemeId.Light -> Light
         ThemeId.Basic -> Basic
+        ThemeId.Amoled -> Amoled
     }
 }
 
