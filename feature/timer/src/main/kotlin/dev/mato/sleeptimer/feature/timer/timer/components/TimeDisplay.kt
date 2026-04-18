@@ -14,7 +14,6 @@ import dev.mato.sleeptimer.feature.timer.theme.appTheme
 @Composable
 fun TimeDisplay(
     totalMinutes: Int,
-    label: String,
     modifier: Modifier = Modifier,
 ) {
     val theme = appTheme()
@@ -49,7 +48,7 @@ fun TimeDisplay(
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = label.ifEmpty { small }.uppercase(),
+            text = small.uppercase(),
             style = MaterialTheme.typography.labelLarge,
             color = theme.textDim,
         )

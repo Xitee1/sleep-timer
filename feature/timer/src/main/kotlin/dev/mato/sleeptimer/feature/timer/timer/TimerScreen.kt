@@ -128,18 +128,11 @@ private fun TimerContent(
                 )
 
                 when (val s = uiState) {
-                    is TimerUiState.Idle -> TimeDisplay(
-                        totalMinutes = s.selectedMinutes,
-                        label = "",
-                    )
+                    is TimerUiState.Idle -> TimeDisplay(totalMinutes = s.selectedMinutes)
                     is TimerUiState.Running -> TimeDisplay(
-                        totalMinutes = s.remainingMinutes.coerceAtLeast(if (s.remainingSeconds > 0) 1 else 0),
-                        label = "remaining",
+                        totalMinutes = s.remainingMinutes + if (s.remainingSeconds > 0) 1 else 0,
                     )
-                    is TimerUiState.FadingOut -> TimeDisplay(
-                        totalMinutes = 0,
-                        label = "fading out",
-                    )
+                    is TimerUiState.FadingOut -> TimeDisplay(totalMinutes = 0)
                 }
             }
 

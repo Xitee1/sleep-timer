@@ -109,7 +109,6 @@ class SleepTimerService : Service() {
 
                 updateTimerState(TimerPhase.RUNNING)
 
-                // Update notification every 10 seconds or when minutes change
                 val remainingMinutes = (remainingMillis / 60_000).toInt()
                 notificationManager.updateNotification(remainingMinutes)
             }

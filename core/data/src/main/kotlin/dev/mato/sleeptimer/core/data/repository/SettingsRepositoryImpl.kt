@@ -22,7 +22,6 @@ class SettingsRepositoryImpl @Inject constructor(
         val STOP_MEDIA = booleanPreferencesKey("stop_media_playback")
         val FADE_OUT_DURATION = intPreferencesKey("fade_out_duration_seconds")
         val SCREEN_OFF = booleanPreferencesKey("screen_off")
-        val NOTIFICATION_ENABLED = booleanPreferencesKey("notification_enabled")
         val HAPTIC_FEEDBACK = booleanPreferencesKey("haptic_feedback")
         val THEME = stringPreferencesKey("theme")
         val STARS_ENABLED = booleanPreferencesKey("stars_enabled")
@@ -33,7 +32,6 @@ class SettingsRepositoryImpl @Inject constructor(
             stopMediaPlayback = prefs[STOP_MEDIA] ?: true,
             fadeOutDurationSeconds = prefs[FADE_OUT_DURATION] ?: 30,
             screenOff = prefs[SCREEN_OFF] ?: false,
-            notificationEnabled = prefs[NOTIFICATION_ENABLED] ?: true,
             hapticFeedbackEnabled = prefs[HAPTIC_FEEDBACK] ?: true,
             theme = ThemeId.fromStorage(prefs[THEME]),
             starsEnabled = prefs[STARS_ENABLED] ?: true,
@@ -50,10 +48,6 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun updateScreenOff(enabled: Boolean) {
         dataStore.edit { it[SCREEN_OFF] = enabled }
-    }
-
-    override suspend fun updateNotificationEnabled(enabled: Boolean) {
-        dataStore.edit { it[NOTIFICATION_ENABLED] = enabled }
     }
 
     override suspend fun updateHapticFeedback(enabled: Boolean) {

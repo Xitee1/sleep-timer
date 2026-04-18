@@ -9,7 +9,6 @@ interface SettingsRepository {
     suspend fun updateStopMediaPlayback(enabled: Boolean)
     suspend fun updateFadeOutDuration(seconds: Int)
     suspend fun updateScreenOff(enabled: Boolean)
-    suspend fun updateNotificationEnabled(enabled: Boolean)
     suspend fun updateHapticFeedback(enabled: Boolean)
     suspend fun updateTheme(theme: ThemeId)
     suspend fun updateStarsEnabled(enabled: Boolean)

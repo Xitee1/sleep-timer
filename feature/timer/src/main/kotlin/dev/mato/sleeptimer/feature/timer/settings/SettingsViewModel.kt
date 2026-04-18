@@ -29,14 +29,14 @@ class SettingsViewModel @Inject constructor(
         "dev.mato.sleeptimer.receiver.SleepTimerDeviceAdminReceiver",
     )
 
-    val uiState: StateFlow<SettingsUiState> = settingsRepository.settings
+    val uiState: StateFlow<SettingsUiState?> = settingsRepository.settings
         .map { settings ->
             SettingsUiState(
                 settings = settings,
                 isDeviceAdminEnabled = devicePolicyManager.isAdminActive(adminComponent),
             )
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun isDeviceAdminActive(): Boolean {
         return devicePolicyManager.isAdminActive(adminComponent)
@@ -54,10 +54,6 @@ class SettingsViewModel @Inject constructor(
 
     fun updateScreenOff(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.updateScreenOff(enabled) }
-    }
-
-    fun updateNotificationEnabled(enabled: Boolean) {
-        viewModelScope.launch { settingsRepository.updateNotificationEnabled(enabled) }
     }
 
     fun updateHapticFeedback(enabled: Boolean) {
