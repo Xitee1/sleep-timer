@@ -81,9 +81,11 @@ class TimerViewModel @Inject constructor(
     suspend fun computeStartupPermissionCheck(): StartupPermissionCheck? {
         if (startupCheckDone) return null
         startupCheckDone = true
-        shizukuManager.refresh()
+        // Wait for Shizuku's binder to connect — a cold-start `pingBinder()` race
+        // would otherwise report NotRunning even when Shizuku is up.
+        val shizukuState = shizukuManager.awaitInitialState()
         val s = settingsRepository.settings.first()
-        val shizukuReady = shizukuManager.isReady()
+        val shizukuReady = shizukuState == ShizukuManager.State.Ready
         val adminActive = screenLockHelper.isAdminActive()
         val adminMissing = s.screenOff && !s.softScreenOff && !adminActive
         val shizukuFeatures = buildList {
