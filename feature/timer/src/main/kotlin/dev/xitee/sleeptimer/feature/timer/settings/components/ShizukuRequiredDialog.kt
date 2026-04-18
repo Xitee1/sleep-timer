@@ -4,7 +4,12 @@ import android.content.Intent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -85,18 +90,22 @@ fun ShizukuRequiredDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.Security, contentDescription = null) },
         title = { Text(stringResource(R.string.shizuku_dialog_title)) },
         text = {
-            Column {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 if (featureExplanations.size == 1 && introText == null) {
                     Text(featureExplanations.first())
                 } else {
-                    introText?.let { Text(it) }
+                    introText?.let {
+                        Text(it)
+                        Spacer(Modifier.height(8.dp))
+                    }
                     featureExplanations.forEach { explanation ->
                         Text("• $explanation", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(16.dp))
                 Text(stringResource(bodyRes))
             }
         },
