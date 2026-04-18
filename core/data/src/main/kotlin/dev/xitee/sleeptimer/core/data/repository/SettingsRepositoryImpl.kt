@@ -29,6 +29,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val THEME = stringPreferencesKey("theme")
         val STARS_ENABLED = booleanPreferencesKey("stars_enabled")
         val STEP_MINUTES = intPreferencesKey("step_minutes")
+        val PRESET_MINUTES = intPreferencesKey("preset_minutes")
     }
 
     override val settings: Flow<UserSettings> = dataStore.data.map { prefs ->
@@ -43,6 +44,7 @@ class SettingsRepositoryImpl @Inject constructor(
             theme = ThemeId.fromStorage(prefs[THEME]),
             starsEnabled = prefs[STARS_ENABLED] ?: true,
             stepMinutes = prefs[STEP_MINUTES] ?: 5,
+            presetMinutes = prefs[PRESET_MINUTES] ?: 15,
         )
     }
 
@@ -84,5 +86,9 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun updateStepMinutes(minutes: Int) {
         dataStore.edit { it[STEP_MINUTES] = minutes.coerceIn(1, 30) }
+    }
+
+    override suspend fun updatePresetMinutes(minutes: Int) {
+        dataStore.edit { it[PRESET_MINUTES] = minutes.coerceIn(1, 300) }
     }
 }

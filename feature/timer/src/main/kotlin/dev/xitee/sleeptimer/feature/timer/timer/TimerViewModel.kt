@@ -14,13 +14,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class TimerViewModel @Inject constructor(
     private val timerRepository: TimerRepository,
-    settingsRepository: SettingsRepository,
+    private val settingsRepository: SettingsRepository,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -28,6 +30,12 @@ class TimerViewModel @Inject constructor(
 
     val settings: StateFlow<UserSettings> = settingsRepository.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UserSettings())
+
+    init {
+        viewModelScope.launch {
+            _selectedMinutes.value = settingsRepository.settings.first().presetMinutes
+        }
+    }
 
     val uiState: StateFlow<TimerUiState> = combine(
         timerRepository.timerState,
@@ -55,7 +63,14 @@ class TimerViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TimerUiState.Idle())
 
     fun setMinutes(minutes: Int) {
-        _selectedMinutes.value = minutes.coerceIn(1, 300)
+        val coerced = minutes.coerceIn(1, 300)
+        _selectedMinutes.value = coerced
+        val phase = timerRepository.timerState.value.phase
+        if (phase == TimerPhase.IDLE || phase == TimerPhase.FINISHED) {
+            viewModelScope.launch {
+                settingsRepository.updatePresetMinutes(coerced)
+            }
+        }
     }
 
     fun startTimer() {
