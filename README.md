@@ -9,11 +9,18 @@ No accounts, no ads, no trackers, no network access.
 
 ## Features
 
-- Simple countdown timer in minutes, with `+5 min` and cancel actions directly
-  from the notification
+- Simple countdown timer with `+step`, `−step` and cancel actions directly
+  from the notification (step is configurable, defaults to 5 min)
+- Shows the exact wall-clock time at which the timer will end
 - Stops audio and video playback across apps at the end of the timer
 - Configurable fade-out duration before playback stops
-- Optional screen lock when the timer ends (requires Device Admin permission)
+- Optional screen lock when the timer ends — choose between **Device Admin**
+  (standard Android lock, credential required to unlock) or **Shizuku soft
+  lock** (simulates the power button, biometric unlock keeps working)
+- Optional Wi-Fi and Bluetooth off when the timer ends (both via Shizuku,
+  since modern Android blocks apps from toggling these directly)
+- Six built-in themes (Midnight, Ocean, Ember, Light, Basic, AMOLED) with an
+  optional drifting starfield behind the dial
 - Haptic feedback for timer controls (can be disabled)
 - Foreground service keeps the timer reliable even when the app is in the
   background
@@ -28,8 +35,13 @@ _Coming soon._
 | Permission | Why it is needed |
 |---|---|
 | `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_MEDIA_PLAYBACK` | Keeps the countdown running reliably in the background so it fires on time |
-| `POST_NOTIFICATIONS` | Shows the running timer with quick actions (+5 min, cancel) |
-| `BIND_DEVICE_ADMIN` (optional, `force-lock` only) | Required by Android to lock the screen when the timer ends — only requested if you enable the "Lock screen" setting |
+| `POST_NOTIFICATIONS` | Shows the running timer with quick actions (+/− step, cancel) |
+| `BIND_DEVICE_ADMIN` (optional, `force-lock` only) | Required by Android to lock the screen when the timer ends — only requested if you pick the Device Admin lock method |
+
+The app declares a `ShizukuProvider` so it can talk to
+[Shizuku](https://shizuku.rikka.app/) when you enable the Wi-Fi off,
+Bluetooth off, or soft-lock features. Shizuku is **optional** — the core
+timer works without it, and the provider is dormant until you opt in.
 
 The app does not request the `INTERNET` permission. It cannot connect to any
 network.
