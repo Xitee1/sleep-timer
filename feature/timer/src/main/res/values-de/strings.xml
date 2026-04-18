@@ -40,6 +40,7 @@
     <string name="theme_ember">Glut</string>
     <string name="theme_light">Hell</string>
     <string name="theme_basic">Einfach</string>
+    <string name="theme_amoled">AMOLED</string>
 
     <!-- Shizuku Dialog -->
     <string name="shizuku_dialog_title">Shizuku erforderlich</string>

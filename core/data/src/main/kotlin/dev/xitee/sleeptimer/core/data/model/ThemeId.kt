@@ -6,6 +6,7 @@ enum class ThemeId {
     Ember,
     Light,
     Basic,
+    Amoled,
     ;
 
     companion object {
