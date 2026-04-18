@@ -22,16 +22,23 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.MusicOff
+import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Vibration
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -39,9 +46,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import dev.xitee.sleeptimer.feature.timer.R
 import dev.xitee.sleeptimer.feature.timer.settings.components.FadeOutSlider
 import dev.xitee.sleeptimer.feature.timer.settings.components.SettingsToggleRow
+import dev.xitee.sleeptimer.feature.timer.settings.components.ShizukuRequiredDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.StepMinutesSlider
 import dev.xitee.sleeptimer.feature.timer.settings.components.ThemeSelector
 import dev.xitee.sleeptimer.feature.timer.theme.AppThemes
@@ -78,6 +87,41 @@ private fun SettingsContent(
         ActivityResultContracts.StartActivityForResult(),
     ) {
         // after return, state refresh is driven by the flow
+    }
+
+    var shizukuDialogExplanation by remember { mutableStateOf<String?>(null) }
+    var pendingShizukuToggle by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    fun requestWithShizuku(explanation: String, enableAction: () -> Unit) {
+        if (viewModel.isShizukuReady()) {
+            enableAction()
+        } else {
+            shizukuDialogExplanation = explanation
+            pendingShizukuToggle = enableAction
+        }
+    }
+
+    if (shizukuDialogExplanation != null) {
+        ShizukuRequiredDialog(
+            state = uiState.shizukuState,
+            featureExplanation = shizukuDialogExplanation!!,
+            onRequestPermission = { viewModel.requestShizukuPermission() },
+            onDismiss = {
+                shizukuDialogExplanation = null
+                pendingShizukuToggle = null
+            },
+        )
+    }
+
+    // Auto-complete the pending toggle if Shizuku transitions to Ready while dialog is open.
+    if (pendingShizukuToggle != null && uiState.shizukuState == ShizukuManager.State.Ready) {
+        pendingShizukuToggle?.invoke()
+        pendingShizukuToggle = null
+        shizukuDialogExplanation = null
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.refreshShizuku()
     }
 
     TimerBackground(
@@ -138,14 +182,14 @@ private fun SettingsContent(
                 SettingsToggleRow(
                     icon = Icons.Default.PhoneAndroid,
                     title = stringResource(R.string.screen_title),
-                    description = if (uiState.isDeviceAdminEnabled) {
+                    description = if (uiState.isDeviceAdminEnabled || uiState.settings.softScreenOff) {
                         stringResource(R.string.screen_description)
                     } else {
                         stringResource(R.string.screen_admin_required)
                     },
                     checked = uiState.settings.screenOff,
                     onCheckedChange = { enabled ->
-                        if (enabled && !viewModel.isDeviceAdminActive()) {
+                        if (enabled && !uiState.settings.softScreenOff && !viewModel.isDeviceAdminActive()) {
                             val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
                                 putExtra(
                                     DevicePolicyManager.EXTRA_DEVICE_ADMIN,
@@ -159,6 +203,57 @@ private fun SettingsContent(
                             deviceAdminLauncher.launch(intent)
                         } else {
                             viewModel.updateScreenOff(enabled)
+                        }
+                    },
+                )
+
+                // Soft screen-off (Shizuku) — only relevant if parent toggle is on.
+                if (uiState.settings.screenOff) {
+                    SettingsToggleRow(
+                        icon = Icons.Default.Nightlight,
+                        title = stringResource(R.string.soft_screen_off_title),
+                        description = stringResource(R.string.soft_screen_off_description),
+                        checked = uiState.settings.softScreenOff,
+                        onCheckedChange = { enabled ->
+                            if (enabled) {
+                                requestWithShizuku(context.getString(R.string.shizuku_feature_soft_screen_off)) {
+                                    viewModel.updateSoftScreenOff(true)
+                                }
+                            } else {
+                                viewModel.updateSoftScreenOff(false)
+                            }
+                        },
+                    )
+                }
+
+                SettingsToggleRow(
+                    icon = Icons.Default.Wifi,
+                    title = stringResource(R.string.wifi_off_title),
+                    description = stringResource(R.string.wifi_off_description),
+                    checked = uiState.settings.turnOffWifi,
+                    onCheckedChange = { enabled ->
+                        if (enabled) {
+                            requestWithShizuku(context.getString(R.string.shizuku_feature_wifi)) {
+                                viewModel.updateTurnOffWifi(true)
+                            }
+                        } else {
+                            viewModel.updateTurnOffWifi(false)
+                        }
+                    },
+                )
+
+                SettingsToggleRow(
+                    icon = Icons.Default.Bluetooth,
+                    title = stringResource(R.string.bluetooth_off_title),
+                    description = stringResource(R.string.bluetooth_off_description),
+                    checked = uiState.settings.turnOffBluetooth,
+                    onCheckedChange = { enabled ->
+                        if (enabled) {
+                            requestWithShizuku(context.getString(R.string.shizuku_feature_bluetooth)) {
+                                viewModel.updateTurnOffBluetooth(true)
+                            }
+                        } else {
+                            viewModel.updateTurnOffBluetooth(false)
                         }
                     },
                 )

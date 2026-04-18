@@ -57,4 +57,12 @@
     <string name="shizuku_feature_soft_screen_off">Sanftes Bildschirmabschalten simuliert einen Druck der Power-Taste via Shizuku, sodass die biometrische Entsperrung weiterhin funktioniert.</string>
     <string name="shizuku_feature_wifi">WLAN nach Timer-Ende auszuschalten erfordert Shizuku, da moderne Android-Versionen Apps das direkte Umschalten von WLAN verbieten.</string>
     <string name="shizuku_feature_bluetooth">Bluetooth nach Timer-Ende auszuschalten erfordert Shizuku, da moderne Android-Versionen Apps das direkte Umschalten von Bluetooth verbieten.</string>
+
+    <!-- Shizuku-Funktionen -->
+    <string name="soft_screen_off_title">Sanftes Bildschirmabschalten</string>
+    <string name="soft_screen_off_description">Power-Taste simulieren (via Shizuku) — biometrische Entsperrung bleibt nutzbar</string>
+    <string name="wifi_off_title">WLAN ausschalten</string>
+    <string name="wifi_off_description">WLAN deaktivieren wenn Timer endet (benötigt Shizuku)</string>
+    <string name="bluetooth_off_title">Bluetooth ausschalten</string>
+    <string name="bluetooth_off_description">Bluetooth deaktivieren wenn Timer endet (benötigt Shizuku)</string>
 </resources>

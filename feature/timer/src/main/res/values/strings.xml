@@ -57,4 +57,12 @@
     <string name="shizuku_feature_soft_screen_off">Soft screen-off simulates a power-button press via Shizuku, so biometric unlock keeps working.</string>
     <string name="shizuku_feature_wifi">Turning off Wi-Fi after the timer ends requires Shizuku because modern Android versions block apps from toggling Wi-Fi directly.</string>
     <string name="shizuku_feature_bluetooth">Turning off Bluetooth after the timer ends requires Shizuku because modern Android versions block apps from toggling Bluetooth directly.</string>
+
+    <!-- Shizuku feature toggles -->
+    <string name="soft_screen_off_title">Soft screen-off</string>
+    <string name="soft_screen_off_description">Use power-button simulation via Shizuku — biometric unlock keeps working</string>
+    <string name="wifi_off_title">Turn off Wi-Fi</string>
+    <string name="wifi_off_description">Disable Wi-Fi when timer ends (requires Shizuku)</string>
+    <string name="bluetooth_off_title">Turn off Bluetooth</string>
+    <string name="bluetooth_off_description">Disable Bluetooth when timer ends (requires Shizuku)</string>
 </resources>
