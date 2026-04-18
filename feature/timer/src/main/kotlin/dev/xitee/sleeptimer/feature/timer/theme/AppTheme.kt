@@ -1,5 +1,6 @@
 package dev.xitee.sleeptimer.feature.timer.theme
 
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -13,7 +14,7 @@ import dev.xitee.sleeptimer.core.data.model.ThemeId
  */
 data class AppTheme(
     val id: ThemeId,
-    val label: String,
+    @StringRes val labelRes: Int,
 
     // Background
     val hasGradient: Boolean,

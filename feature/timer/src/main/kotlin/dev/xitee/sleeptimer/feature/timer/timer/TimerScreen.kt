@@ -244,7 +244,7 @@ private fun ActionRow(
     ) {
         SecondaryRoundButton(
             icon = Icons.Default.Remove,
-            contentDescription = "Minus",
+            contentDescription = stringResource(R.string.cd_step_minus),
             onClick = onMinusStep,
             hapticEnabled = hapticEnabled,
             enabled = isMinusEnabled,
@@ -256,7 +256,7 @@ private fun ActionRow(
         )
         SecondaryRoundButton(
             icon = Icons.Default.Add,
-            contentDescription = "Plus",
+            contentDescription = stringResource(R.string.cd_step_plus),
             onClick = onPlusStep,
             hapticEnabled = hapticEnabled,
             enabled = if (isRunning) plusStepVisibleWhileRunning else isPlusEnabled,

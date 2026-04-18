@@ -22,6 +22,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.xitee.sleeptimer.core.data.model.ThemeId
@@ -82,7 +83,7 @@ private fun ThemeCard(
         ThemePreview(option)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = option.label,
+            text = stringResource(option.labelRes),
             style = MaterialTheme.typography.bodyMedium.copy(
                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
             ),
