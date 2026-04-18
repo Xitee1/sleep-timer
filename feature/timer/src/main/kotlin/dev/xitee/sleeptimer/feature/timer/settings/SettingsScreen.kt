@@ -114,10 +114,12 @@ private fun SettingsContent(
     }
 
     // Auto-complete the pending toggle if Shizuku transitions to Ready while dialog is open.
-    if (pendingShizukuToggle != null && uiState.shizukuState == ShizukuManager.State.Ready) {
-        pendingShizukuToggle?.invoke()
-        pendingShizukuToggle = null
-        shizukuDialogExplanation = null
+    LaunchedEffect(uiState.shizukuState, pendingShizukuToggle) {
+        if (pendingShizukuToggle != null && uiState.shizukuState == ShizukuManager.State.Ready) {
+            pendingShizukuToggle?.invoke()
+            pendingShizukuToggle = null
+            shizukuDialogExplanation = null
+        }
     }
 
     LaunchedEffect(Unit) {
