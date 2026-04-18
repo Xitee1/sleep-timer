@@ -165,6 +165,7 @@ private fun TimerContent(
             state = shizukuState,
             featureExplanations = explanations,
             introText = stringResource(R.string.shizuku_startup_intro),
+            dismissLabelRes = R.string.dialog_action_ignore,
             onRequestPermission = { viewModel.requestShizukuPermission() },
             onDismiss = { shizukuStartupFeatures = emptyList() },
         )

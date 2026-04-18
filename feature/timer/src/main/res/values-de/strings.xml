@@ -66,9 +66,12 @@
     <string name="shizuku_startup_intro">Die Shizuku-Berechtigung fehlt für folgende aktivierte Funktionen:</string>
 
     <!-- Geräteadministrator-Dialog (beim Start) -->
-    <string name="admin_dialog_title">Geräteadministrator erforderlich</string>
+    <string name="admin_dialog_title">Geräteadministrator-Berechtigung erforderlich</string>
     <string name="admin_body_required">Die Geräteadministrator-Berechtigung fehlt. Ohne sie kann SleepTimer den Bildschirm nicht sperren, wenn der Timer endet.</string>
     <string name="admin_action_grant">Berechtigung erteilen</string>
+
+    <!-- Generischer Dialog-Action für Startup-Berechtigungswarnungen -->
+    <string name="dialog_action_ignore">Ignorieren</string>
 
     <!-- Shizuku-Funktionen -->
     <string name="wifi_off_title">WLAN ausschalten</string>
