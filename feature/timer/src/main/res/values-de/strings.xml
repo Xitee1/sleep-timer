@@ -28,7 +28,7 @@
     <string name="step_minutes_title">+/− Schrittweite</string>
     <string name="step_minutes_value">%d Min</string>
     <string name="screen_title">Bildschirm</string>
-    <string name="screen_description">Bildschirm sperren wenn Timer endet</string>
+    <string name="screen_description">Bildschirm sperren wenn Timer endet (Shizuku optional)</string>
     <string name="screen_admin_required">Geräteadministrator-Berechtigung erforderlich</string>
     <string name="category_haptic">Haptisches Feedback</string>
     <string name="haptic_title">Haptisches Feedback</string>
@@ -59,10 +59,17 @@
     <string name="shizuku_feature_bluetooth">Bluetooth nach Timer-Ende auszuschalten erfordert Shizuku, da moderne Android-Versionen Apps das direkte Umschalten von Bluetooth verbieten.</string>
 
     <!-- Shizuku-Funktionen -->
-    <string name="soft_screen_off_title">Sanftes Bildschirmabschalten</string>
-    <string name="soft_screen_off_description">Power-Taste simulieren (via Shizuku) — biometrische Entsperrung bleibt nutzbar</string>
     <string name="wifi_off_title">WLAN ausschalten</string>
     <string name="wifi_off_description">WLAN deaktivieren wenn Timer endet (benötigt Shizuku)</string>
     <string name="bluetooth_off_title">Bluetooth ausschalten</string>
     <string name="bluetooth_off_description">Bluetooth deaktivieren wenn Timer endet (benötigt Shizuku)</string>
+
+    <!-- Sperrmethoden-Dialog -->
+    <string name="screen_method_dialog_title">Sperrmethode wählen</string>
+    <string name="screen_method_hard_title">Geräteadministrator</string>
+    <string name="screen_method_hard_description">Standard-Android-Sperre. Code zum Entsperren nötig.</string>
+    <string name="screen_method_soft_title">Shizuku (sanft)</string>
+    <string name="screen_method_soft_description">Simuliert Power-Taste. Biometrische Entsperrung bleibt aktiv.</string>
+    <string name="screen_method_active_hard">Geräteadministrator — Code zum Entsperren nötig</string>
+    <string name="screen_method_active_soft">Shizuku — biometrische Entsperrung bleibt aktiv</string>
 </resources>

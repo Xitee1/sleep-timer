@@ -1,5 +1,6 @@
 package dev.xitee.sleeptimer.feature.timer.settings
 
+import android.app.Activity
 import android.app.admin.DevicePolicyManager
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -24,7 +25,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.MusicOff
-import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.Wifi
@@ -49,6 +49,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import dev.xitee.sleeptimer.feature.timer.R
 import dev.xitee.sleeptimer.feature.timer.settings.components.FadeOutSlider
+import dev.xitee.sleeptimer.feature.timer.settings.components.ScreenLockMethodDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.SettingsToggleRow
 import dev.xitee.sleeptimer.feature.timer.settings.components.ShizukuRequiredDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.StepMinutesSlider
@@ -85,12 +86,16 @@ private fun SettingsContent(
 
     val deviceAdminLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
-    ) {
-        // after return, state refresh is driven by the flow
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            viewModel.updateScreenOff(true)
+            viewModel.updateSoftScreenOff(false)
+        }
     }
 
     var shizukuDialogExplanation by remember { mutableStateOf<String?>(null) }
     var pendingShizukuToggle by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var showMethodDialog by remember { mutableStateOf(false) }
 
     fun requestWithShizuku(explanation: String, enableAction: () -> Unit) {
         if (viewModel.isShizukuReady()) {
@@ -110,6 +115,36 @@ private fun SettingsContent(
                 shizukuDialogExplanation = null
                 pendingShizukuToggle = null
             },
+        )
+    }
+
+    if (showMethodDialog) {
+        ScreenLockMethodDialog(
+            onHardLockSelected = {
+                if (viewModel.isDeviceAdminActive()) {
+                    viewModel.updateScreenOff(true)
+                    viewModel.updateSoftScreenOff(false)
+                } else {
+                    val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+                        putExtra(
+                            DevicePolicyManager.EXTRA_DEVICE_ADMIN,
+                            viewModel.getAdminComponent(),
+                        )
+                        putExtra(
+                            DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                            context.getString(R.string.screen_description),
+                        )
+                    }
+                    deviceAdminLauncher.launch(intent)
+                }
+            },
+            onSoftLockSelected = {
+                requestWithShizuku(context.getString(R.string.shizuku_feature_soft_screen_off)) {
+                    viewModel.updateScreenOff(true)
+                    viewModel.updateSoftScreenOff(true)
+                }
+            },
+            onDismiss = { showMethodDialog = false },
         )
     }
 
@@ -184,49 +219,21 @@ private fun SettingsContent(
                 SettingsToggleRow(
                     icon = Icons.Default.PhoneAndroid,
                     title = stringResource(R.string.screen_title),
-                    description = if (uiState.isDeviceAdminEnabled || uiState.settings.softScreenOff) {
-                        stringResource(R.string.screen_description)
-                    } else {
-                        stringResource(R.string.screen_admin_required)
+                    description = when {
+                        !uiState.settings.screenOff -> stringResource(R.string.screen_description)
+                        uiState.settings.softScreenOff -> stringResource(R.string.screen_method_active_soft)
+                        uiState.isDeviceAdminEnabled -> stringResource(R.string.screen_method_active_hard)
+                        else -> stringResource(R.string.screen_admin_required)
                     },
                     checked = uiState.settings.screenOff,
                     onCheckedChange = { enabled ->
-                        if (enabled && !uiState.settings.softScreenOff && !viewModel.isDeviceAdminActive()) {
-                            val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
-                                putExtra(
-                                    DevicePolicyManager.EXTRA_DEVICE_ADMIN,
-                                    viewModel.getAdminComponent(),
-                                )
-                                putExtra(
-                                    DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                                    context.getString(R.string.screen_description),
-                                )
-                            }
-                            deviceAdminLauncher.launch(intent)
+                        if (enabled) {
+                            showMethodDialog = true
                         } else {
-                            viewModel.updateScreenOff(enabled)
+                            viewModel.updateScreenOff(false)
                         }
                     },
                 )
-
-                // Soft screen-off (Shizuku) — only relevant if parent toggle is on.
-                if (uiState.settings.screenOff) {
-                    SettingsToggleRow(
-                        icon = Icons.Default.Nightlight,
-                        title = stringResource(R.string.soft_screen_off_title),
-                        description = stringResource(R.string.soft_screen_off_description),
-                        checked = uiState.settings.softScreenOff,
-                        onCheckedChange = { enabled ->
-                            if (enabled) {
-                                requestWithShizuku(context.getString(R.string.shizuku_feature_soft_screen_off)) {
-                                    viewModel.updateSoftScreenOff(true)
-                                }
-                            } else {
-                                viewModel.updateSoftScreenOff(false)
-                            }
-                        },
-                    )
-                }
 
                 SettingsToggleRow(
                     icon = Icons.Default.Wifi,
