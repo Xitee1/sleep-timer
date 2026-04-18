@@ -31,4 +31,7 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.service)
+
+    implementation(libs.shizuku.api)
+    implementation(libs.shizuku.provider)
 }
