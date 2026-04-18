@@ -11,11 +11,11 @@
     <string name="settings_title">Einstellungen</string>
     <string name="category_sleep_timer">Sleep Timer</string>
     <string name="playback_title">Wiedergabe</string>
-    <string name="playback_description">Audio- und Videowiedergabe stoppen</string>
+    <string name="playback_description">Medienwiedergabe stoppen</string>
     <string name="fade_out_title">Fade-out-Dauer</string>
     <string name="fade_out_seconds">%d Sekunden</string>
     <string name="screen_title">Bildschirm</string>
-    <string name="screen_description">Bildschirm sperren wenn Timer endet (Shizuku optional)</string>
+    <string name="screen_description">Display ausschalten (Shizuku optional)</string>
     <string name="screen_admin_required">Geräteadministrator-Berechtigung erforderlich</string>
     <string name="category_haptic">Haptisches Feedback</string>
     <string name="haptic_title">Haptisches Feedback</string>
