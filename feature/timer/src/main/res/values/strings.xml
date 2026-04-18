@@ -40,4 +40,21 @@
     <string name="theme_ember">Ember</string>
     <string name="theme_light">Light</string>
     <string name="theme_basic">Basic</string>
+
+    <!-- Shizuku dialog -->
+    <string name="shizuku_dialog_title">Shizuku required</string>
+    <string name="shizuku_body_not_installed">Shizuku is not installed. Tap below to learn how to install and set it up.</string>
+    <string name="shizuku_body_not_running">Shizuku is installed but not running. Open the Shizuku app and start the service.</string>
+    <string name="shizuku_body_permission">SleepTimer needs permission to use Shizuku.</string>
+    <string name="shizuku_body_ready">Shizuku is ready.</string>
+    <string name="shizuku_action_install">Install guide</string>
+    <string name="shizuku_action_open">Open Shizuku</string>
+    <string name="shizuku_action_grant">Grant permission</string>
+    <string name="shizuku_action_ok">OK</string>
+    <string name="shizuku_action_cancel">Cancel</string>
+
+    <!-- Shizuku feature explanations (per-toggle) -->
+    <string name="shizuku_feature_soft_screen_off">Soft screen-off simulates a power-button press via Shizuku, so biometric unlock keeps working.</string>
+    <string name="shizuku_feature_wifi">Turning off Wi-Fi after the timer ends requires Shizuku because modern Android versions block apps from toggling Wi-Fi directly.</string>
+    <string name="shizuku_feature_bluetooth">Turning off Bluetooth after the timer ends requires Shizuku because modern Android versions block apps from toggling Bluetooth directly.</string>
 </resources>

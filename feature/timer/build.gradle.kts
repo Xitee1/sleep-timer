@@ -30,6 +30,7 @@ android {
 
 dependencies {
     implementation(project(":core:data"))
+    implementation(project(":core:service"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

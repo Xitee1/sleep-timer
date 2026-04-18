@@ -40,4 +40,21 @@
     <string name="theme_ember">Glut</string>
     <string name="theme_light">Hell</string>
     <string name="theme_basic">Einfach</string>
+
+    <!-- Shizuku Dialog -->
+    <string name="shizuku_dialog_title">Shizuku erforderlich</string>
+    <string name="shizuku_body_not_installed">Shizuku ist nicht installiert. Tippe unten, um eine Installations- und Einrichtungsanleitung zu öffnen.</string>
+    <string name="shizuku_body_not_running">Shizuku ist installiert, aber nicht aktiv. Öffne die Shizuku-App und starte den Dienst.</string>
+    <string name="shizuku_body_permission">SleepTimer benötigt die Berechtigung, Shizuku zu verwenden.</string>
+    <string name="shizuku_body_ready">Shizuku ist bereit.</string>
+    <string name="shizuku_action_install">Anleitung öffnen</string>
+    <string name="shizuku_action_open">Shizuku öffnen</string>
+    <string name="shizuku_action_grant">Berechtigung erteilen</string>
+    <string name="shizuku_action_ok">OK</string>
+    <string name="shizuku_action_cancel">Abbrechen</string>
+
+    <!-- Shizuku-Feature-Erklärungen (pro Schalter) -->
+    <string name="shizuku_feature_soft_screen_off">Sanftes Bildschirmabschalten simuliert einen Druck der Power-Taste via Shizuku, sodass die biometrische Entsperrung weiterhin funktioniert.</string>
+    <string name="shizuku_feature_wifi">WLAN nach Timer-Ende auszuschalten erfordert Shizuku, da moderne Android-Versionen Apps das direkte Umschalten von WLAN verbieten.</string>
+    <string name="shizuku_feature_bluetooth">Bluetooth nach Timer-Ende auszuschalten erfordert Shizuku, da moderne Android-Versionen Apps das direkte Umschalten von Bluetooth verbieten.</string>
 </resources>
