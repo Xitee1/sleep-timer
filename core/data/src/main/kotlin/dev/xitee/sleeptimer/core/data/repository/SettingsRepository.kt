@@ -16,4 +16,5 @@ interface SettingsRepository {
     suspend fun updateTheme(theme: ThemeId)
     suspend fun updateStarsEnabled(enabled: Boolean)
     suspend fun updateStepMinutes(minutes: Int)
+    suspend fun updatePresetMinutes(minutes: Int)
 }
