@@ -1,5 +1,6 @@
 package dev.xitee.sleeptimer.feature.timer.timer
 
+import android.content.pm.ActivityInfo
 import android.view.OrientationEventListener
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -20,6 +21,13 @@ fun DeviceOrientation.counterRotationDegrees(): Float = when (this) {
     DeviceOrientation.LANDSCAPE_LEFT -> -90f
     DeviceOrientation.PORTRAIT_REVERSED -> 180f
     DeviceOrientation.LANDSCAPE_RIGHT -> 90f
+}
+
+fun DeviceOrientation.toActivityInfoOrientation(): Int = when (this) {
+    DeviceOrientation.PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    DeviceOrientation.LANDSCAPE_LEFT -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+    DeviceOrientation.PORTRAIT_REVERSED -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+    DeviceOrientation.LANDSCAPE_RIGHT -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 }
 
 @Composable
