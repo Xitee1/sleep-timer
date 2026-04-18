@@ -10,6 +10,7 @@ import dev.xitee.sleeptimer.core.data.model.TimerPhase
 import dev.xitee.sleeptimer.core.data.model.UserSettings
 import dev.xitee.sleeptimer.core.data.repository.SettingsRepository
 import dev.xitee.sleeptimer.core.data.repository.TimerRepository
+import dev.xitee.sleeptimer.core.service.SleepTimerService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -77,44 +78,27 @@ class TimerViewModel @Inject constructor(
         val minutes = _selectedMinutes.value
         if (minutes <= 0) return
         val durationMillis = minutes * 60 * 1000L
-        val intent = Intent().apply {
-            action = ACTION_START
-            setClassName(context, SERVICE_CLASS)
-            putExtra(EXTRA_DURATION_MILLIS, durationMillis)
+        val intent = serviceIntent(SleepTimerService.ACTION_START).apply {
+            putExtra(SleepTimerService.EXTRA_DURATION_MILLIS, durationMillis)
         }
         context.startForegroundService(intent)
     }
 
     fun stopTimer() {
-        val intent = Intent().apply {
-            action = ACTION_CANCEL
-            setClassName(context, SERVICE_CLASS)
-        }
-        context.startService(intent)
+        context.startService(serviceIntent(SleepTimerService.ACTION_CANCEL))
     }
 
     fun addStep() {
-        val intent = Intent().apply {
-            action = ACTION_ADD_MINUTES
-            setClassName(context, SERVICE_CLASS)
-        }
-        context.startService(intent)
+        context.startService(serviceIntent(SleepTimerService.ACTION_ADD_MINUTES))
     }
 
     fun subtractStep() {
-        val intent = Intent().apply {
-            action = ACTION_SUBTRACT_MINUTES
-            setClassName(context, SERVICE_CLASS)
-        }
-        context.startService(intent)
+        context.startService(serviceIntent(SleepTimerService.ACTION_SUBTRACT_MINUTES))
     }
 
-    companion object {
-        const val SERVICE_CLASS = "dev.xitee.sleeptimer.core.service.SleepTimerService"
-        const val ACTION_START = "dev.xitee.sleeptimer.action.START"
-        const val ACTION_CANCEL = "dev.xitee.sleeptimer.action.CANCEL"
-        const val ACTION_ADD_MINUTES = "dev.xitee.sleeptimer.action.ADD_MINUTES"
-        const val ACTION_SUBTRACT_MINUTES = "dev.xitee.sleeptimer.action.SUBTRACT_MINUTES"
-        const val EXTRA_DURATION_MILLIS = "dev.xitee.sleeptimer.extra.DURATION_MILLIS"
-    }
+    private fun serviceIntent(actionName: String): Intent =
+        Intent().apply {
+            action = actionName
+            setClassName(context, SleepTimerService::class.java.name)
+        }
 }
