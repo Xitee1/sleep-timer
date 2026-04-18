@@ -165,12 +165,13 @@ class SleepTimerService : Service() {
             TimerPhase.FADING_OUT -> {
                 // Replace countdownJob with the fade-in + restart so Cancel during
                 // the 2 s fade-in window cancels this whole sequence, not just the
-                // already-finished fade-out.
+                // already-finished fade-out. The countdown and fade-in run in
+                // parallel — the clock ticks from the moment the user presses +,
+                // not after the fade-in completes.
                 val oldJob = countdownJob ?: return
                 val stepMillis = stepMinutes * 60 * 1000L
                 countdownJob = serviceScope.launch {
                     oldJob.cancelAndJoin()
-                    mediaVolumeController.fadeInToOriginal(FADE_IN_SECONDS)
                     totalDurationMillis = stepMillis
                     remainingMillis = stepMillis
                     updateTimerState(TimerPhase.RUNNING)
@@ -178,6 +179,7 @@ class SleepTimerService : Service() {
                         remainingMillisToDisplayMinutes(remainingMillis),
                         stepMinutes,
                     )
+                    launch { mediaVolumeController.fadeInToOriginal(FADE_IN_SECONDS) }
                     runCountdownAndExpire()
                 }
             }
