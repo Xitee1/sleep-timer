@@ -28,7 +28,9 @@ No accounts, no ads, no trackers, no network access.
 
 ## Screenshots
 
-_Coming soon._
+| Timer running | Settings | Themes |
+|---|---|---|
+| ![Timer running with notification actions](docs/screenshots/timer-running.png) | ![Settings screen](docs/screenshots/settings.png) | ![Theme picker](docs/screenshots/themes.png) |
 
 ## Permissions
 
