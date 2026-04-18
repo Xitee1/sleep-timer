@@ -25,6 +25,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val HAPTIC_FEEDBACK = booleanPreferencesKey("haptic_feedback")
         val THEME = stringPreferencesKey("theme")
         val STARS_ENABLED = booleanPreferencesKey("stars_enabled")
+        val STEP_MINUTES = intPreferencesKey("step_minutes")
     }
 
     override val settings: Flow<UserSettings> = dataStore.data.map { prefs ->
@@ -35,6 +36,7 @@ class SettingsRepositoryImpl @Inject constructor(
             hapticFeedbackEnabled = prefs[HAPTIC_FEEDBACK] ?: true,
             theme = ThemeId.fromStorage(prefs[THEME]),
             starsEnabled = prefs[STARS_ENABLED] ?: true,
+            stepMinutes = prefs[STEP_MINUTES] ?: 5,
         )
     }
 
@@ -60,5 +62,9 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun updateStarsEnabled(enabled: Boolean) {
         dataStore.edit { it[STARS_ENABLED] = enabled }
+    }
+
+    override suspend fun updateStepMinutes(minutes: Int) {
+        dataStore.edit { it[STEP_MINUTES] = minutes.coerceIn(1, 30) }
     }
 }

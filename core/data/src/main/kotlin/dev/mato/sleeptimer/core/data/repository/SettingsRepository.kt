@@ -12,4 +12,5 @@ interface SettingsRepository {
     suspend fun updateHapticFeedback(enabled: Boolean)
     suspend fun updateTheme(theme: ThemeId)
     suspend fun updateStarsEnabled(enabled: Boolean)
+    suspend fun updateStepMinutes(minutes: Int)
 }

@@ -23,6 +23,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -39,13 +40,23 @@ class SleepTimerService : Service() {
     private var countdownJob: Job? = null
     private var remainingMillis: Long = 0L
     private var totalDurationMillis: Long = 0L
+    private var stepMinutes: Int = 5
 
     companion object {
         const val ACTION_START = "dev.mato.sleeptimer.action.START"
         const val ACTION_CANCEL = "dev.mato.sleeptimer.action.CANCEL"
-        const val ACTION_ADD_FIVE = "dev.mato.sleeptimer.action.ADD_FIVE"
-        const val ACTION_SUBTRACT_FIVE = "dev.mato.sleeptimer.action.SUBTRACT_FIVE"
+        const val ACTION_ADD_MINUTES = "dev.mato.sleeptimer.action.ADD_MINUTES"
+        const val ACTION_SUBTRACT_MINUTES = "dev.mato.sleeptimer.action.SUBTRACT_MINUTES"
         const val EXTRA_DURATION_MILLIS = "dev.mato.sleeptimer.extra.DURATION_MILLIS"
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        serviceScope.launch {
+            settingsRepository.settings
+                .map { it.stepMinutes }
+                .collect { stepMinutes = it }
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -58,11 +69,11 @@ class SleepTimerService : Service() {
                     startTimer(durationMillis)
                 }
             }
-            ACTION_ADD_FIVE -> {
-                addFiveMinutes()
+            ACTION_ADD_MINUTES -> {
+                addStep()
             }
-            ACTION_SUBTRACT_FIVE -> {
-                subtractFiveMinutes()
+            ACTION_SUBTRACT_MINUTES -> {
+                subtractStep()
             }
             ACTION_CANCEL -> {
                 cancelTimer()
@@ -82,6 +93,7 @@ class SleepTimerService : Service() {
         notificationManager.createNotificationChannel()
         val notification = notificationManager.buildNotification(
             remainingMinutes = remainingMillisToDisplayMinutes(remainingMillis),
+            stepMinutes = stepMinutes,
         )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -111,7 +123,7 @@ class SleepTimerService : Service() {
                 updateTimerState(TimerPhase.RUNNING)
 
                 val remainingMinutes = remainingMillisToDisplayMinutes(remainingMillis)
-                notificationManager.updateNotification(remainingMinutes)
+                notificationManager.updateNotification(remainingMinutes, stepMinutes)
             }
 
             // Timer expired — handle completion
@@ -119,23 +131,30 @@ class SleepTimerService : Service() {
         }
     }
 
-    private fun addFiveMinutes() {
+    private fun addStep() {
         if (countdownJob?.isActive == true) {
-            remainingMillis += 5 * 60 * 1000L
-            totalDurationMillis += 5 * 60 * 1000L
+            val stepMillis = stepMinutes * 60 * 1000L
+            remainingMillis += stepMillis
+            totalDurationMillis += stepMillis
             updateTimerState(TimerPhase.RUNNING)
-            notificationManager.updateNotification(remainingMillisToDisplayMinutes(remainingMillis))
+            notificationManager.updateNotification(
+                remainingMillisToDisplayMinutes(remainingMillis),
+                stepMinutes,
+            )
         }
     }
 
-    private fun subtractFiveMinutes() {
+    private fun subtractStep() {
         if (countdownJob?.isActive == true) {
-            val fiveMinutesMillis = 5 * 60 * 1000L
-            if (remainingMillis <= fiveMinutesMillis) return
-            remainingMillis -= fiveMinutesMillis
-            totalDurationMillis = (totalDurationMillis - fiveMinutesMillis).coerceAtLeast(remainingMillis)
+            val stepMillis = stepMinutes * 60 * 1000L
+            if (remainingMillis <= stepMillis) return
+            remainingMillis -= stepMillis
+            totalDurationMillis = (totalDurationMillis - stepMillis).coerceAtLeast(remainingMillis)
             updateTimerState(TimerPhase.RUNNING)
-            notificationManager.updateNotification(remainingMillisToDisplayMinutes(remainingMillis))
+            notificationManager.updateNotification(
+                remainingMillisToDisplayMinutes(remainingMillis),
+                stepMinutes,
+            )
         }
     }
 
@@ -158,7 +177,7 @@ class SleepTimerService : Service() {
 
             if (settings.stopMediaPlayback) {
                 updateTimerState(TimerPhase.FADING_OUT)
-                notificationManager.updateNotification(0)
+                notificationManager.updateNotification(0, stepMinutes)
 
                 mediaVolumeController.fadeOutAndPause(settings.fadeOutDurationSeconds)
             }

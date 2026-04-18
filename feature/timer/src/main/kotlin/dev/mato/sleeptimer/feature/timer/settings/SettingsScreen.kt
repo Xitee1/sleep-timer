@@ -42,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mato.sleeptimer.feature.timer.R
 import dev.mato.sleeptimer.feature.timer.settings.components.FadeOutSlider
 import dev.mato.sleeptimer.feature.timer.settings.components.SettingsToggleRow
+import dev.mato.sleeptimer.feature.timer.settings.components.StepMinutesSlider
 import dev.mato.sleeptimer.feature.timer.settings.components.ThemeSelector
 import dev.mato.sleeptimer.feature.timer.theme.AppThemes
 import dev.mato.sleeptimer.feature.timer.theme.LocalAppTheme
@@ -126,6 +127,10 @@ private fun SettingsContent(
                 FadeOutSlider(
                     durationSeconds = uiState.settings.fadeOutDurationSeconds,
                     onDurationChanged = { viewModel.updateFadeOutDuration(it) },
+                )
+                StepMinutesSlider(
+                    stepMinutes = uiState.settings.stepMinutes,
+                    onStepChanged = { viewModel.updateStepMinutes(it) },
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))

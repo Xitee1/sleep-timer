@@ -20,8 +20,8 @@ class TimerNotificationManager @Inject constructor(
         const val CHANNEL_ID = "sleep_timer_v2"
         private const val LEGACY_CHANNEL_ID = "sleep_timer"
         const val NOTIFICATION_ID = 1
-        private const val ACTION_ADD_FIVE = "dev.mato.sleeptimer.action.ADD_FIVE"
-        private const val ACTION_SUBTRACT_FIVE = "dev.mato.sleeptimer.action.SUBTRACT_FIVE"
+        private const val ACTION_ADD_MINUTES = "dev.mato.sleeptimer.action.ADD_MINUTES"
+        private const val ACTION_SUBTRACT_MINUTES = "dev.mato.sleeptimer.action.SUBTRACT_MINUTES"
         private const val ACTION_CANCEL = "dev.mato.sleeptimer.action.CANCEL"
         private const val SERVICE_CLASS = "dev.mato.sleeptimer.core.service.SleepTimerService"
     }
@@ -45,7 +45,7 @@ class TimerNotificationManager @Inject constructor(
         notificationManager.createNotificationChannel(channel)
     }
 
-    fun buildNotification(remainingMinutes: Int): Notification {
+    fun buildNotification(remainingMinutes: Int, stepMinutes: Int): Notification {
         val contentText = if (remainingMinutes > 0) {
             context.getString(R.string.notification_minutes_remaining, remainingMinutes)
         } else {
@@ -64,8 +64,8 @@ class TimerNotificationManager @Inject constructor(
                 )
             }
 
-        val subtractFivePendingIntent = servicePendingIntent(ACTION_SUBTRACT_FIVE, requestCode = 1)
-        val addFivePendingIntent = servicePendingIntent(ACTION_ADD_FIVE, requestCode = 2)
+        val subtractPendingIntent = servicePendingIntent(ACTION_SUBTRACT_MINUTES, requestCode = 1)
+        val addPendingIntent = servicePendingIntent(ACTION_ADD_MINUTES, requestCode = 2)
         val cancelPendingIntent = servicePendingIntent(ACTION_CANCEL, requestCode = 3)
 
         return NotificationCompat.Builder(context, CHANNEL_ID)
@@ -77,8 +77,16 @@ class TimerNotificationManager @Inject constructor(
             .setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .addAction(0, context.getString(R.string.notification_action_subtract_five), subtractFivePendingIntent)
-            .addAction(0, context.getString(R.string.notification_action_add_five), addFivePendingIntent)
+            .addAction(
+                0,
+                context.getString(R.string.notification_action_subtract_minutes, stepMinutes),
+                subtractPendingIntent,
+            )
+            .addAction(
+                0,
+                context.getString(R.string.notification_action_add_minutes, stepMinutes),
+                addPendingIntent,
+            )
             .addAction(0, context.getString(R.string.notification_action_cancel), cancelPendingIntent)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
@@ -97,8 +105,8 @@ class TimerNotificationManager @Inject constructor(
         )
     }
 
-    fun updateNotification(remainingMinutes: Int) {
-        notificationManager.notify(NOTIFICATION_ID, buildNotification(remainingMinutes))
+    fun updateNotification(remainingMinutes: Int, stepMinutes: Int) {
+        notificationManager.notify(NOTIFICATION_ID, buildNotification(remainingMinutes, stepMinutes))
     }
 
     fun cancelNotification() {

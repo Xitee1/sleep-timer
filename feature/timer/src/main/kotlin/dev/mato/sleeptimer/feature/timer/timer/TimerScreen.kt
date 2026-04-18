@@ -161,29 +161,33 @@ private fun TimerContent(
                         viewModel.startTimer()
                     }
                 },
-                onMinusFive = {
+                onMinusStep = {
                     if (isRunning) {
-                        viewModel.subtractFiveMinutes()
+                        viewModel.subtractStep()
                     } else {
-                        val next = ((dialState.totalMinutes - 5) / 5) * 5
-                        viewModel.setMinutes(next.coerceAtLeast(0))
+                        val step = settings.stepMinutes
+                        val current = dialState.totalMinutes
+                        val next = ((current - 1).coerceAtLeast(0) / step) * step
+                        viewModel.setMinutes(next)
                     }
                 },
-                onPlusFive = {
+                onPlusStep = {
                     if (isRunning) {
-                        viewModel.addFiveMinutes()
+                        viewModel.addStep()
                     } else {
-                        val next = ((dialState.totalMinutes + 5) / 5) * 5
+                        val step = settings.stepMinutes
+                        val current = dialState.totalMinutes
+                        val next = (current / step + 1) * step
                         viewModel.setMinutes(next.coerceAtMost(300))
                     }
                 },
                 isMinusEnabled = if (isRunning) {
-                    runningRemainingSeconds >= 5 * 60
+                    runningRemainingSeconds > settings.stepMinutes * 60
                 } else {
                     dialState.totalMinutes > 0
                 },
                 isPlusEnabled = !isRunning && dialState.totalMinutes < 300,
-                plusFiveVisibleWhileRunning = true,
+                plusStepVisibleWhileRunning = true,
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -225,11 +229,11 @@ private fun ActionRow(
     isRunning: Boolean,
     hapticEnabled: Boolean,
     onToggle: () -> Unit,
-    onMinusFive: () -> Unit,
-    onPlusFive: () -> Unit,
+    onMinusStep: () -> Unit,
+    onPlusStep: () -> Unit,
     isMinusEnabled: Boolean,
     isPlusEnabled: Boolean,
-    plusFiveVisibleWhileRunning: Boolean,
+    plusStepVisibleWhileRunning: Boolean,
 ) {
     androidx.compose.foundation.layout.Row(
         modifier = Modifier
@@ -240,8 +244,8 @@ private fun ActionRow(
     ) {
         SecondaryRoundButton(
             icon = Icons.Default.Remove,
-            contentDescription = "Minus 5 minutes",
-            onClick = onMinusFive,
+            contentDescription = "Minus",
+            onClick = onMinusStep,
             hapticEnabled = hapticEnabled,
             enabled = isMinusEnabled,
         )
@@ -252,10 +256,10 @@ private fun ActionRow(
         )
         SecondaryRoundButton(
             icon = Icons.Default.Add,
-            contentDescription = "Plus 5 minutes",
-            onClick = onPlusFive,
+            contentDescription = "Plus",
+            onClick = onPlusStep,
             hapticEnabled = hapticEnabled,
-            enabled = if (isRunning) plusFiveVisibleWhileRunning else isPlusEnabled,
+            enabled = if (isRunning) plusStepVisibleWhileRunning else isPlusEnabled,
         )
     }
 }

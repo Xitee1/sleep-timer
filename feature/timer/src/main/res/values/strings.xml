@@ -17,6 +17,8 @@
     <string name="playback_description">Stop audio and video playback</string>
     <string name="fade_out_title">Fade-out duration</string>
     <string name="fade_out_seconds">%d seconds</string>
+    <string name="step_minutes_title">+/− step</string>
+    <string name="step_minutes_value">%d min</string>
     <string name="screen_title">Screen</string>
     <string name="screen_description">Lock screen when timer ends</string>
     <string name="screen_admin_required">Device admin permission required</string>
