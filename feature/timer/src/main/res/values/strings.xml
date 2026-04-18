@@ -66,9 +66,12 @@
     <string name="shizuku_startup_intro">Shizuku permission is missing for the following enabled features:</string>
 
     <!-- Device admin required dialog (startup) -->
-    <string name="admin_dialog_title">Device admin required</string>
+    <string name="admin_dialog_title">Device admin permission required</string>
     <string name="admin_body_required">Device admin permission is missing. Without it SleepTimer cannot lock the screen when the timer ends.</string>
     <string name="admin_action_grant">Grant permission</string>
+
+    <!-- Generic dialog action used for startup permission warnings -->
+    <string name="dialog_action_ignore">Ignore</string>
 
     <!-- Shizuku feature toggles -->
     <string name="wifi_off_title">Turn off Wi-Fi</string>

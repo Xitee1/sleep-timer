@@ -27,7 +27,7 @@ fun DeviceAdminRequiredDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.shizuku_action_cancel))
+                Text(stringResource(R.string.dialog_action_ignore))
             }
         },
     )

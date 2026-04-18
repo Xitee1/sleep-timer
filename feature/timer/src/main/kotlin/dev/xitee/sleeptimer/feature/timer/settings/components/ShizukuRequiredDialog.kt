@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.annotation.StringRes
 import androidx.core.net.toUri
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import dev.xitee.sleeptimer.feature.timer.R
@@ -44,6 +45,7 @@ fun ShizukuRequiredDialog(
     onRequestPermission: () -> Unit,
     onDismiss: () -> Unit,
     introText: String? = null,
+    @StringRes dismissLabelRes: Int = R.string.shizuku_action_cancel,
 ) {
     val context = LocalContext.current
 
@@ -116,7 +118,7 @@ fun ShizukuRequiredDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.shizuku_action_cancel))
+                Text(stringResource(dismissLabelRes))
             }
         },
     )
