@@ -11,7 +11,7 @@ import dev.xitee.sleeptimer.core.data.model.TimerPhase
 import dev.xitee.sleeptimer.core.data.model.TimerState
 import dev.xitee.sleeptimer.core.data.model.UserSettings
 import dev.xitee.sleeptimer.core.data.repository.SettingsRepository
-import dev.xitee.sleeptimer.core.data.repository.TimerRepository
+import dev.xitee.sleeptimer.core.data.repository.TimerRepositoryImpl
 import dev.xitee.sleeptimer.core.data.util.remainingMillisToDisplayMinutes
 import dev.xitee.sleeptimer.core.service.media.MediaVolumeController
 import dev.xitee.sleeptimer.core.service.notification.TimerNotificationManager
@@ -36,7 +36,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class SleepTimerService : Service() {
 
-    @Inject lateinit var timerRepository: TimerRepository
+    @Inject lateinit var timerRepository: TimerRepositoryImpl
     @Inject lateinit var settingsRepository: SettingsRepository
     @Inject lateinit var notificationManager: TimerNotificationManager
     @Inject lateinit var mediaVolumeController: MediaVolumeController
