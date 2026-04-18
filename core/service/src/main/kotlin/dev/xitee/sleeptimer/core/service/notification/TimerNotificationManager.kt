@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.xitee.sleeptimer.core.data.model.TimerPhase
 import dev.xitee.sleeptimer.core.service.R
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -45,11 +46,19 @@ class TimerNotificationManager @Inject constructor(
         notificationManager.createNotificationChannel(channel)
     }
 
-    fun buildNotification(remainingMinutes: Int, stepMinutes: Int): Notification {
-        val contentText = if (remainingMinutes > 0) {
-            context.getString(R.string.notification_minutes_remaining, remainingMinutes)
-        } else {
-            context.getString(R.string.notification_less_than_minute)
+    fun buildNotification(
+        remainingMinutes: Int,
+        stepMinutes: Int,
+        phase: TimerPhase = TimerPhase.RUNNING,
+    ): Notification {
+        val contentText = when {
+            phase == TimerPhase.FADING_OUT -> context.getString(R.string.notification_fading_out)
+            remainingMinutes > 0 -> context.resources.getQuantityString(
+                R.plurals.notification_minutes_remaining,
+                remainingMinutes,
+                remainingMinutes,
+            )
+            else -> context.getString(R.string.notification_less_than_minute)
         }
 
         // Content intent to open the app
@@ -105,8 +114,15 @@ class TimerNotificationManager @Inject constructor(
         )
     }
 
-    fun updateNotification(remainingMinutes: Int, stepMinutes: Int) {
-        notificationManager.notify(NOTIFICATION_ID, buildNotification(remainingMinutes, stepMinutes))
+    fun updateNotification(
+        remainingMinutes: Int,
+        stepMinutes: Int,
+        phase: TimerPhase = TimerPhase.RUNNING,
+    ) {
+        notificationManager.notify(
+            NOTIFICATION_ID,
+            buildNotification(remainingMinutes, stepMinutes, phase),
+        )
     }
 
     fun cancelNotification() {

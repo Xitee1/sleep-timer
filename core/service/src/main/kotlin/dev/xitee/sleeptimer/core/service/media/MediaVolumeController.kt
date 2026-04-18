@@ -35,6 +35,24 @@ class MediaVolumeController @Inject constructor(
         restoreVolume()
     }
 
+    suspend fun fadeInToOriginal(durationSeconds: Int) {
+        val target = originalVolume
+        if (target < 0) return
+        val current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        if (current >= target || durationSeconds <= 0) {
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, target, 0)
+            originalVolume = -1
+            return
+        }
+        val steps = target - current
+        val intervalMs = (durationSeconds * 1000L) / steps
+        for (i in current + 1..target) {
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, i, 0)
+            delay(intervalMs)
+        }
+        originalVolume = -1
+    }
+
     fun pauseMedia() {
         val downEvent = KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PAUSE)
         val upEvent = KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PAUSE)

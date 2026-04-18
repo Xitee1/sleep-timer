@@ -3,8 +3,12 @@
     <string name="notification_channel_name">Sleep Timer</string>
     <string name="notification_channel_description">Shows remaining time for sleep timer</string>
     <string name="notification_content_title">Sleep Timer</string>
-    <string name="notification_minutes_remaining">%d minutes remaining</string>
+    <plurals name="notification_minutes_remaining">
+        <item quantity="one">%d minute remaining</item>
+        <item quantity="other">%d minutes remaining</item>
+    </plurals>
     <string name="notification_less_than_minute">Less than a minute remaining</string>
+    <string name="notification_fading_out">Fading out playback</string>
     <string name="notification_action_add_minutes">+%d min</string>
     <string name="notification_action_subtract_minutes">-%d min</string>
     <string name="notification_action_cancel">Cancel</string>
