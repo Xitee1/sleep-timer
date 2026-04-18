@@ -72,4 +72,17 @@
     <string name="screen_method_soft_description">Simuliert Power-Taste. Biometrische Entsperrung bleibt aktiv.</string>
     <string name="screen_method_active_hard">Geräteadministrator — Code zum Entsperren nötig</string>
     <string name="screen_method_active_soft">Shizuku — biometrische Entsperrung bleibt aktiv</string>
+
+    <!-- Über die App -->
+    <string name="category_about">Über</string>
+    <string name="about_title">Über</string>
+    <string name="about_entry_title">Über diese App</string>
+    <string name="about_entry_description">Version, Quellcode und Unterstützung</string>
+    <string name="about_version_title">Version</string>
+    <string name="about_author_title">Autor</string>
+    <string name="about_author_value">Xitee</string>
+    <string name="about_repo_title">Quellcode</string>
+    <string name="about_repo_value">github.com/Xitee1/sleep-timer</string>
+    <string name="about_donate_title">Spenden</string>
+    <string name="about_donate_description">Wenn dir diese App gefällt und du mich unterstützen möchtest, kannst du das hier tun.</string>
 </resources>

@@ -7,3 +7,6 @@ data object TimerRoute
 
 @Serializable
 data object SettingsRoute
+
+@Serializable
+data object AboutRoute
