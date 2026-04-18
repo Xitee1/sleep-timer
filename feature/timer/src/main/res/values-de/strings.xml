@@ -13,6 +13,7 @@
     <string name="time_unit_hour">stunde</string>
     <string name="time_unit_hours">stunden</string>
     <string name="time_unit_hr_min">std · min</string>
+    <string name="ends_at_time">Endet um %1$s</string>
 
     <!-- Settings Screen -->
     <string name="settings_title">Einstellungen</string>
