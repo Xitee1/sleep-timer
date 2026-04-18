@@ -76,7 +76,17 @@ class SleepTimerService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
+        val action = intent?.action
+        // If the service was restarted by the OS (or by a stale PendingIntent from a
+        // notification that survived process death) for any action other than START,
+        // there is no countdown to modify. Skip straight to stopSelf — otherwise we
+        // would never call startForeground within the 5-second window and crash with
+        // ForegroundServiceDidNotStartInTimeException.
+        if (action != ACTION_START && countdownJob == null) {
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
+        when (action) {
             ACTION_START -> {
                 val durationMillis = intent.getLongExtra(EXTRA_DURATION_MILLIS, 0L)
                 if (durationMillis > 0) {
