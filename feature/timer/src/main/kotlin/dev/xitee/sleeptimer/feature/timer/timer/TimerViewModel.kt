@@ -63,7 +63,19 @@ class TimerViewModel @Inject constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TimerUiState.Idle())
 
+    /**
+     * Updates the live UI minutes without persisting. Called continuously during a
+     * dial drag — persisting every tick would flood DataStore with ~30 writes per drag.
+     */
     fun setMinutes(minutes: Int) {
+        _selectedMinutes.value = minutes.coerceIn(1, 300)
+    }
+
+    /**
+     * Updates and persists the preset. Called from +/- step buttons (single discrete
+     * change) and from dial `onDragEnd` (one write at the end of a drag).
+     */
+    fun commitMinutes(minutes: Int) {
         val coerced = minutes.coerceIn(1, 300)
         _selectedMinutes.value = coerced
         val phase = timerRepository.timerState.value.phase
