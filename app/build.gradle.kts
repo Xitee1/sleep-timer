@@ -8,11 +8,11 @@ plugins {
 }
 
 android {
-    namespace = "dev.mato.sleeptimer"
+    namespace = "dev.xitee.sleeptimer"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "dev.mato.sleeptimer"
+        applicationId = "dev.xitee.sleeptimer"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

@@ -24,7 +24,7 @@
         </activity>
 
         <service
-            android:name="dev.mato.sleeptimer.core.service.SleepTimerService"
+            android:name="dev.xitee.sleeptimer.core.service.SleepTimerService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 

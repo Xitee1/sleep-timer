@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "dev.mato.sleeptimer.feature.timer"
+    namespace = "dev.xitee.sleeptimer.feature.timer"
     compileSdk = 35
 
     defaultConfig {

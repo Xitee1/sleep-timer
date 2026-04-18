@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "dev.mato.sleeptimer.core.service"
+    namespace = "dev.xitee.sleeptimer.core.service"
     compileSdk = 35
 
     defaultConfig {
