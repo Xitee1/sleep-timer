@@ -12,6 +12,7 @@ import dev.mato.sleeptimer.core.data.model.TimerState
 import dev.mato.sleeptimer.core.data.model.UserSettings
 import dev.mato.sleeptimer.core.data.repository.SettingsRepository
 import dev.mato.sleeptimer.core.data.repository.TimerRepository
+import dev.mato.sleeptimer.core.data.util.remainingMillisToDisplayMinutes
 import dev.mato.sleeptimer.core.service.media.MediaVolumeController
 import dev.mato.sleeptimer.core.service.notification.TimerNotificationManager
 import dev.mato.sleeptimer.core.service.screen.ScreenLockHelper
@@ -80,7 +81,7 @@ class SleepTimerService : Service() {
         // Create notification channel and start foreground
         notificationManager.createNotificationChannel()
         val notification = notificationManager.buildNotification(
-            remainingMinutes = (remainingMillis / 60_000).toInt(),
+            remainingMinutes = remainingMillisToDisplayMinutes(remainingMillis),
         )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -109,7 +110,7 @@ class SleepTimerService : Service() {
 
                 updateTimerState(TimerPhase.RUNNING)
 
-                val remainingMinutes = (remainingMillis / 60_000).toInt()
+                val remainingMinutes = remainingMillisToDisplayMinutes(remainingMillis)
                 notificationManager.updateNotification(remainingMinutes)
             }
 
@@ -123,7 +124,7 @@ class SleepTimerService : Service() {
             remainingMillis += 5 * 60 * 1000L
             totalDurationMillis += 5 * 60 * 1000L
             updateTimerState(TimerPhase.RUNNING)
-            notificationManager.updateNotification((remainingMillis / 60_000).toInt())
+            notificationManager.updateNotification(remainingMillisToDisplayMinutes(remainingMillis))
         }
     }
 
@@ -134,7 +135,7 @@ class SleepTimerService : Service() {
             remainingMillis -= fiveMinutesMillis
             totalDurationMillis = (totalDurationMillis - fiveMinutesMillis).coerceAtLeast(remainingMillis)
             updateTimerState(TimerPhase.RUNNING)
-            notificationManager.updateNotification((remainingMillis / 60_000).toInt())
+            notificationManager.updateNotification(remainingMillisToDisplayMinutes(remainingMillis))
         }
     }
 

@@ -38,17 +38,15 @@ class TimerViewModel @Inject constructor(
                 TimerUiState.Idle(selectedMinutes = selectedMin)
             }
             TimerPhase.RUNNING -> {
-                val remainingSeconds = (timerState.remainingMillis / 1000).toInt()
                 val totalSeconds = (timerState.totalDurationMillis / 1000).toInt()
-                val progress = if (totalSeconds > 0) {
-                    remainingSeconds.toFloat() / totalSeconds.toFloat()
+                val progress = if (timerState.totalDurationMillis > 0L) {
+                    timerState.remainingMillis.toFloat() / timerState.totalDurationMillis.toFloat()
                 } else {
                     0f
                 }
                 TimerUiState.Running(
                     totalMinutes = (totalSeconds / 60),
-                    remainingMinutes = remainingSeconds / 60,
-                    remainingSeconds = remainingSeconds % 60,
+                    remainingMillis = timerState.remainingMillis,
                     progress = progress,
                 )
             }

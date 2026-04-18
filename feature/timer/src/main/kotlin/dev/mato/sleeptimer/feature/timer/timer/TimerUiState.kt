@@ -8,8 +8,7 @@ sealed interface TimerUiState {
 
     data class Running(
         val totalMinutes: Int,
-        val remainingMinutes: Int,
-        val remainingSeconds: Int,
+        val remainingMillis: Long,
         val progress: Float,
     ) : TimerUiState
 
