@@ -14,13 +14,15 @@ class ScreenLockHelper @Inject constructor(
     private val devicePolicyManager =
         context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
 
-    private val adminComponent = ComponentName(
+    val adminComponent: ComponentName = ComponentName(
         context,
         "dev.xitee.sleeptimer.receiver.SleepTimerDeviceAdminReceiver",
     )
 
+    fun isAdminActive(): Boolean = devicePolicyManager.isAdminActive(adminComponent)
+
     fun lockScreen(): Boolean {
-        return if (devicePolicyManager.isAdminActive(adminComponent)) {
+        return if (isAdminActive()) {
             devicePolicyManager.lockNow()
             true
         } else {

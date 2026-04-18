@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -22,6 +23,22 @@ fun ShizukuRequiredDialog(
     featureExplanation: String,
     onRequestPermission: () -> Unit,
     onDismiss: () -> Unit,
+) {
+    ShizukuRequiredDialog(
+        state = state,
+        featureExplanations = listOf(featureExplanation),
+        onRequestPermission = onRequestPermission,
+        onDismiss = onDismiss,
+    )
+}
+
+@Composable
+fun ShizukuRequiredDialog(
+    state: ShizukuManager.State,
+    featureExplanations: List<String>,
+    onRequestPermission: () -> Unit,
+    onDismiss: () -> Unit,
+    introText: String? = null,
 ) {
     val context = LocalContext.current
 
@@ -71,7 +88,14 @@ fun ShizukuRequiredDialog(
         title = { Text(stringResource(R.string.shizuku_dialog_title)) },
         text = {
             Column {
-                Text(featureExplanation)
+                if (featureExplanations.size == 1 && introText == null) {
+                    Text(featureExplanations.first())
+                } else {
+                    introText?.let { Text(it) }
+                    featureExplanations.forEach { explanation ->
+                        Text("• $explanation", style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
                 Spacer(Modifier.height(12.dp))
                 Text(stringResource(bodyRes))
             }
