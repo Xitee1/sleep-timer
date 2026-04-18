@@ -42,19 +42,23 @@ class ShizukuManager @Inject constructor(
     fun isReady(): Boolean = _state.value == State.Ready
 
     fun requestPermission() {
-        if (computeState() != State.PermissionRequired) return
+        if (_state.value != State.PermissionRequired) return
         if (Shizuku.isPreV11()) return
-        Shizuku.requestPermission(REQUEST_CODE)
+        try {
+            Shizuku.requestPermission(REQUEST_CODE)
+        } catch (_: Exception) {
+            refresh()
+        }
     }
 
     private fun computeState(): State {
         if (!isShizukuInstalled()) return State.NotInstalled
-        val running = try { Shizuku.pingBinder() } catch (_: Throwable) { false }
+        val running = try { Shizuku.pingBinder() } catch (_: Exception) { false }
         if (!running) return State.NotRunning
         if (Shizuku.isPreV11()) return State.PermissionRequired
         val granted = try {
             Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
-        } catch (_: Throwable) { false }
+        } catch (_: Exception) { false }
         return if (granted) State.Ready else State.PermissionRequired
     }
 
