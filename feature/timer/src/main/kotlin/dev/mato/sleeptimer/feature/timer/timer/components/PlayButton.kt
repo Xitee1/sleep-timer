@@ -43,15 +43,20 @@ fun RoundAccentButton(
     modifier: Modifier = Modifier,
 ) {
     val theme = appTheme()
+    val shadowModifier = if (theme.hasGradient) {
+        Modifier.shadow(
+            elevation = 20.dp,
+            shape = CircleShape,
+            ambientColor = theme.accent,
+            spotColor = theme.accent,
+        )
+    } else {
+        Modifier
+    }
     Box(
         modifier = modifier
             .size(84.dp)
-            .shadow(
-                elevation = 20.dp,
-                shape = CircleShape,
-                ambientColor = theme.accent,
-                spotColor = theme.accent,
-            )
+            .then(shadowModifier)
             .clip(CircleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
