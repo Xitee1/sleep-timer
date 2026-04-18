@@ -7,7 +7,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -21,9 +20,9 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -48,7 +47,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -153,6 +154,21 @@ private fun TimerContent(
             val timeFormatter = remember(context) {
                 android.text.format.DateFormat.getTimeFormat(context)
             }
+            val endetText: String? = endMillis?.let {
+                stringResource(R.string.ends_at_time, timeFormatter.format(java.util.Date(it)))
+            }
+            val endetTextStyle = MaterialTheme.typography.bodyLarge
+            val textMeasurer = rememberTextMeasurer()
+            val density = LocalDensity.current
+            val endetTextSize = remember(endetText, endetTextStyle, textMeasurer) {
+                if (endetText.isNullOrEmpty()) {
+                    androidx.compose.ui.unit.IntSize.Zero
+                } else {
+                    textMeasurer.measure(endetText, endetTextStyle).size
+                }
+            }
+            val endetTextWidthDp = with(density) { endetTextSize.width.toDp() }
+            val endetTextHeightDp = with(density) { endetTextSize.height.toDp() }
 
             BoxWithConstraints(
                 modifier = Modifier
@@ -161,25 +177,35 @@ private fun TimerContent(
                     .padding(horizontal = 40.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                // In landscape, "Endet um" should sit exactly at the midpoint between
-                // the dial's bottom and the flex area's bottom (= button row top), with
-                // equal air above and below it. The required shift depends on the flex
-                // area height and the actual dial size, so compute it from constraints
-                // rather than picking a fixed value.
-                val dialSize = minOf(maxWidth, 360.dp)
-                val endetHeight = 24.dp
                 val dialToEndetGap = 20.dp
-                val groupTop = (maxHeight - dialSize - dialToEndetGap - endetHeight) / 2
-                val dialBottom = groupTop + dialSize
-                val portraitEndetCenter = dialBottom + dialToEndetGap + endetHeight / 2
-                val landscapeEndetCenter = (dialBottom + maxHeight) / 2
-                val targetShift = (landscapeEndetCenter - portraitEndetCenter)
+                val maxDialSize = 360.dp
+
+                // The rotated text's axis-aligned bounding box changes size with the
+                // rotation angle. Driving the endet slot height from the same
+                // `animatedAngle` that rotates the text guarantees the slot is always
+                // exactly big enough to hold it — no frame during the transition can
+                // see the text bleed into the dial above. When the flex area is
+                // short, the dial shrinks to make room.
+                val angleRad = animatedAngle * (Math.PI.toFloat() / 180f)
+                val sinAbs = kotlin.math.abs(kotlin.math.sin(angleRad))
+                val cosAbs = kotlin.math.abs(kotlin.math.cos(angleRad))
+                val endetBoxHeight = (endetTextWidthDp * sinAbs + endetTextHeightDp * cosAbs)
+                    .coerceAtLeast(24.dp)
+                val availableForDialHeight = (maxHeight - dialToEndetGap - endetBoxHeight)
                     .coerceAtLeast(0.dp)
-                val endetShift by animateDpAsState(
-                    targetValue = if (isLandscape) targetShift else 0.dp,
-                    animationSpec = tween(ROTATION_DURATION_MS, easing = FastOutSlowInEasing),
-                    label = "endetShift",
-                )
+                val dialSize = minOf(maxWidth, availableForDialHeight, maxDialSize)
+
+                // At landscape, place the slot's centre at the midpoint between the
+                // dial's bottom and the flex area's bottom (= button row), so the
+                // text reads as equidistant from dial and buttons instead of hugging
+                // the dial. Since the Column natural-centres the (dial + gap + slot)
+                // group, the slot's natural centre sits gap + slotHeight/2 below the
+                // dial — derive the extra downward offset needed to land on the
+                // midpoint. `sinAbs` eases the offset in alongside the rotation.
+                val landscapeSlotOffset =
+                    ((maxHeight - dialSize - dialToEndetGap * 3 - endetBoxHeight) / 4f)
+                        .coerceAtLeast(0.dp)
+                val slotOffset = landscapeSlotOffset * sinAbs
 
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -187,7 +213,7 @@ private fun TimerContent(
                 ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .size(dialSize)
                             .graphicsLayer { rotationZ = animatedAngle },
                         contentAlignment = Alignment.Center,
                     ) {
@@ -198,9 +224,7 @@ private fun TimerContent(
                             hapticEnabled = settings.hapticFeedbackEnabled,
                             onMinutesChanged = { viewModel.setMinutes(it) },
                             onMinutesCommitted = { viewModel.commitMinutes(it) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .sizeIn(maxWidth = 360.dp, maxHeight = 360.dp),
+                            modifier = Modifier.fillMaxSize(),
                         )
 
                         when (val s = uiState) {
@@ -217,21 +241,16 @@ private fun TimerContent(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(endetHeight),
+                            .height(endetBoxHeight)
+                            .offset(y = slotOffset),
                         contentAlignment = Alignment.Center,
                     ) {
-                        if (endMillis != null) {
+                        if (endetText != null) {
                             Text(
-                                text = stringResource(
-                                    R.string.ends_at_time,
-                                    timeFormatter.format(java.util.Date(endMillis)),
-                                ),
-                                style = MaterialTheme.typography.bodyLarge,
+                                text = endetText,
+                                style = endetTextStyle,
                                 color = appTheme().textDim,
-                                modifier = Modifier.graphicsLayer {
-                                    rotationZ = animatedAngle
-                                    translationY = endetShift.toPx()
-                                },
+                                modifier = Modifier.graphicsLayer { rotationZ = animatedAngle },
                             )
                         }
                     }
