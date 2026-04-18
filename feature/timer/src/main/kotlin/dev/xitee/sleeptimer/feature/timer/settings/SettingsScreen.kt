@@ -238,8 +238,7 @@ private fun SettingsContent(
                     description = when {
                         !uiState.settings.screenOff -> stringResource(R.string.screen_description)
                         uiState.settings.softScreenOff -> stringResource(R.string.screen_method_active_soft)
-                        uiState.isDeviceAdminEnabled -> stringResource(R.string.screen_method_active_hard)
-                        else -> stringResource(R.string.screen_admin_required)
+                        else -> stringResource(R.string.screen_method_active_hard)
                     },
                     checked = uiState.settings.screenOff,
                     onCheckedChange = { enabled ->

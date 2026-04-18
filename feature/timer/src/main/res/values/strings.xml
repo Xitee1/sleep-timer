@@ -30,7 +30,6 @@
     <string name="step_minutes_value">%d min</string>
     <string name="screen_title">Screen</string>
     <string name="screen_description">Lock screen when timer ends (Shizuku optional)</string>
-    <string name="screen_admin_required">Device admin permission required</string>
     <string name="category_haptic">Haptic Feedback</string>
     <string name="haptic_title">Haptic feedback</string>
     <string name="haptic_description">Vibrate when using timer and controls</string>
@@ -60,6 +59,17 @@
     <string name="shizuku_feature_wifi">Turning off Wi-Fi after the timer ends requires Shizuku because modern Android versions block apps from toggling Wi-Fi directly.</string>
     <string name="shizuku_feature_bluetooth">Turning off Bluetooth after the timer ends requires Shizuku because modern Android versions block apps from toggling Bluetooth directly.</string>
 
+    <!-- Short feature labels used in the startup permission dialog's bullet list -->
+    <string name="shizuku_feature_label_display">Turn off display</string>
+    <string name="shizuku_feature_label_wifi">Turn off Wi-Fi</string>
+    <string name="shizuku_feature_label_bluetooth">Turn off Bluetooth</string>
+    <string name="shizuku_startup_intro">Shizuku permission is missing for the following enabled features:</string>
+
+    <!-- Device admin required dialog (startup) -->
+    <string name="admin_dialog_title">Device admin required</string>
+    <string name="admin_body_required">Device admin permission is missing. Without it SleepTimer cannot lock the screen when the timer ends.</string>
+    <string name="admin_action_grant">Grant permission</string>
+
     <!-- Shizuku feature toggles -->
     <string name="wifi_off_title">Turn off Wi-Fi</string>
     <string name="wifi_off_description">Disable Wi-Fi when timer ends (requires Shizuku)</string>
@@ -72,8 +82,8 @@
     <string name="screen_method_hard_description">Standard Android lock. Requires credential to unlock.</string>
     <string name="screen_method_soft_title">Shizuku (soft)</string>
     <string name="screen_method_soft_description">Simulates power button. Biometric unlock stays active.</string>
-    <string name="screen_method_active_hard">Device admin — credential required to unlock</string>
-    <string name="screen_method_active_soft">Shizuku — biometric unlock stays active</string>
+    <string name="screen_method_active_hard">Turn off display - Device admin</string>
+    <string name="screen_method_active_soft">Turn off display - Shizuku</string>
 
     <!-- About -->
     <string name="category_about">About</string>

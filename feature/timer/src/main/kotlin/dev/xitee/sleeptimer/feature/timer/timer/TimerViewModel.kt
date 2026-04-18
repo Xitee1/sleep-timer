@@ -1,5 +1,6 @@
 package dev.xitee.sleeptimer.feature.timer.timer
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import androidx.lifecycle.ViewModel
@@ -10,6 +11,8 @@ import dev.xitee.sleeptimer.core.data.model.TimerPhase
 import dev.xitee.sleeptimer.core.data.model.UserSettings
 import dev.xitee.sleeptimer.core.data.repository.SettingsRepository
 import dev.xitee.sleeptimer.core.data.repository.TimerRepository
+import dev.xitee.sleeptimer.core.service.screen.ScreenLockHelper
+import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -23,6 +26,8 @@ import javax.inject.Inject
 class TimerViewModel @Inject constructor(
     private val timerRepository: TimerRepository,
     private val settingsRepository: SettingsRepository,
+    private val shizukuManager: ShizukuManager,
+    private val screenLockHelper: ScreenLockHelper,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -30,6 +35,12 @@ class TimerViewModel @Inject constructor(
 
     val settings: StateFlow<UserSettings> = settingsRepository.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UserSettings())
+
+    val shizukuState: StateFlow<ShizukuManager.State> = shizukuManager.state
+
+    // Guards the startup permission dialog so it fires once per process lifetime.
+    // Survives navigation (ViewModel is scoped to the Timer nav entry).
+    private var startupCheckDone = false
 
     init {
         viewModelScope.launch {
@@ -61,6 +72,27 @@ class TimerViewModel @Inject constructor(
             TimerPhase.FADING_OUT -> TimerUiState.FadingOut
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TimerUiState.Idle())
+
+    fun getAdminComponent(): ComponentName = screenLockHelper.adminComponent
+
+    fun refreshShizuku() = shizukuManager.refresh()
+    fun requestShizukuPermission() = shizukuManager.requestPermission()
+
+    suspend fun computeStartupPermissionCheck(): StartupPermissionCheck? {
+        if (startupCheckDone) return null
+        startupCheckDone = true
+        shizukuManager.refresh()
+        val s = settingsRepository.settings.first()
+        val shizukuReady = shizukuManager.isReady()
+        val adminActive = screenLockHelper.isAdminActive()
+        val adminMissing = s.screenOff && !s.softScreenOff && !adminActive
+        val shizukuFeatures = buildList {
+            if (s.screenOff && s.softScreenOff && !shizukuReady) add(ShizukuFeature.SCREEN_OFF)
+            if (s.turnOffWifi && !shizukuReady) add(ShizukuFeature.WIFI)
+            if (s.turnOffBluetooth && !shizukuReady) add(ShizukuFeature.BLUETOOTH)
+        }
+        return StartupPermissionCheck(adminMissing, shizukuFeatures)
+    }
 
     fun setMinutes(minutes: Int) {
         val coerced = minutes.coerceIn(1, 300)
@@ -118,3 +150,10 @@ class TimerViewModel @Inject constructor(
         const val EXTRA_DURATION_MILLIS = "dev.xitee.sleeptimer.extra.DURATION_MILLIS"
     }
 }
+
+data class StartupPermissionCheck(
+    val adminMissing: Boolean,
+    val shizukuMissingFeatures: List<ShizukuFeature>,
+)
+
+enum class ShizukuFeature { SCREEN_OFF, WIFI, BLUETOOTH }
