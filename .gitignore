@@ -17,3 +17,4 @@ local.properties
 *.jks
 *.keystore
 !gradle/wrapper/gradle-wrapper.jar
+.worktrees/
