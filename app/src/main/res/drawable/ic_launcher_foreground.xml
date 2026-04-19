@@ -1,17 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive icon foreground. Source: docs/icon/sleep_timer_icon_foreground.svg
+  Original 680x680 artwork is scaled into the inner 72x72 safe zone of the
+  108x108 adaptive-icon viewport via translate(18,18) scale(72/680).
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <group
-        android:translateX="22"
-        android:translateY="22">
+        android:translateX="18"
+        android:translateY="18"
+        android:scaleX="0.10588"
+        android:scaleY="0.10588">
+
         <path
-            android:fillColor="#FFFFFF"
-            android:pathData="M32,4C16.54,4 4,16.54 4,32s12.54,28 27.99,28C47.46,60 60,47.46 60,32S47.46,4 32,4zM32,56c-13.26,0 -24,-10.74 -24,-24s10.74,-24 24,-24 24,10.74 24,24 -10.74,24 -24,24z" />
+            android:fillColor="#F7E8A8"
+            android:pathData="M205,225 a135,135 0 1 0 270,0 a135,135 0 1 0 -270,0 Z" />
         <path
-            android:fillColor="#FFFFFF"
-            android:pathData="M33.5,18H30v18l15.75,9.45 2.25,-3.69 -13.5,-8.01z" />
+            android:fillColor="#1C2A5E"
+            android:fillAlpha="0.14"
+            android:pathData="M285,190 a120,120 0 1 0 240,0 a120,120 0 1 0 -240,0 Z" />
+
+        <path
+            android:fillColor="#2D3A70"
+            android:pathData="M335,120 a5,5 0 1 0 10,0 a5,5 0 1 0 -10,0 Z" />
+        <path
+            android:fillColor="#2D3A70"
+            android:pathData="M440,225 a5,5 0 1 0 10,0 a5,5 0 1 0 -10,0 Z" />
+        <path
+            android:fillColor="#2D3A70"
+            android:pathData="M335,330 a5,5 0 1 0 10,0 a5,5 0 1 0 -10,0 Z" />
+        <path
+            android:fillColor="#2D3A70"
+            android:pathData="M230,225 a5,5 0 1 0 10,0 a5,5 0 1 0 -10,0 Z" />
+
+        <path
+            android:strokeColor="#2D3A70"
+            android:strokeWidth="9"
+            android:strokeLineCap="round"
+            android:pathData="M340,225 L340,135" />
+        <path
+            android:strokeColor="#2D3A70"
+            android:strokeWidth="11"
+            android:strokeLineCap="round"
+            android:pathData="M340,225 L278,178" />
+        <path
+            android:fillColor="#2D3A70"
+            android:pathData="M330,225 a10,10 0 1 0 20,0 a10,10 0 1 0 -20,0 Z" />
+
+        <path
+            android:fillColor="#F7E8A8"
+            android:pathData="M119,400 H141 a14,14 0 0 1 14,14 V581 a14,14 0 0 1 -14,14 H119 a14,14 0 0 1 -14,-14 V414 a14,14 0 0 1 14,-14 Z" />
+        <path
+            android:fillColor="#F7E8A8"
+            android:pathData="M125,490 H555 a20,20 0 0 1 20,20 V570 a20,20 0 0 1 -20,20 H125 a20,20 0 0 1 -20,-20 V510 a20,20 0 0 1 20,-20 Z" />
+        <path
+            android:fillColor="#FFF4C8"
+            android:pathData="M172,462 H288 a12,12 0 0 1 12,12 V498 a12,12 0 0 1 -12,12 H172 a12,12 0 0 1 -12,-12 V474 a12,12 0 0 1 12,-12 Z" />
+        <path
+            android:fillColor="#C9B87E"
+            android:pathData="M310,493 h265 v7 h-265 z" />
+        <path
+            android:fillColor="#F7E8A8"
+            android:pathData="M567,455 H578 a12,12 0 0 1 12,12 V583 a12,12 0 0 1 -12,12 H567 a12,12 0 0 1 -12,-12 V467 a12,12 0 0 1 12,-12 Z" />
+        <path
+            android:fillColor="#F7E8A8"
+            android:pathData="M118,595 H132 a3,3 0 0 1 3,3 V614 a3,3 0 0 1 -3,3 H118 a3,3 0 0 1 -3,-3 V598 a3,3 0 0 1 3,-3 Z" />
+        <path
+            android:fillColor="#F7E8A8"
+            android:pathData="M563,595 H577 a3,3 0 0 1 3,3 V614 a3,3 0 0 1 -3,3 H563 a3,3 0 0 1 -3,-3 V598 a3,3 0 0 1 3,-3 Z" />
     </group>
 </vector>

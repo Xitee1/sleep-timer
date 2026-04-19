@@ -1,0 +1,33 @@
+<svg width="1024" height="1024" viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg">
+  <title>Sleep timer app icon - foreground</title>
+  <desc>Foreground-Layer fuer Android adaptive icon, Content im zentralen 72x72 Safe-Bereich</desc>
+
+  <!-- Content skaliert von 680x680 auf 72x72 und zentriert in 108x108 Viewport (Safe Zone) -->
+  <g transform="translate(18 18) scale(0.10588)">
+
+    <!-- Mond/Uhr: Vollkreis mit Crescent-Schatten -->
+    <circle cx="340" cy="225" r="135" fill="#f7e8a8"/>
+    <circle cx="405" cy="190" r="120" fill="#1c2a5e" opacity="0.14"/>
+
+    <!-- Stundenmarkierungen -->
+    <circle cx="340" cy="120" r="5" fill="#2d3a70"/>
+    <circle cx="445" cy="225" r="5" fill="#2d3a70"/>
+    <circle cx="340" cy="330" r="5" fill="#2d3a70"/>
+    <circle cx="235" cy="225" r="5" fill="#2d3a70"/>
+
+    <!-- Uhrzeiger -->
+    <line x1="340" y1="225" x2="340" y2="135" stroke="#2d3a70" stroke-width="9" stroke-linecap="round"/>
+    <line x1="340" y1="225" x2="278" y2="178" stroke="#2d3a70" stroke-width="11" stroke-linecap="round"/>
+    <circle cx="340" cy="225" r="10" fill="#2d3a70"/>
+
+    <!-- Bett -->
+    <rect x="105" y="400" width="50" height="195" rx="14" fill="#f7e8a8"/>
+    <rect x="105" y="490" width="470" height="100" rx="20" fill="#f7e8a8"/>
+    <rect x="160" y="462" width="140" height="48" rx="12" fill="#fff4c8"/>
+    <rect x="310" y="493" width="265" height="7" fill="#c9b87e"/>
+    <rect x="555" y="455" width="35" height="140" rx="12" fill="#f7e8a8"/>
+    <rect x="115" y="595" width="20" height="22" rx="3" fill="#f7e8a8"/>
+    <rect x="560" y="595" width="20" height="22" rx="3" fill="#f7e8a8"/>
+
+  </g>
+</svg>
