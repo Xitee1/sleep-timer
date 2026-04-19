@@ -1,0 +1,4 @@
+* New: missing permissions for the screen-off feature are now prompted on app startup, with a recovery dialog if the prompt is dismissed.
+* Fixed: Shizuku startup race that could briefly report Shizuku as not running.
+* Polish: Material 3 dialog styling, clearer device-admin prompt titles.
+* Internal: upgraded to AGP 9, Kotlin 2.3, Compose BOM 2026.03.01.
