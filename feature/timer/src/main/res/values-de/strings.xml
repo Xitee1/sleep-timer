@@ -30,7 +30,6 @@
     <string name="step_minutes_value">%d Min</string>
     <string name="screen_title">Bildschirm</string>
     <string name="screen_description">Display ausschalten (Shizuku optional)</string>
-    <string name="screen_admin_required">Geräteadministrator-Berechtigung erforderlich</string>
     <string name="category_haptic">Haptisches Feedback</string>
     <string name="haptic_title">Haptisches Feedback</string>
     <string name="haptic_description">Vibrieren bei Verwendung von Timer und Bedienelementen</string>
@@ -60,6 +59,20 @@
     <string name="shizuku_feature_wifi">WLAN nach Timer-Ende auszuschalten erfordert Shizuku, da moderne Android-Versionen Apps das direkte Umschalten von WLAN verbieten.</string>
     <string name="shizuku_feature_bluetooth">Bluetooth nach Timer-Ende auszuschalten erfordert Shizuku, da moderne Android-Versionen Apps das direkte Umschalten von Bluetooth verbieten.</string>
 
+    <!-- Kurzbezeichnungen für die Bullet-Liste im Startup-Dialog -->
+    <string name="shizuku_feature_label_display">Display ausschalten</string>
+    <string name="shizuku_feature_label_wifi">WLAN ausschalten</string>
+    <string name="shizuku_feature_label_bluetooth">Bluetooth ausschalten</string>
+    <string name="shizuku_startup_intro">Die Shizuku-Berechtigung fehlt für folgende aktivierte Funktionen:</string>
+
+    <!-- Geräteadministrator-Dialog (beim Start) -->
+    <string name="admin_dialog_title">Geräteadministrator-Berechtigung erforderlich</string>
+    <string name="admin_body_required">Die Geräteadministrator-Berechtigung fehlt. Ohne sie kann SleepTimer den Bildschirm nicht sperren, wenn der Timer endet.</string>
+    <string name="admin_action_grant">Berechtigung erteilen</string>
+
+    <!-- Generischer Dialog-Action für Startup-Berechtigungswarnungen -->
+    <string name="dialog_action_ignore">Ignorieren</string>
+
     <!-- Shizuku-Funktionen -->
     <string name="wifi_off_title">WLAN ausschalten</string>
     <string name="wifi_off_description">WLAN deaktivieren (Shizuku benötigt)</string>
@@ -72,8 +85,8 @@
     <string name="screen_method_hard_description">Standard-Android-Sperre. Code zum Entsperren nötig.</string>
     <string name="screen_method_soft_title">Shizuku (sanft)</string>
     <string name="screen_method_soft_description">Simuliert Power-Taste. Biometrische Entsperrung bleibt aktiv.</string>
-    <string name="screen_method_active_hard">Geräteadministrator — Code zum Entsperren nötig</string>
-    <string name="screen_method_active_soft">Shizuku — biometrische Entsperrung bleibt aktiv</string>
+    <string name="screen_method_active_hard">Display ausschalten - Geräteadministrator</string>
+    <string name="screen_method_active_soft">Display ausschalten - Shizuku</string>
 
     <!-- Über die App -->
     <string name="category_about">Über</string>

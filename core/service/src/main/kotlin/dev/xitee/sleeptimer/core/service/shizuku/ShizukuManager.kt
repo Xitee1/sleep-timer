@@ -6,6 +6,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import rikka.shizuku.Shizuku
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -25,7 +27,15 @@ class ShizukuManager @Inject constructor(
     private val _state = MutableStateFlow(computeState())
     val state: StateFlow<State> = _state.asStateFlow()
 
-    private val binderReceived = Shizuku.OnBinderReceivedListener { refresh() }
+    // Flips true the first time the Shizuku binder connects this process.
+    // Before that, `pingBinder()` returning false is ambiguous — it may mean
+    // "not running" or simply "not yet received".
+    private val _binderReceivedOnce = MutableStateFlow(false)
+
+    private val binderReceived = Shizuku.OnBinderReceivedListener {
+        _binderReceivedOnce.value = true
+        refresh()
+    }
     private val binderDead = Shizuku.OnBinderDeadListener { refresh() }
     private val permissionResult = Shizuku.OnRequestPermissionResultListener { _, _ -> refresh() }
 
@@ -49,6 +59,22 @@ class ShizukuManager @Inject constructor(
         } catch (_: Exception) {
             refresh()
         }
+    }
+
+    /**
+     * Waits until the Shizuku binder connects (or timeout) before returning the
+     * state. Call this for startup checks so an early-boot `pingBinder()` race
+     * doesn't masquerade as NotRunning.
+     */
+    suspend fun awaitInitialState(timeoutMs: Long = 1500): State {
+        if (!isShizukuInstalled()) return State.NotInstalled
+        if (!_binderReceivedOnce.value) {
+            withTimeoutOrNull(timeoutMs) {
+                _binderReceivedOnce.first { it }
+            }
+        }
+        refresh()
+        return _state.value
     }
 
     private fun computeState(): State {
