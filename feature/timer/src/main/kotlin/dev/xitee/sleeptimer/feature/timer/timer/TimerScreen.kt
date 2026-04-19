@@ -55,7 +55,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.xitee.sleeptimer.core.data.util.remainingMillisToDisplayMinutes
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
@@ -99,6 +99,7 @@ private fun TimerContent(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val dialState = rememberCircularDialState()
     val context = LocalContext.current
+    val screenDescription = stringResource(R.string.screen_description)
 
     val orientation by rememberDeviceOrientation()
     val isLandscape = orientation == DeviceOrientation.LANDSCAPE_LEFT ||
@@ -145,7 +146,7 @@ private fun TimerContent(
                     )
                     putExtra(
                         DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                        context.getString(R.string.screen_description),
+                        screenDescription,
                     )
                 }
                 adminStartupLauncher.launch(intent)

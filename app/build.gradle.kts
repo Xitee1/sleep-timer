@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt.android)
@@ -9,12 +8,12 @@ plugins {
 
 android {
     namespace = "dev.xitee.sleeptimer"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "dev.xitee.sleeptimer"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         // Schema: major * 100000 + minor * 1000 + patch * 10 (last digit reserved for hotfixes)
         versionCode = 1 * 100000 + 0 * 1000 + 0 * 10
         versionName = "1.0.0"
@@ -55,12 +54,14 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     buildFeatures {
         compose = true
+    }
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xannotation-default-target=param-property")
     }
 }
 
@@ -84,6 +85,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     implementation(libs.kotlinx.serialization.json)
 
     implementation(libs.hilt.android)

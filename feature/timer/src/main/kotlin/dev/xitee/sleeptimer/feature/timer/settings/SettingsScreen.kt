@@ -46,10 +46,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -98,7 +97,11 @@ private fun SettingsContent(
     onNavigateToAbout: () -> Unit,
     viewModel: SettingsViewModel,
 ) {
-    val context = LocalContext.current
+    val screenDescription = stringResource(R.string.screen_description)
+    val shizukuSoftScreenOffExplanation =
+        stringResource(R.string.shizuku_feature_soft_screen_off)
+    val shizukuWifiExplanation = stringResource(R.string.shizuku_feature_wifi)
+    val shizukuBluetoothExplanation = stringResource(R.string.shizuku_feature_bluetooth)
 
     val deviceAdminLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
@@ -148,14 +151,14 @@ private fun SettingsContent(
                         )
                         putExtra(
                             DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                            context.getString(R.string.screen_description),
+                            screenDescription,
                         )
                     }
                     deviceAdminLauncher.launch(intent)
                 }
             },
             onSoftLockSelected = {
-                requestWithShizuku(context.getString(R.string.shizuku_feature_soft_screen_off)) {
+                requestWithShizuku(shizukuSoftScreenOffExplanation) {
                     viewModel.updateScreenOff(true)
                     viewModel.updateSoftScreenOff(true)
                 }
@@ -266,7 +269,7 @@ private fun SettingsContent(
                     checked = uiState.settings.turnOffWifi,
                     onCheckedChange = { enabled ->
                         if (enabled) {
-                            requestWithShizuku(context.getString(R.string.shizuku_feature_wifi)) {
+                            requestWithShizuku(shizukuWifiExplanation) {
                                 viewModel.updateTurnOffWifi(true)
                             }
                         } else {
@@ -282,7 +285,7 @@ private fun SettingsContent(
                     checked = uiState.settings.turnOffBluetooth,
                     onCheckedChange = { enabled ->
                         if (enabled) {
-                            requestWithShizuku(context.getString(R.string.shizuku_feature_bluetooth)) {
+                            requestWithShizuku(shizukuBluetoothExplanation) {
                                 viewModel.updateTurnOffBluetooth(true)
                             }
                         } else {
