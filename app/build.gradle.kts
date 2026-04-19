@@ -15,8 +15,8 @@ android {
         minSdk = 26
         targetSdk = 36
         // Schema: major * 100000 + minor * 1000 + patch * 10 (last digit reserved for hotfixes)
-        versionCode = 1 * 100000 + 0 * 1000 + 0 * 10
-        versionName = "1.0.0"
+        versionCode = 1 * 100000 + 0 * 1000 + 1 * 10
+        versionName = "1.0.1"
     }
 
     signingConfigs {
