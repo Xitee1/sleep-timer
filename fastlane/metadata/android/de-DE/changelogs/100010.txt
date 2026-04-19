@@ -1,0 +1,4 @@
+* Neu: Fehlende Berechtigungen für die Bildschirm-aus-Funktion werden beim App-Start abgefragt, mit Wiederherstellungs-Dialog beim Verwerfen.
+* Behoben: Shizuku-Startup-Race, das Shizuku kurz als „nicht laufend“ melden konnte.
+* Politur: Material-3-Stil für Dialoge, klarere Titel beim Geräteadministrator-Dialog.
+* Intern: Upgrade auf AGP 9, Kotlin 2.3, Compose BOM 2026.03.01.

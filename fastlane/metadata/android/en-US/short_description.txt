@@ -1,0 +1,1 @@
+Audio fade-out and screen lock at the end of a countdown. No ads, no internet.
