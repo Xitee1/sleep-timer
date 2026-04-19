@@ -99,6 +99,7 @@ private fun TimerContent(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val dialState = rememberCircularDialState()
     val context = LocalContext.current
+    val screenDescription = stringResource(R.string.screen_description)
 
     val orientation by rememberDeviceOrientation()
     val isLandscape = orientation == DeviceOrientation.LANDSCAPE_LEFT ||
@@ -145,7 +146,7 @@ private fun TimerContent(
                     )
                     putExtra(
                         DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                        context.getString(R.string.screen_description),
+                        screenDescription,
                     )
                 }
                 adminStartupLauncher.launch(intent)
