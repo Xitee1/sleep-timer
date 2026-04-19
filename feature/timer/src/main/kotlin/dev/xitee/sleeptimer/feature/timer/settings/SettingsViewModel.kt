@@ -46,7 +46,6 @@ class SettingsViewModel @Inject constructor(
         ) { settings, shizukuState, _ ->
             SettingsUiState(
                 settings = settings,
-                isDeviceAdminEnabled = devicePolicyManager.isAdminActive(adminComponent),
                 shizukuState = shizukuState,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)

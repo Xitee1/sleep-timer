@@ -1,6 +1,8 @@
 package dev.xitee.sleeptimer.feature.timer.timer
 
 import android.Manifest
+import android.app.admin.DevicePolicyManager
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -40,6 +42,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -55,7 +58,10 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.xitee.sleeptimer.core.data.util.remainingMillisToDisplayMinutes
+import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import dev.xitee.sleeptimer.feature.timer.R
+import dev.xitee.sleeptimer.feature.timer.settings.components.DeviceAdminRequiredDialog
+import dev.xitee.sleeptimer.feature.timer.settings.components.ShizukuRequiredDialog
 import dev.xitee.sleeptimer.feature.timer.theme.AppThemes
 import dev.xitee.sleeptimer.feature.timer.theme.LocalAppTheme
 import dev.xitee.sleeptimer.feature.timer.theme.appTheme
@@ -105,6 +111,67 @@ private fun TimerContent(
         viewModel.startTimer()
     }
 
+    var showAdminStartupDialog by remember { mutableStateOf(false) }
+    var shizukuStartupFeatures by remember { mutableStateOf<List<ShizukuFeature>>(emptyList()) }
+    val shizukuState by viewModel.shizukuState.collectAsStateWithLifecycle()
+
+    val adminStartupLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { _ ->
+        showAdminStartupDialog = false
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.computeStartupPermissionCheck()?.let { check ->
+            showAdminStartupDialog = check.adminMissing
+            shizukuStartupFeatures = check.shizukuMissingFeatures
+        }
+    }
+
+    // Auto-close the Shizuku startup dialog once permission is granted.
+    LaunchedEffect(shizukuState) {
+        if (shizukuStartupFeatures.isNotEmpty() && shizukuState == ShizukuManager.State.Ready) {
+            shizukuStartupFeatures = emptyList()
+        }
+    }
+
+    if (showAdminStartupDialog) {
+        DeviceAdminRequiredDialog(
+            onRequestPermission = {
+                val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+                    putExtra(
+                        DevicePolicyManager.EXTRA_DEVICE_ADMIN,
+                        viewModel.getAdminComponent(),
+                    )
+                    putExtra(
+                        DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                        context.getString(R.string.screen_description),
+                    )
+                }
+                adminStartupLauncher.launch(intent)
+            },
+            onDismiss = { showAdminStartupDialog = false },
+        )
+    }
+
+    if (shizukuStartupFeatures.isNotEmpty()) {
+        val explanations = shizukuStartupFeatures.map { feature ->
+            when (feature) {
+                ShizukuFeature.SCREEN_OFF -> stringResource(R.string.shizuku_feature_label_display)
+                ShizukuFeature.WIFI -> stringResource(R.string.shizuku_feature_label_wifi)
+                ShizukuFeature.BLUETOOTH -> stringResource(R.string.shizuku_feature_label_bluetooth)
+            }
+        }
+        ShizukuRequiredDialog(
+            state = shizukuState,
+            featureExplanations = explanations,
+            introText = stringResource(R.string.shizuku_startup_intro),
+            dismissLabelRes = R.string.dialog_action_ignore,
+            onRequestPermission = { viewModel.requestShizukuPermission() },
+            onDismiss = { shizukuStartupFeatures = emptyList() },
+        )
+    }
+
     val isRunning = uiState is TimerUiState.Running || uiState is TimerUiState.FadingOut
 
     LaunchedEffect(uiState) {
@@ -120,6 +187,14 @@ private fun TimerContent(
         is TimerUiState.Running -> s.remainingMillis / 60_000f
         is TimerUiState.FadingOut -> 0f
         else -> 0f
+    }
+
+    val displayMinutes: Int = if (dialState.isDragging) {
+        dialState.totalMinutes
+    } else when (val s = uiState) {
+        is TimerUiState.Idle -> s.selectedMinutes
+        is TimerUiState.Running -> remainingMillisToDisplayMinutes(s.remainingMillis)
+        is TimerUiState.FadingOut -> 0
     }
 
     TimerBackground(
@@ -145,11 +220,10 @@ private fun TimerContent(
                     kotlinx.coroutines.delay(10_000L)
                 }
             }
-            val endMillis: Long? = when (val s = uiState) {
-                is TimerUiState.Idle ->
-                    if (s.selectedMinutes > 0) nowMillis + s.selectedMinutes * 60_000L else null
-                is TimerUiState.Running -> nowMillis + s.remainingMillis
-                is TimerUiState.FadingOut -> null
+            val endMillis: Long? = if (uiState is TimerUiState.FadingOut || displayMinutes <= 0) {
+                null
+            } else {
+                nowMillis + displayMinutes * 60_000L
             }
             val timeFormatter = remember(context) {
                 android.text.format.DateFormat.getTimeFormat(context)
@@ -222,18 +296,12 @@ private fun TimerContent(
                             isRunning = isRunning,
                             runningMinutes = runningMinutes,
                             hapticEnabled = settings.hapticFeedbackEnabled,
-                            onMinutesChanged = { viewModel.setMinutes(it) },
-                            onMinutesCommitted = { viewModel.commitMinutes(it) },
+                            onMinutesChanged = viewModel::setMinutes,
+                            onMinutesCommitted = viewModel::commitMinutes,
                             modifier = Modifier.fillMaxSize(),
                         )
 
-                        when (val s = uiState) {
-                            is TimerUiState.Idle -> TimeDisplay(totalMinutes = s.selectedMinutes)
-                            is TimerUiState.Running -> TimeDisplay(
-                                totalMinutes = remainingMillisToDisplayMinutes(s.remainingMillis),
-                            )
-                            is TimerUiState.FadingOut -> TimeDisplay(totalMinutes = 0)
-                        }
+                        TimeDisplay(totalMinutes = displayMinutes)
                     }
 
                     Spacer(modifier = Modifier.height(dialToEndetGap))

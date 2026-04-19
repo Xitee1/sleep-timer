@@ -1,5 +1,6 @@
 package dev.xitee.sleeptimer.feature.timer.timer
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import androidx.lifecycle.ViewModel
@@ -10,7 +11,10 @@ import dev.xitee.sleeptimer.core.data.model.TimerPhase
 import dev.xitee.sleeptimer.core.data.model.UserSettings
 import dev.xitee.sleeptimer.core.data.repository.SettingsRepository
 import dev.xitee.sleeptimer.core.data.repository.TimerRepository
+import dev.xitee.sleeptimer.core.data.util.remainingMillisToDisplayMinutes
 import dev.xitee.sleeptimer.core.service.SleepTimerService
+import dev.xitee.sleeptimer.core.service.screen.ScreenLockHelper
+import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +28,8 @@ import javax.inject.Inject
 class TimerViewModel @Inject constructor(
     private val timerRepository: TimerRepository,
     private val settingsRepository: SettingsRepository,
+    private val shizukuManager: ShizukuManager,
+    private val screenLockHelper: ScreenLockHelper,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -31,6 +37,12 @@ class TimerViewModel @Inject constructor(
 
     val settings: StateFlow<UserSettings> = settingsRepository.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UserSettings())
+
+    val shizukuState: StateFlow<ShizukuManager.State> = shizukuManager.state
+
+    // Guards the startup permission dialog so it fires once per process lifetime.
+    // Survives navigation (ViewModel is scoped to the Timer nav entry).
+    private var startupCheckDone = false
 
     init {
         viewModelScope.launch {
@@ -63,25 +75,62 @@ class TimerViewModel @Inject constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TimerUiState.Idle())
 
+    fun getAdminComponent(): ComponentName = screenLockHelper.adminComponent
+
+    fun refreshShizuku() = shizukuManager.refresh()
+    fun requestShizukuPermission() = shizukuManager.requestPermission()
+
+    suspend fun computeStartupPermissionCheck(): StartupPermissionCheck? {
+        if (startupCheckDone) return null
+        startupCheckDone = true
+        // Wait for Shizuku's binder to connect — a cold-start `pingBinder()` race
+        // would otherwise report NotRunning even when Shizuku is up.
+        val shizukuState = shizukuManager.awaitInitialState()
+        val s = settingsRepository.settings.first()
+        val shizukuReady = shizukuState == ShizukuManager.State.Ready
+        val adminActive = screenLockHelper.isAdminActive()
+        val adminMissing = s.screenOff && !s.softScreenOff && !adminActive
+        val shizukuFeatures = buildList {
+            if (s.screenOff && s.softScreenOff && !shizukuReady) add(ShizukuFeature.SCREEN_OFF)
+            if (s.turnOffWifi && !shizukuReady) add(ShizukuFeature.WIFI)
+            if (s.turnOffBluetooth && !shizukuReady) add(ShizukuFeature.BLUETOOTH)
+        }
+        return StartupPermissionCheck(adminMissing, shizukuFeatures)
+    }
+
     /**
      * Updates the live UI minutes without persisting. Called continuously during a
      * dial drag — persisting every tick would flood DataStore with ~30 writes per drag.
+     * Ignored while a timer is running: during-drag previews are driven by dialState
+     * in the UI, and updating `_selectedMinutes` would silently shift the idle preset
+     * once the running session ends.
      */
     fun setMinutes(minutes: Int) {
+        val phase = timerRepository.timerState.value.phase
+        if (phase != TimerPhase.IDLE && phase != TimerPhase.FINISHED) return
         _selectedMinutes.value = minutes.coerceIn(1, 300)
     }
 
     /**
-     * Updates and persists the preset. Called from +/- step buttons (single discrete
-     * change) and from dial `onDragEnd` (one write at the end of a drag).
+     * Applies a committed minutes value. When idle, persists it as the preset. When a
+     * timer is running, dispatches to the service to adjust remaining time.
      */
     fun commitMinutes(minutes: Int) {
         val coerced = minutes.coerceIn(1, 300)
-        _selectedMinutes.value = coerced
-        val phase = timerRepository.timerState.value.phase
-        if (phase == TimerPhase.IDLE || phase == TimerPhase.FINISHED) {
-            viewModelScope.launch {
-                settingsRepository.updatePresetMinutes(coerced)
+        val state = timerRepository.timerState.value
+        when (state.phase) {
+            TimerPhase.RUNNING -> {
+                if (remainingMillisToDisplayMinutes(state.remainingMillis) == coerced) return
+                val intent = serviceIntent(SleepTimerService.ACTION_SET_MINUTES).apply {
+                    putExtra(SleepTimerService.EXTRA_MINUTES, coerced)
+                }
+                context.startService(intent)
+            }
+            else -> {
+                _selectedMinutes.value = coerced
+                viewModelScope.launch {
+                    settingsRepository.updatePresetMinutes(coerced)
+                }
             }
         }
     }
@@ -114,3 +163,10 @@ class TimerViewModel @Inject constructor(
             setClassName(context, SleepTimerService::class.java.name)
         }
 }
+
+data class StartupPermissionCheck(
+    val adminMissing: Boolean,
+    val shizukuMissingFeatures: List<ShizukuFeature>,
+)
+
+enum class ShizukuFeature { SCREEN_OFF, WIFI, BLUETOOTH }

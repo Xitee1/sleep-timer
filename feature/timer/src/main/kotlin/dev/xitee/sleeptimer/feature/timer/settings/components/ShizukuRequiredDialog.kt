@@ -4,7 +4,13 @@ import android.content.Intent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -12,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.annotation.StringRes
 import androidx.core.net.toUri
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import dev.xitee.sleeptimer.feature.timer.R
@@ -22,6 +29,23 @@ fun ShizukuRequiredDialog(
     featureExplanation: String,
     onRequestPermission: () -> Unit,
     onDismiss: () -> Unit,
+) {
+    ShizukuRequiredDialog(
+        state = state,
+        featureExplanations = listOf(featureExplanation),
+        onRequestPermission = onRequestPermission,
+        onDismiss = onDismiss,
+    )
+}
+
+@Composable
+fun ShizukuRequiredDialog(
+    state: ShizukuManager.State,
+    featureExplanations: List<String>,
+    onRequestPermission: () -> Unit,
+    onDismiss: () -> Unit,
+    introText: String? = null,
+    @StringRes dismissLabelRes: Int = R.string.shizuku_action_cancel,
 ) {
     val context = LocalContext.current
 
@@ -68,11 +92,22 @@ fun ShizukuRequiredDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.Security, contentDescription = null) },
         title = { Text(stringResource(R.string.shizuku_dialog_title)) },
         text = {
-            Column {
-                Text(featureExplanation)
-                Spacer(Modifier.height(12.dp))
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                if (featureExplanations.size == 1 && introText == null) {
+                    Text(featureExplanations.first())
+                } else {
+                    introText?.let {
+                        Text(it)
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    featureExplanations.forEach { explanation ->
+                        Text("• $explanation", style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
                 Text(stringResource(bodyRes))
             }
         },
@@ -83,7 +118,7 @@ fun ShizukuRequiredDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.shizuku_action_cancel))
+                Text(stringResource(dismissLabelRes))
             }
         },
     )
