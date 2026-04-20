@@ -414,8 +414,7 @@ private fun DrawScope.drawImpactEffects(
 
     // 2) Three concentric shockwave ripples, phase-shifted.
     // Each ripple has its own normalized lifetime within the impact pulse.
-    val rippleOffsets = floatArrayOf(0f, 0.12f, 0.24f)
-    for (offset in rippleOffsets) {
+    for (offset in IMPACT_RIPPLE_OFFSETS) {
         val local = ((pulse - offset) / (1f - offset)).coerceIn(0f, 1f)
         if (local <= 0f) continue
         val rippleRadius = 10.dp.toPx() + (70.dp.toPx() - 10.dp.toPx()) * local
@@ -444,3 +443,5 @@ private fun DrawScope.drawImpactEffects(
         )
     }
 }
+
+private val IMPACT_RIPPLE_OFFSETS = floatArrayOf(0f, 0.12f, 0.24f)
