@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MusicOff
 import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Icon
@@ -223,6 +224,13 @@ private fun SettingsContent(
                     checked = uiState.settings.starsEnabled,
                     onCheckedChange = { viewModel.updateStarsEnabled(it) },
                     enabled = AppThemes.byId(uiState.settings.theme).allowStars,
+                )
+                SettingsToggleRow(
+                    icon = Icons.Default.RocketLaunch,
+                    title = stringResource(R.string.launch_animation_title),
+                    description = stringResource(R.string.launch_animation_description),
+                    checked = uiState.settings.launchAnimationEnabled,
+                    onCheckedChange = { viewModel.updateLaunchAnimationEnabled(it) },
                 )
 
                 SectionHeader(stringResource(R.string.category_sleep_timer))

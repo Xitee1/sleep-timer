@@ -20,6 +20,8 @@
     <string name="category_appearance">Erscheinungsbild</string>
     <string name="stars_title">Sternen-Hintergrund</string>
     <string name="stars_description">Driftendes Sternenfeld hinter dem Dial</string>
+    <string name="launch_animation_title">Launch-Animation</string>
+    <string name="launch_animation_description">Raketenartige Animation des Play-Buttons beim Timer-Start</string>
     <string name="stars_unavailable">Für dieses Theme nicht verfügbar</string>
     <string name="category_sleep_timer">Sleep Timer</string>
     <string name="playback_title">Wiedergabe</string>
