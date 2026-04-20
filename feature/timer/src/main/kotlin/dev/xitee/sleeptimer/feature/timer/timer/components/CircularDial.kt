@@ -43,6 +43,7 @@ fun CircularDial(
     onMinutesChanged: (Int) -> Unit,
     onMinutesCommitted: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    impactPulse: Float = 0f,
 ) {
     val theme = appTheme()
     val view = LocalView.current
@@ -200,6 +201,17 @@ fun CircularDial(
                 theme = theme,
                 dimmed = isRunning && !state.isDragging,
             )
+
+            if (impactPulse > 0f) {
+                drawImpactEffects(
+                    center = center,
+                    ringRadius = radius,
+                    strokeWidth = strokeWidth,
+                    knobFraction = ringFraction,
+                    pulse = impactPulse.coerceIn(0f, 1f),
+                    accent = theme.accent,
+                )
+            }
         }
     }
 }
@@ -376,4 +388,59 @@ private fun DrawScope.drawKnob(
         radius = 3.dp.toPx(),
         center = Offset(kx, ky),
     )
+}
+
+private fun DrawScope.drawImpactEffects(
+    center: Offset,
+    ringRadius: Float,
+    strokeWidth: Float,
+    knobFraction: Float,
+    pulse: Float,
+    accent: Color,
+) {
+    // Knob-Position reproducing drawKnob's math.
+    val angle = knobFraction * (2f * Math.PI.toFloat()) - (Math.PI.toFloat() / 2f)
+    val kx = center.x + ringRadius * cos(angle)
+    val ky = center.y + ringRadius * sin(angle)
+
+    // 1) Knob aura bloom — radius expands, alpha fades.
+    val auraRadius = 16.dp.toPx() + (60.dp.toPx() - 16.dp.toPx()) * pulse
+    val auraAlpha = (1f - pulse).coerceAtLeast(0f) * 0.55f
+    drawCircle(
+        color = accent.copy(alpha = auraAlpha),
+        radius = auraRadius,
+        center = Offset(kx, ky),
+    )
+
+    // 2) Three concentric shockwave ripples, phase-shifted.
+    // Each ripple has its own normalized lifetime within the impact pulse.
+    val rippleOffsets = floatArrayOf(0f, 0.12f, 0.24f)
+    for (offset in rippleOffsets) {
+        val local = ((pulse - offset) / (1f - offset)).coerceIn(0f, 1f)
+        if (local <= 0f) continue
+        val rippleRadius = 10.dp.toPx() + (70.dp.toPx() - 10.dp.toPx()) * local
+        val rippleStroke = (6.dp.toPx() - 5.5f.dp.toPx() * local).coerceAtLeast(0.5f.dp.toPx())
+        val rippleAlpha = (1f - local) * 0.9f
+        drawCircle(
+            color = accent.copy(alpha = rippleAlpha),
+            radius = rippleRadius,
+            center = Offset(kx, ky),
+            style = Stroke(width = rippleStroke),
+        )
+    }
+
+    // 3) Ring-Alpha-Boost: bright flash layered over the existing progress arc.
+    // Eases in quickly (0→0.3) and fades over the rest of the pulse.
+    val boostAlpha = when {
+        pulse < 0.3f -> pulse / 0.3f
+        else -> (1f - pulse) / 0.7f
+    }.coerceIn(0f, 1f) * 0.4f
+    if (boostAlpha > 0f) {
+        drawCircle(
+            color = accent.copy(alpha = boostAlpha),
+            radius = ringRadius,
+            center = center,
+            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+        )
+    }
 }
