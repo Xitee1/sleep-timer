@@ -2,6 +2,8 @@ package dev.xitee.sleeptimer.feature.timer.timer.components
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
@@ -72,34 +74,41 @@ class LaunchAnimationController(private val scope: CoroutineScope) {
             launch { iconScale.animateTo(0.9f, crouchSpec) }
             delay(140)
 
-            // Phase 2: Launch (140–560ms, 420ms) — 1:1 nach Prototyp-Keyframes.
+            // Phase 2: Launch (140–560ms, 420ms).
             //
-            // Travel ist in DREI Abschnitte gesplittet, jeder separat ease-in-out —
-            // das ist entscheidend: ein einzelner Tween über 420ms fühlt sich wie
-            // gleichmäßige Beschleunigung an, aber mit drei Segmenten fällt die
-            // Geschwindigkeit an den Grenzen (30% / 80% der Zeit) auf nahezu Null.
-            // Genau diese kurzen Pausen — besonders die nach dem Verlassen des
-            // Buttons bei 30% — geben der Animation ihren „Power"-Charakter:
-            //   Segment 1 (0–126ms):  0 → 0.28 — Icon hebt ab, nimmt dabei Fahrt auf,
-            //                         verliert sie zum Ende wieder (*Hang nach Launch*).
-            //   Segment 2 (126–336ms): 0.28 → 0.84 — Hauptflug, schnellster Abschnitt.
-            //   Segment 3 (336–420ms): 0.84 → 1.0 — weiches Einschlag-Pacing.
+            // Travel und Scale laufen beide als SINGLE keyframes-Animation mit linearer
+            // Interpolation zwischen den Wegpunkten. Ergebnis: innerhalb jedes Segments
+            // ist die Geschwindigkeit konstant, an den Segment-Grenzen (30% und 80% der
+            // Zeit) springt sie auf einen anderen Wert — ohne die Deceleration-to-zero
+            // die bei einer Kette von animateTo-Calls entstehen würde (und die sich
+            // wie harte Stops anfühlen). Speed-Verhältnisse Travel: 1.0 : 1.7 : 1.1
+            // — deutlich spürbar dynamisch.
+            //
+            // Wegpunkte sind dieselben wie im Prototyp (rocketShoot-Keyframes): 0 →
+            // 0.22 (30%) → 0.84 (80%) → 1.0 (100%) für Travel, 0.9 → 1.1 → 0.9 → 0.5
+            // für Scale.
             phase = LaunchPhase.Launch
-            val launchEasing = CubicBezierEasing(0.4f, 0f, 0.2f, 1f)
             launch { buttonScale.animateTo(1f, tween(180)) }
             launch {
-                iconTravel.animateTo(0.28f, tween(126, easing = launchEasing))
-                iconTravel.animateTo(0.84f, tween(210, easing = launchEasing))
-                iconTravel.animateTo(1f, tween(84, easing = launchEasing))
+                iconTravel.animateTo(
+                    targetValue = 1f,
+                    animationSpec = keyframes {
+                        durationMillis = 420
+                        0.22f at 126 using LinearEasing
+                        0.84f at 336 using LinearEasing
+                        // Letztes Segment 0.84→1.0 in 84ms läuft mit Default-Easing.
+                    },
+                )
             }
             launch {
-                // Scale: 0.9 (vom Crouch) → 1.1 → 0.9 → 0.5 mit denselben Segment-
-                // Grenzen wie Travel. 0.9→1.1 fühlt sich an wie eine Feder die sich
-                // entspannt; 1.1→0.9 ist die „Aufrichtung"; 0.9→0.5 perspektivische
-                // Verkleinerung beim Zudringen aufs Dial.
-                iconScale.animateTo(1.1f, tween(126, easing = launchEasing))
-                iconScale.animateTo(0.9f, tween(210, easing = launchEasing))
-                iconScale.animateTo(0.5f, tween(84, easing = launchEasing))
+                iconScale.animateTo(
+                    targetValue = 0.5f,
+                    animationSpec = keyframes {
+                        durationMillis = 420
+                        1.1f at 126 using LinearEasing
+                        0.9f at 336 using LinearEasing
+                    },
+                )
             }
             delay(420)
 

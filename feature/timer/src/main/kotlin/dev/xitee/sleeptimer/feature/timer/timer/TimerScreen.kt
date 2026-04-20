@@ -359,6 +359,13 @@ private fun TimerContent(
             }
 
             val launchPhase = launchController.phase
+            // Der Button zeigt die Running-Visuals (Stop-Icon + Shape-Morph) erst NACHDEM
+            // die Launch-Animation komplett durchgelaufen ist. Während der Flug läuft,
+            // soll der Button leer bleiben — sonst sieht es aus als käme ein zweites
+            // Icon hinten aus dem Button raus. Sobald der Controller wieder auf Idle
+            // steht (nach der Impact-Phase) und der Timer tatsächlich läuft, wechselt
+            // der Button via Crossfade auf Stop.
+            val playButtonShowsRunning = isRunning && launchPhase == LaunchPhase.Idle
             // Ziel-Rotation des Icons relativ zur X-Achse (Icon zeigt standardmäßig rechts).
             val targetIconAngleDeg = remember(buttonCenter, dialCenter) {
                 if (buttonCenter == Offset.Zero || dialCenter == Offset.Zero) 0f
@@ -371,6 +378,7 @@ private fun TimerContent(
 
             ActionRow(
                 isRunning = isRunning,
+                playButtonShowsRunning = playButtonShowsRunning,
                 hapticEnabled = settings.hapticFeedbackEnabled,
                 iconRotation = animatedAngle,
                 onToggle = {
@@ -536,6 +544,7 @@ private fun HomeTopBar(
 @Composable
 private fun ActionRow(
     isRunning: Boolean,
+    playButtonShowsRunning: Boolean,
     hapticEnabled: Boolean,
     iconRotation: Float,
     onToggle: () -> Unit,
@@ -563,7 +572,7 @@ private fun ActionRow(
             iconRotation = iconRotation,
         )
         PlayButton(
-            isRunning = isRunning,
+            isRunning = playButtonShowsRunning,
             hapticEnabled = hapticEnabled,
             onClick = onToggle,
             iconRotation = iconRotation,
