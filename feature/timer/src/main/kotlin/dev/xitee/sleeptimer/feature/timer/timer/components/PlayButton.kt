@@ -41,6 +41,9 @@ fun PlayButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     iconRotation: Float = 0f,
+    crouchProgress: Float = 0f,
+    iconLaunching: Boolean = false,
+    targetIconRotationDeg: Float = 0f,
 ) {
     val theme = appTheme()
     val view = LocalView.current
@@ -65,9 +68,22 @@ fun PlayButton(
         Modifier
     }
 
+    // Linear interpolate button scale: 1.0 at crouchProgress=0, 0.92 at crouchProgress=1
+    val buttonScale = 1f - 0.08f * crouchProgress.coerceIn(0f, 1f)
+    // Icon rotation during crouch: 0° → targetIconRotationDeg as crouchProgress goes 0→1.
+    // `iconRotation` (orientation-based) is added on top so landscape still rotates the
+    // idle icon correctly.
+    val crouchRotation = targetIconRotationDeg * crouchProgress.coerceIn(0f, 1f)
+    // Icon scale during crouch: 1.0 → 0.9
+    val crouchIconScale = 1f - 0.1f * crouchProgress.coerceIn(0f, 1f)
+
     Box(
         modifier = modifier
             .size(84.dp)
+            .graphicsLayer {
+                scaleX = buttonScale
+                scaleY = buttonScale
+            }
             .then(shadowModifier)
             .clip(shape)
             .clickable {
@@ -102,13 +118,20 @@ fun PlayButton(
         ) { running ->
             val icon: ImageVector = if (running) Icons.Default.Stop else Icons.Default.PlayArrow
             val desc = stringResource(if (running) R.string.stop_timer else R.string.start_timer)
+            // Play icon hides while the launch overlay is flying.
+            val iconAlpha = if (!running && iconLaunching) 0f else 1f
             Icon(
                 imageVector = icon,
                 contentDescription = desc,
                 tint = theme.accentInk,
                 modifier = Modifier
                     .size(34.dp)
-                    .graphicsLayer { rotationZ = iconRotation },
+                    .graphicsLayer {
+                        rotationZ = iconRotation + (if (!running) crouchRotation else 0f)
+                        scaleX = if (!running) crouchIconScale else 1f
+                        scaleY = if (!running) crouchIconScale else 1f
+                        alpha = iconAlpha
+                    },
             )
         }
     }
