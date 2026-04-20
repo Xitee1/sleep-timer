@@ -5,6 +5,7 @@ import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
@@ -70,26 +72,25 @@ class LaunchAnimationController(private val scope: CoroutineScope) {
             launch { iconScale.animateTo(0.9f, crouchSpec) }
             delay(140)
 
-            // Phase 2: Launch (140–680ms, 540ms total) — zweistufig:
-            //   a) Windup (200ms): Icon schwebt kaum merklich aus dem Button, scaled auf,
-            //      sammelt Energie („Vorbereitung" die der Nutzer vermisst hat).
-            //   b) Flight (340ms): harter Schub zum Dial, Icon schrumpft perspektivisch.
+            // Phase 2: Launch (140–560ms, 420ms) — 1:1 nach Prototyp. Scale-Kurve
+            // 1.0 → 1.1 (30%) → 0.9 (80%) → 0.5 (100%): kurzer Windup beim Abheben,
+            // dann perspektivische Verkleinerung zur Dial-Mitte. Travel-Kurve kommt
+            // aus der Material-Easing (langsamer Start, schnelle Mitte, weiches Ende).
             phase = LaunchPhase.Launch
-            val windupEasing = CubicBezierEasing(0.4f, 0f, 0.85f, 0f)
-            val flightEasing = CubicBezierEasing(0.15f, 0f, 0.3f, 1f)
+            val launchEasing = CubicBezierEasing(0.4f, 0f, 0.2f, 1f)
             launch { buttonScale.animateTo(1f, tween(180)) }
+            launch { iconTravel.animateTo(1f, tween(420, easing = launchEasing)) }
             launch {
-                iconTravel.animateTo(0.1f, tween(200, easing = windupEasing))
-                iconTravel.animateTo(1f, tween(340, easing = flightEasing))
+                // Start ist 0.9 (vom Crouch). 3-stufig matched die Prototyp-Keyframes.
+                iconScale.animateTo(1.1f, tween(126, easing = launchEasing))
+                iconScale.animateTo(0.9f, tween(210, easing = launchEasing))
+                iconScale.animateTo(0.5f, tween(84, easing = launchEasing))
             }
-            launch {
-                iconScale.animateTo(1.18f, tween(200, easing = windupEasing))
-                iconScale.animateTo(0.25f, tween(340, easing = flightEasing))
-            }
-            delay(540)
+            delay(420)
 
-            // Phase 3: Impact (680–1280ms, 600ms total). Länger als der Launch, damit die
-            // Shockwaves sich entfalten und ausklingen können.
+            // Phase 3: Impact (560–1160ms, 600ms). Länger als der Prototyp-Impact (260ms)
+            // weil wir die Shockwave-Expansion in derselben Pulse-Kurve steuern — dort
+            // nutzt der Prototyp separate 900ms CSS-Animations die die Phase überdauern.
             phase = LaunchPhase.Impact
             val impactEasing = CubicBezierEasing(0.12f, 0.85f, 0.3f, 1f)
             val impactSpec = tween<Float>(600, easing = impactEasing)
@@ -160,18 +161,47 @@ fun LaunchOverlay(
 
     val travel = controller.iconTravel.value
     val iconScaleValue = controller.iconScale.value
-    // Crisper Fade-out unmittelbar vor dem Einschlag, damit Icon-Verschwinden und
-    // Dial-Impact als ein Moment wirken (vorher war eine sichtbare Lücke dazwischen).
+    // Icon fadet über die letzten 20% des Fluges aus — matched den Prototyp.
     val alphaValue =
-        if (travel < 0.95f) 1f else (1f - (travel - 0.95f) / 0.05f).coerceIn(0f, 1f)
-    // Glow wächst proportional zur Entfernung vom Button: auf dem Button fast unsichtbar,
-    // im freien Flug deutlich sichtbar.
+        if (travel < 0.8f) 1f else (1f - (travel - 0.8f) / 0.2f).coerceIn(0f, 1f)
+    // Glow um das Icon herum — wächst mit Entfernung vom Button.
     val glowAlpha = travel.coerceIn(0f, 1f) * 0.9f
 
     val currentX = buttonCenter.x + (dialCenter.x - buttonCenter.x) * travel
     val currentY = buttonCenter.y + (dialCenter.y - buttonCenter.y) * travel
 
-    // Container-Box ist 60dp (Glow-Radius). Icon ist 34dp zentriert darin.
+    // Trail: leuchtende Bahn vom Button bis zur aktuellen Icon-Position. Nur während
+    // des Flugs gerendert. Das ist das wesentliche „Wow"-Element — ohne Trail wirkt
+    // das fliegende Icon wie ein simples Schieben; mit Trail wird daraus ein Rocket-
+    // Launch mit Abgasspur. Width konstant, Alpha-Kurve wie im Prototyp: steigt bis
+    // ~40% Flugzeit auf Peak, fadet in den letzten 60% aus.
+    if (phase == LaunchPhase.Launch && travel > 0.02f && dialCenter != Offset.Zero) {
+        val trailAlpha = when {
+            travel < 0.4f -> travel / 0.4f
+            else -> (1f - (travel - 0.4f) / 0.6f).coerceAtLeast(0f)
+        }
+        if (trailAlpha > 0f) {
+            val trailHead = Offset(currentX, currentY)
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                drawLine(
+                    brush = Brush.linearGradient(
+                        0f to Color.Transparent,
+                        0.25f to glowColor.copy(alpha = 0.35f * trailAlpha),
+                        0.75f to glowColor.copy(alpha = 1f * trailAlpha),
+                        1f to Color.White.copy(alpha = trailAlpha),
+                        start = buttonCenter,
+                        end = trailHead,
+                    ),
+                    start = buttonCenter,
+                    end = trailHead,
+                    strokeWidth = 10.dp.toPx(),
+                    cap = StrokeCap.Round,
+                )
+            }
+        }
+    }
+
+    // Icon + runder Accent-Glow direkt dahinter. Container ist 60dp, Icon 34dp.
     Box(
         modifier = Modifier
             .size(60.dp)
