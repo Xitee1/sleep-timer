@@ -48,7 +48,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -56,7 +59,10 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.xitee.sleeptimer.core.data.util.isSystemReduceMotionEnabled
 import dev.xitee.sleeptimer.core.data.util.remainingMillisToDisplayMinutes
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import dev.xitee.sleeptimer.feature.timer.R
@@ -67,11 +73,15 @@ import dev.xitee.sleeptimer.feature.timer.theme.LocalAppTheme
 import dev.xitee.sleeptimer.feature.timer.theme.appTheme
 import dev.xitee.sleeptimer.feature.timer.theme.rememberAnimatedAppTheme
 import dev.xitee.sleeptimer.feature.timer.timer.components.CircularDial
+import dev.xitee.sleeptimer.feature.timer.timer.components.LaunchOverlay
+import dev.xitee.sleeptimer.feature.timer.timer.components.LaunchPhase
 import dev.xitee.sleeptimer.feature.timer.timer.components.PlayButton
 import dev.xitee.sleeptimer.feature.timer.timer.components.SecondaryRoundButton
 import dev.xitee.sleeptimer.feature.timer.timer.components.TimeDisplay
 import dev.xitee.sleeptimer.feature.timer.timer.components.TimerBackground
 import dev.xitee.sleeptimer.feature.timer.timer.components.rememberCircularDialState
+import dev.xitee.sleeptimer.feature.timer.timer.components.rememberLaunchAnimationController
+import kotlin.math.atan2
 
 private const val ROTATION_DURATION_MS = 350
 
@@ -105,6 +115,17 @@ private fun TimerContent(
     val isLandscape = orientation == DeviceOrientation.LANDSCAPE_LEFT ||
         orientation == DeviceOrientation.LANDSCAPE_RIGHT
     val animatedAngle = animatedRotationAngle(orientation)
+
+    val launchController = rememberLaunchAnimationController()
+    var buttonCenter by remember { mutableStateOf(Offset.Zero) }
+    var dialCenter by remember { mutableStateOf(Offset.Zero) }
+    val animationEnabled = settings.launchAnimationEnabled &&
+        !isSystemReduceMotionEnabled(context)
+
+    // Snap zurück auf Idle, wenn die App in den Hintergrund geht.
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        launchController.reset()
+    }
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -289,7 +310,10 @@ private fun TimerContent(
                     Box(
                         modifier = Modifier
                             .size(dialSize)
-                            .graphicsLayer { rotationZ = animatedAngle },
+                            .graphicsLayer { rotationZ = animatedAngle }
+                            .onGloballyPositioned { coords ->
+                                dialCenter = coords.boundsInRoot().center
+                            },
                         contentAlignment = Alignment.Center,
                     ) {
                         CircularDial(
@@ -299,6 +323,7 @@ private fun TimerContent(
                             hapticEnabled = settings.hapticFeedbackEnabled,
                             onMinutesChanged = viewModel::setMinutes,
                             onMinutesCommitted = viewModel::commitMinutes,
+                            impactPulse = launchController.impactPulse.value,
                             modifier = Modifier.fillMaxSize(),
                         )
 
@@ -333,12 +358,26 @@ private fun TimerContent(
                 else -> 0
             }
 
+            val launchPhase = launchController.phase
+            val iconLaunching = launchPhase == LaunchPhase.Launch ||
+                launchPhase == LaunchPhase.Impact
+            // Ziel-Rotation des Icons relativ zur X-Achse (Icon zeigt standardmäßig rechts).
+            val targetIconAngleDeg = remember(buttonCenter, dialCenter) {
+                if (buttonCenter == Offset.Zero || dialCenter == Offset.Zero) 0f
+                else {
+                    val dx = dialCenter.x - buttonCenter.x
+                    val dy = dialCenter.y - buttonCenter.y
+                    Math.toDegrees(atan2(dy, dx).toDouble()).toFloat()
+                }
+            }
+
             ActionRow(
                 isRunning = isRunning,
                 hapticEnabled = settings.hapticFeedbackEnabled,
                 iconRotation = animatedAngle,
                 onToggle = {
-                    if (isRunning) {
+                    val animating = launchPhase != LaunchPhase.Idle
+                    if (isRunning || animating) {
                         viewModel.stopTimer()
                     } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                         ContextCompat.checkSelfPermission(
@@ -349,6 +388,12 @@ private fun TimerContent(
                         notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                     } else {
                         viewModel.startTimer()
+                        if (animationEnabled &&
+                            buttonCenter != Offset.Zero &&
+                            dialCenter != Offset.Zero
+                        ) {
+                            launchController.launch(targetIconAngleDeg)
+                        }
                     }
                 },
                 onMinusStep = {
@@ -378,6 +423,11 @@ private fun TimerContent(
                 },
                 isPlusEnabled = !isRunning && dialState.totalMinutes < 300,
                 plusStepVisibleWhileRunning = true,
+                crouchProgress = launchController.crouchProgress.value,
+                iconLaunching = iconLaunching,
+                targetIconRotationDeg = targetIconAngleDeg,
+                buttonScale = launchController.buttonScale.value,
+                onButtonPositioned = { buttonCenter = it },
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -415,6 +465,13 @@ private fun TimerContent(
                 )
             }
         }
+
+        LaunchOverlay(
+            controller = launchController,
+            buttonCenter = buttonCenter,
+            dialCenter = dialCenter,
+            accentColor = appTheme().accent,
+        )
     }
 }
 
@@ -490,6 +547,11 @@ private fun ActionRow(
     isMinusEnabled: Boolean,
     isPlusEnabled: Boolean,
     plusStepVisibleWhileRunning: Boolean,
+    crouchProgress: Float,
+    iconLaunching: Boolean,
+    targetIconRotationDeg: Float,
+    buttonScale: Float,
+    onButtonPositioned: (Offset) -> Unit,
 ) {
     androidx.compose.foundation.layout.Row(
         modifier = Modifier
@@ -511,6 +573,13 @@ private fun ActionRow(
             hapticEnabled = hapticEnabled,
             onClick = onToggle,
             iconRotation = iconRotation,
+            crouchProgress = crouchProgress,
+            iconLaunching = iconLaunching,
+            targetIconRotationDeg = targetIconRotationDeg,
+            buttonScale = buttonScale,
+            modifier = Modifier.onGloballyPositioned { coords ->
+                onButtonPositioned(coords.boundsInRoot().center)
+            },
         )
         SecondaryRoundButton(
             icon = Icons.Default.Add,
