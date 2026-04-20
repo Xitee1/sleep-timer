@@ -72,16 +72,31 @@ class LaunchAnimationController(private val scope: CoroutineScope) {
             launch { iconScale.animateTo(0.9f, crouchSpec) }
             delay(140)
 
-            // Phase 2: Launch (140–560ms, 420ms) — 1:1 nach Prototyp. Scale-Kurve
-            // 1.0 → 1.1 (30%) → 0.9 (80%) → 0.5 (100%): kurzer Windup beim Abheben,
-            // dann perspektivische Verkleinerung zur Dial-Mitte. Travel-Kurve kommt
-            // aus der Material-Easing (langsamer Start, schnelle Mitte, weiches Ende).
+            // Phase 2: Launch (140–560ms, 420ms) — 1:1 nach Prototyp-Keyframes.
+            //
+            // Travel ist in DREI Abschnitte gesplittet, jeder separat ease-in-out —
+            // das ist entscheidend: ein einzelner Tween über 420ms fühlt sich wie
+            // gleichmäßige Beschleunigung an, aber mit drei Segmenten fällt die
+            // Geschwindigkeit an den Grenzen (30% / 80% der Zeit) auf nahezu Null.
+            // Genau diese kurzen Pausen — besonders die nach dem Verlassen des
+            // Buttons bei 30% — geben der Animation ihren „Power"-Charakter:
+            //   Segment 1 (0–126ms):  0 → 0.28 — Icon hebt ab, nimmt dabei Fahrt auf,
+            //                         verliert sie zum Ende wieder (*Hang nach Launch*).
+            //   Segment 2 (126–336ms): 0.28 → 0.84 — Hauptflug, schnellster Abschnitt.
+            //   Segment 3 (336–420ms): 0.84 → 1.0 — weiches Einschlag-Pacing.
             phase = LaunchPhase.Launch
             val launchEasing = CubicBezierEasing(0.4f, 0f, 0.2f, 1f)
             launch { buttonScale.animateTo(1f, tween(180)) }
-            launch { iconTravel.animateTo(1f, tween(420, easing = launchEasing)) }
             launch {
-                // Start ist 0.9 (vom Crouch). 3-stufig matched die Prototyp-Keyframes.
+                iconTravel.animateTo(0.28f, tween(126, easing = launchEasing))
+                iconTravel.animateTo(0.84f, tween(210, easing = launchEasing))
+                iconTravel.animateTo(1f, tween(84, easing = launchEasing))
+            }
+            launch {
+                // Scale: 0.9 (vom Crouch) → 1.1 → 0.9 → 0.5 mit denselben Segment-
+                // Grenzen wie Travel. 0.9→1.1 fühlt sich an wie eine Feder die sich
+                // entspannt; 1.1→0.9 ist die „Aufrichtung"; 0.9→0.5 perspektivische
+                // Verkleinerung beim Zudringen aufs Dial.
                 iconScale.animateTo(1.1f, tween(126, easing = launchEasing))
                 iconScale.animateTo(0.9f, tween(210, easing = launchEasing))
                 iconScale.animateTo(0.5f, tween(84, easing = launchEasing))
