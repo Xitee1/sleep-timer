@@ -2,6 +2,7 @@ package dev.xitee.sleeptimer.feature.timer.timer.components
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
@@ -76,17 +77,18 @@ class LaunchAnimationController(private val scope: CoroutineScope) {
 
             // Phase 2: Launch (140–560ms, 420ms).
             //
-            // Travel und Scale laufen beide als SINGLE keyframes-Animation mit linearer
-            // Interpolation zwischen den Wegpunkten. Ergebnis: innerhalb jedes Segments
-            // ist die Geschwindigkeit konstant, an den Segment-Grenzen (30% und 80% der
-            // Zeit) springt sie auf einen anderen Wert — ohne die Deceleration-to-zero
-            // die bei einer Kette von animateTo-Calls entstehen würde (und die sich
-            // wie harte Stops anfühlen). Speed-Verhältnisse Travel: 1.0 : 1.7 : 1.1
-            // — deutlich spürbar dynamisch.
+            // Pacing in vier Teilen:
+            //   1. Lift-off (0–100ms): ease-in-out, Icon hebt ab auf 22% Strecke.
+            //      Decceleriert am Ende → Velocity nahe Null.
+            //   2. Hold (100–135ms): 35ms Standstill auf 22% — der „Hang" direkt nach
+            //      dem Verlassen des Buttons, sichtbar aber kurz.
+            //   3. Cruise (135–336ms): linearer, schneller Flug zu 84% (spürbar
+            //      höhere Konstantgeschwindigkeit als in Phase 1).
+            //   4. Approach (336–420ms): linearer Rest zum Einschlag auf 100%.
             //
-            // Wegpunkte sind dieselben wie im Prototyp (rocketShoot-Keyframes): 0 →
-            // 0.22 (30%) → 0.84 (80%) → 1.0 (100%) für Travel, 0.9 → 1.1 → 0.9 → 0.5
-            // für Scale.
+            // Der Hold erzeugt die Pause ohne die „Vollbremsung"-Qualität einer
+            // geketteten ease-in-out Sequenz. Danach springt die Geschwindigkeit
+            // abrupt auf Cruise-Speed — das gibt der Launch-Phase ihren Power-Burst.
             phase = LaunchPhase.Launch
             launch { buttonScale.animateTo(1f, tween(180)) }
             launch {
@@ -94,9 +96,9 @@ class LaunchAnimationController(private val scope: CoroutineScope) {
                     targetValue = 1f,
                     animationSpec = keyframes {
                         durationMillis = 420
-                        0.22f at 126 using LinearEasing
+                        0.22f at 100 using FastOutSlowInEasing
+                        0.22f at 135 using LinearEasing
                         0.84f at 336 using LinearEasing
-                        // Letztes Segment 0.84→1.0 in 84ms läuft mit Default-Easing.
                     },
                 )
             }
@@ -105,7 +107,10 @@ class LaunchAnimationController(private val scope: CoroutineScope) {
                     targetValue = 0.5f,
                     animationSpec = keyframes {
                         durationMillis = 420
-                        1.1f at 126 using LinearEasing
+                        // Scale peaked at 1.1 während Lift-off, hält durch den Hang,
+                        // schrumpft dann im Cruise auf 0.9 und am Ende perspektivisch auf 0.5.
+                        1.1f at 100 using FastOutSlowInEasing
+                        1.1f at 135 using LinearEasing
                         0.9f at 336 using LinearEasing
                     },
                 )
