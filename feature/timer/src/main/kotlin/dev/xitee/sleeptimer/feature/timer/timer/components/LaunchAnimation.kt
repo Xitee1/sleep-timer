@@ -70,32 +70,38 @@ class LaunchAnimationController(private val scope: CoroutineScope) {
             launch { iconScale.animateTo(0.9f, crouchSpec) }
             delay(140)
 
-            // Phase 2: Launch (140–560ms)
+            // Phase 2: Launch (140–680ms, 540ms total) — zweistufig:
+            //   a) Windup (200ms): Icon schwebt kaum merklich aus dem Button, scaled auf,
+            //      sammelt Energie („Vorbereitung" die der Nutzer vermisst hat).
+            //   b) Flight (340ms): harter Schub zum Dial, Icon schrumpft perspektivisch.
             phase = LaunchPhase.Launch
-            val launchEasing = CubicBezierEasing(0.4f, 0f, 0.2f, 1f)
-            val launchSpec = tween<Float>(420, easing = launchEasing)
+            val windupEasing = CubicBezierEasing(0.4f, 0f, 0.85f, 0f)
+            val flightEasing = CubicBezierEasing(0.15f, 0f, 0.3f, 1f)
             launch { buttonScale.animateTo(1f, tween(180)) }
-            launch { iconTravel.animateTo(1f, launchSpec) }
-            // Icon scale: 0.9 → 1.1 → 0.2 across the flight.
             launch {
-                iconScale.animateTo(1.1f, tween(120, easing = launchEasing))
-                iconScale.animateTo(0.2f, tween(300, easing = launchEasing))
+                iconTravel.animateTo(0.1f, tween(200, easing = windupEasing))
+                iconTravel.animateTo(1f, tween(340, easing = flightEasing))
             }
-            delay(420)
+            launch {
+                iconScale.animateTo(1.18f, tween(200, easing = windupEasing))
+                iconScale.animateTo(0.25f, tween(340, easing = flightEasing))
+            }
+            delay(540)
 
-            // Phase 3: Impact (560–820ms)
+            // Phase 3: Impact (680–1280ms, 600ms total). Länger als der Launch, damit die
+            // Shockwaves sich entfalten und ausklingen können.
             phase = LaunchPhase.Impact
-            val impactEasing = CubicBezierEasing(0.2f, 0.7f, 0.3f, 1f)
-            val impactSpec = tween<Float>(260, easing = impactEasing)
+            val impactEasing = CubicBezierEasing(0.12f, 0.85f, 0.3f, 1f)
+            val impactSpec = tween<Float>(600, easing = impactEasing)
             launch {
                 buttonScale.animateTo(
                     1.04f,
                     tween(130, easing = CubicBezierEasing(0.2f, 1.8f, 0.4f, 1f)),
                 )
-                buttonScale.animateTo(1f, tween(130))
+                buttonScale.animateTo(1f, tween(170))
             }
             launch { impactPulse.animateTo(1f, impactSpec) }
-            delay(260)
+            delay(600)
 
             // Zurück auf Idle (snap, nicht animiert, weil nächstes Frame den echten Running-State hat).
             reset()
@@ -154,9 +160,10 @@ fun LaunchOverlay(
 
     val travel = controller.iconTravel.value
     val iconScaleValue = controller.iconScale.value
-    // Fade-out kurz vor dem Impact, damit der Übergang zum Dial-Effekt weich wirkt.
+    // Crisper Fade-out unmittelbar vor dem Einschlag, damit Icon-Verschwinden und
+    // Dial-Impact als ein Moment wirken (vorher war eine sichtbare Lücke dazwischen).
     val alphaValue =
-        if (travel < 0.85f) 1f else (1f - (travel - 0.85f) / 0.15f).coerceIn(0f, 1f)
+        if (travel < 0.95f) 1f else (1f - (travel - 0.95f) / 0.05f).coerceIn(0f, 1f)
     // Glow wächst proportional zur Entfernung vom Button: auf dem Button fast unsichtbar,
     // im freien Flug deutlich sichtbar.
     val glowAlpha = travel.coerceIn(0f, 1f) * 0.9f

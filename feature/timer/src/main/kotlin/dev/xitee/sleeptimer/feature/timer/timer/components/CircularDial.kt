@@ -396,12 +396,32 @@ private fun DrawScope.drawImpactEffects(
     pulse: Float,
     accent: Color,
 ) {
-    // 1) Center flash: hell-gefüllter Kreis vom Dial-Zentrum, der kurz aufflashed
-    // und dann ausklingt. Füllt die Innenfläche des Dials während des Impact-Peaks.
+    // 1) Weißer Flash-„Bang" — schneller heller Burst exakt beim Einschlag. Geht
+    // zuerst hoch, dann sofort wieder runter. Gibt dem Impact seinen Knall-Moment.
+    val bangRise = (pulse / 0.08f).coerceIn(0f, 1f)
+    val bangFall = ((1f - pulse) / 0.45f).coerceIn(0f, 1f).let { it * it }
+    val bangAlpha = bangRise * bangFall * 0.9f
+    if (bangAlpha > 0f) {
+        val bangRadius = 12.dp.toPx() + (ringRadius * 0.5f) * pulse.coerceAtMost(0.5f) * 2f
+        drawCircle(
+            brush = Brush.radialGradient(
+                0f to Color.White.copy(alpha = bangAlpha),
+                0.45f to Color.White.copy(alpha = bangAlpha * 0.5f),
+                1f to Color.White.copy(alpha = 0f),
+                center = center,
+                radius = bangRadius,
+            ),
+            radius = bangRadius,
+            center = center,
+        )
+    }
+
+    // 2) Accent-Halo in der Dial-Innenfläche — länger anhaltender farbiger Glow
+    // hinter dem weißen Bang, fadet über die gesamte Impact-Phase aus.
     val flashInnerRadius = ringRadius - strokeWidth * 0.5f - 6.dp.toPx()
-    val flashEaseIn = (pulse / 0.2f).coerceIn(0f, 1f)
-    val flashEaseOut = ((1f - pulse) / 0.8f).coerceIn(0f, 1f)
-    val flashAlpha = (flashEaseIn * flashEaseOut) * 0.55f
+    val flashEaseIn = (pulse / 0.15f).coerceIn(0f, 1f)
+    val flashEaseOut = ((1f - pulse) / 0.85f).coerceIn(0f, 1f)
+    val flashAlpha = flashEaseIn * flashEaseOut * 0.55f
     if (flashAlpha > 0f) {
         drawCircle(
             brush = Brush.radialGradient(
@@ -415,18 +435,19 @@ private fun DrawScope.drawImpactEffects(
         )
     }
 
-    // 2) Drei konzentrische Shockwave-Ripples vom Dial-Zentrum, phase-shifted. Sie
-    // beginnen als dicker Ring nahe der Dial-Mitte und expandieren bis knapp über den
-    // äußeren Rand — der Puls „schwappt" also über das ganze Dial.
-    val rippleStart = ringRadius * 0.2f
-    val rippleEnd = ringRadius * 1.15f
+    // 3) Drei Shockwave-Ripples vom Dial-Zentrum. Wie Wasser-Wellen aus dem
+    // Einschlagspunkt — jeder Ring startet gestaffelt und läuft bis knapp an den
+    // inneren Ring-Rand. Bei 600ms Impact entsprechen die Offsets ungefähr den
+    // 0ms / 110ms / 220ms des Prototyps.
+    val rippleStart = 8.dp.toPx()
+    val rippleEnd = ringRadius * 0.95f
     for (offset in IMPACT_RIPPLE_OFFSETS) {
         val local = ((pulse - offset) / (1f - offset)).coerceIn(0f, 1f)
         if (local <= 0f) continue
         val rippleRadius = rippleStart + (rippleEnd - rippleStart) * local
         val rippleStroke =
             (6.dp.toPx() - 5.5f.dp.toPx() * local).coerceAtLeast(0.5f.dp.toPx())
-        val rippleAlpha = (1f - local) * 0.8f
+        val rippleAlpha = (1f - local) * 0.85f
         drawCircle(
             color = accent.copy(alpha = rippleAlpha),
             radius = rippleRadius,
@@ -435,12 +456,12 @@ private fun DrawScope.drawImpactEffects(
         )
     }
 
-    // 3) Ring-Alpha-Boost: heller Overlay über dem bestehenden Progress-Arc.
-    // Schneller Anstieg (0→0.3), langsames Ausklingen (0.3→1.0).
+    // 4) Ring-Alpha-Boost: heller Overlay über dem Progress-Arc.
+    // Sehr schneller Anstieg (0→0.12), langsames Ausklingen.
     val boostAlpha = when {
-        pulse < 0.3f -> pulse / 0.3f
-        else -> (1f - pulse) / 0.7f
-    }.coerceIn(0f, 1f) * 0.4f
+        pulse < 0.12f -> pulse / 0.12f
+        else -> (1f - pulse) / 0.88f
+    }.coerceIn(0f, 1f) * 0.5f
     if (boostAlpha > 0f) {
         drawCircle(
             color = accent.copy(alpha = boostAlpha),
@@ -451,4 +472,5 @@ private fun DrawScope.drawImpactEffects(
     }
 }
 
-private val IMPACT_RIPPLE_OFFSETS = floatArrayOf(0f, 0.12f, 0.24f)
+// Ripple-Offsets entsprechen ~0ms / 110ms / 220ms bei 600ms Impact (wie im Prototyp).
+private val IMPACT_RIPPLE_OFFSETS = floatArrayOf(0f, 0.18f, 0.37f)
