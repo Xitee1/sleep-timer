@@ -359,8 +359,6 @@ private fun TimerContent(
             }
 
             val launchPhase = launchController.phase
-            val iconLaunching = launchPhase == LaunchPhase.Launch ||
-                launchPhase == LaunchPhase.Impact
             // Ziel-Rotation des Icons relativ zur X-Achse (Icon zeigt standardmäßig rechts).
             val targetIconAngleDeg = remember(buttonCenter, dialCenter) {
                 if (buttonCenter == Offset.Zero || dialCenter == Offset.Zero) 0f
@@ -423,9 +421,6 @@ private fun TimerContent(
                 },
                 isPlusEnabled = !isRunning && dialState.totalMinutes < 300,
                 plusStepVisibleWhileRunning = true,
-                crouchProgress = launchController.crouchProgress.value,
-                iconLaunching = iconLaunching,
-                targetIconRotationDeg = targetIconAngleDeg,
                 buttonScale = launchController.buttonScale.value,
                 onButtonPositioned = { buttonCenter = it },
             )
@@ -468,9 +463,11 @@ private fun TimerContent(
 
         LaunchOverlay(
             controller = launchController,
+            isRunning = isRunning,
             buttonCenter = buttonCenter,
             dialCenter = dialCenter,
-            accentColor = appTheme().accent,
+            iconTint = appTheme().accentInk,
+            glowColor = appTheme().accent,
         )
     }
 }
@@ -547,9 +544,6 @@ private fun ActionRow(
     isMinusEnabled: Boolean,
     isPlusEnabled: Boolean,
     plusStepVisibleWhileRunning: Boolean,
-    crouchProgress: Float,
-    iconLaunching: Boolean,
-    targetIconRotationDeg: Float,
     buttonScale: Float,
     onButtonPositioned: (Offset) -> Unit,
 ) {
@@ -573,9 +567,6 @@ private fun ActionRow(
             hapticEnabled = hapticEnabled,
             onClick = onToggle,
             iconRotation = iconRotation,
-            crouchProgress = crouchProgress,
-            iconLaunching = iconLaunching,
-            targetIconRotationDeg = targetIconRotationDeg,
             buttonScale = buttonScale,
             modifier = Modifier.onGloballyPositioned { coords ->
                 onButtonPositioned(coords.boundsInRoot().center)

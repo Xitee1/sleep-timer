@@ -3,6 +3,8 @@ package dev.xitee.sleeptimer.feature.timer.timer.components
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
@@ -13,8 +15,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
@@ -42,10 +46,8 @@ class LaunchAnimationController(private val scope: CoroutineScope) {
     val iconRotationDeg = Animatable(0f)
     // Fortschritt der Icon-Reise: 0 = Button-Center, 1 = Dial-Center.
     val iconTravel = Animatable(0f)
-    // Icon-Scale während des Fluges (1.1 → 0.2 für Perspektivillusion).
+    // Icon-Scale: 1.0 idle, 0.9 crouch (komprimiert), 1.1 → 0.2 während des Fluges.
     val iconScale = Animatable(1f)
-    // Crouch-Intensität 0..1, steuert Button-Schrumpfung im PlayButton.
-    val crouchProgress = Animatable(0f)
     // Impact-Pulse 0..1, wird ans Dial weitergereicht.
     val impactPulse = Animatable(0f)
 
@@ -65,7 +67,7 @@ class LaunchAnimationController(private val scope: CoroutineScope) {
             val crouchSpec = tween<Float>(140, easing = crouchEasing)
             launch { buttonScale.animateTo(0.92f, crouchSpec) }
             launch { iconRotationDeg.animateTo(targetIconRotationDeg, crouchSpec) }
-            launch { crouchProgress.animateTo(1f, crouchSpec) }
+            launch { iconScale.animateTo(0.9f, crouchSpec) }
             delay(140)
 
             // Phase 2: Launch (140–560ms)
@@ -74,7 +76,7 @@ class LaunchAnimationController(private val scope: CoroutineScope) {
             val launchSpec = tween<Float>(420, easing = launchEasing)
             launch { buttonScale.animateTo(1f, tween(180)) }
             launch { iconTravel.animateTo(1f, launchSpec) }
-            // Icon scale: 1.0 → 1.1 → 0.2 across the flight (rough approximation using two segments).
+            // Icon scale: 0.9 → 1.1 → 0.2 across the flight.
             launch {
                 iconScale.animateTo(1.1f, tween(120, easing = launchEasing))
                 iconScale.animateTo(0.2f, tween(300, easing = launchEasing))
@@ -111,7 +113,6 @@ class LaunchAnimationController(private val scope: CoroutineScope) {
             iconRotationDeg.snapTo(0f)
             iconTravel.snapTo(0f)
             iconScale.snapTo(1f)
-            crouchProgress.snapTo(0f)
             impactPulse.snapTo(0f)
         }
         phase = LaunchPhase.Idle
@@ -124,37 +125,51 @@ fun rememberLaunchAnimationController(): LaunchAnimationController {
     return remember(scope) { LaunchAnimationController(scope) }
 }
 
+/**
+ * Overlay, das das Play-Icon durchgängig rendert: im Idle sitzt es zentriert auf dem
+ * Button (dunkles `iconTint` auf Accent-Background), während des Fluges reist es zur
+ * Dial-Mitte mit einem weichen Accent-Glow zur Sichtbarkeit vor dem dunklen Hintergrund.
+ * Im Impact ist es „eingeschlagen" und nicht mehr sichtbar (Dial-Effekte übernehmen).
+ * Während der Timer läuft, übernimmt das Stop-Icon im `PlayButton` via Crossfade.
+ */
 @Composable
 fun LaunchOverlay(
     controller: LaunchAnimationController,
+    isRunning: Boolean,
     buttonCenter: Offset,
     dialCenter: Offset,
-    accentColor: Color,
+    iconTint: Color,
+    glowColor: Color,
 ) {
-    // Nur während der Flug-Phase rendern. In Crouch ist das Icon noch im Button,
-    // in Impact ist es „eingeschlagen" (und die Dial-Effekte übernehmen).
-    if (controller.phase != LaunchPhase.Launch) return
-    // Warten bis beide Positionen gemessen wurden — sonst würde das Icon in Frame 1
-    // kurz bei (0,0) aufblitzen.
-    if (buttonCenter == Offset.Zero || dialCenter == Offset.Zero) return
+    val phase = controller.phase
+    val shouldRender = when (phase) {
+        LaunchPhase.Impact -> false
+        LaunchPhase.Idle -> !isRunning
+        LaunchPhase.Crouch, LaunchPhase.Launch -> true
+    }
+    if (!shouldRender) return
+    // Brauchen mindestens Button-Position; Dial-Position ist nur relevant sobald
+    // travel > 0 (wird in onToggle vor controller.launch() gegated).
+    if (buttonCenter == Offset.Zero) return
 
     val travel = controller.iconTravel.value
     val iconScaleValue = controller.iconScale.value
-    // Fade-out gegen Ende des Fluges, damit der Impact „nahtlos" übernimmt.
+    // Fade-out kurz vor dem Impact, damit der Übergang zum Dial-Effekt weich wirkt.
     val alphaValue =
         if (travel < 0.85f) 1f else (1f - (travel - 0.85f) / 0.15f).coerceIn(0f, 1f)
+    // Glow wächst proportional zur Entfernung vom Button: auf dem Button fast unsichtbar,
+    // im freien Flug deutlich sichtbar.
+    val glowAlpha = travel.coerceIn(0f, 1f) * 0.9f
 
     val currentX = buttonCenter.x + (dialCenter.x - buttonCenter.x) * travel
     val currentY = buttonCenter.y + (dialCenter.y - buttonCenter.y) * travel
 
-    Icon(
-        imageVector = Icons.Default.PlayArrow,
-        contentDescription = null,
-        tint = accentColor,
+    // Container-Box ist 60dp (Glow-Radius). Icon ist 34dp zentriert darin.
+    Box(
         modifier = Modifier
-            .size(34.dp)
+            .size(60.dp)
             .graphicsLayer {
-                val halfPx = 17.dp.toPx() // Icon ist 34dp; Center-Offset ist die Hälfte.
+                val halfPx = 30.dp.toPx()
                 translationX = currentX - halfPx
                 translationY = currentY - halfPx
                 rotationZ = controller.iconRotationDeg.value
@@ -162,5 +177,25 @@ fun LaunchOverlay(
                 scaleY = iconScaleValue
                 alpha = alphaValue
             },
-    )
+        contentAlignment = Alignment.Center,
+    ) {
+        if (glowAlpha > 0f) {
+            Canvas(modifier = Modifier.size(60.dp)) {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        0f to glowColor.copy(alpha = glowAlpha),
+                        1f to glowColor.copy(alpha = 0f),
+                        radius = size.minDimension / 2f,
+                    ),
+                    radius = size.minDimension / 2f,
+                )
+            }
+        }
+        Icon(
+            imageVector = Icons.Default.PlayArrow,
+            contentDescription = null,
+            tint = iconTint,
+            modifier = Modifier.size(34.dp),
+        )
+    }
 }

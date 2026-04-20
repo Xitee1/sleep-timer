@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -30,10 +29,19 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.xitee.sleeptimer.feature.timer.R
 import dev.xitee.sleeptimer.feature.timer.theme.appTheme
 
+/**
+ * Der Play/Stop-Button. Das Play-Icon wird NICHT hier gezeichnet — es lebt im
+ * `LaunchOverlay`, um kontinuierlich animiert zu werden (Crouch, Flug, Impact)
+ * ohne Wechsel zwischen zwei Icon-Instanzen. Hier wird nur das Stop-Icon
+ * gerendert (via Crossfade), sobald der Timer läuft. Im Idle-Zustand ist die
+ * Button-Fläche leer und der Overlay-Icon sitzt visuell zentriert darauf.
+ */
 @Composable
 fun PlayButton(
     isRunning: Boolean,
@@ -41,9 +49,6 @@ fun PlayButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     iconRotation: Float = 0f,
-    crouchProgress: Float = 0f,
-    iconLaunching: Boolean = false,
-    targetIconRotationDeg: Float = 0f,
     buttonScale: Float = 1f,
 ) {
     val theme = appTheme()
@@ -69,12 +74,9 @@ fun PlayButton(
         Modifier
     }
 
-    // Icon rotation during crouch: 0° → targetIconRotationDeg as crouchProgress goes 0→1.
-    // `iconRotation` (orientation-based) is added on top so landscape still rotates the
-    // idle icon correctly.
-    val crouchRotation = targetIconRotationDeg * crouchProgress.coerceIn(0f, 1f)
-    // Icon scale during crouch: 1.0 → 0.9
-    val crouchIconScale = 1f - 0.1f * crouchProgress.coerceIn(0f, 1f)
+    val description = stringResource(
+        if (isRunning) R.string.stop_timer else R.string.start_timer,
+    )
 
     Box(
         modifier = modifier
@@ -90,7 +92,8 @@ fun PlayButton(
                     view.performHapticFeedback(playStopHaptic)
                 }
                 onClick()
-            },
+            }
+            .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
         Canvas(modifier = Modifier.size(84.dp)) {
@@ -113,25 +116,18 @@ fun PlayButton(
         Crossfade(
             targetState = isRunning,
             animationSpec = tween(durationMillis = 180),
-            label = "playIcon",
+            label = "stopIconFade",
         ) { running ->
-            val icon: ImageVector = if (running) Icons.Default.Stop else Icons.Default.PlayArrow
-            val desc = stringResource(if (running) R.string.stop_timer else R.string.start_timer)
-            // Play icon hides while the launch overlay is flying.
-            val iconAlpha = if (!running && iconLaunching) 0f else 1f
-            Icon(
-                imageVector = icon,
-                contentDescription = desc,
-                tint = theme.accentInk,
-                modifier = Modifier
-                    .size(34.dp)
-                    .graphicsLayer {
-                        rotationZ = iconRotation + (if (!running) crouchRotation else 0f)
-                        scaleX = if (!running) crouchIconScale else 1f
-                        scaleY = if (!running) crouchIconScale else 1f
-                        alpha = iconAlpha
-                    },
-            )
+            if (running) {
+                Icon(
+                    imageVector = Icons.Default.Stop,
+                    contentDescription = null,
+                    tint = theme.accentInk,
+                    modifier = Modifier
+                        .size(34.dp)
+                        .graphicsLayer { rotationZ = iconRotation },
+                )
+            }
         }
     }
 }

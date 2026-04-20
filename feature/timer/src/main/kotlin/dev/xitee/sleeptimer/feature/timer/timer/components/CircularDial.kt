@@ -207,7 +207,6 @@ fun CircularDial(
                     center = center,
                     ringRadius = radius,
                     strokeWidth = strokeWidth,
-                    knobFraction = ringFraction,
                     pulse = impactPulse.coerceIn(0f, 1f),
                     accent = theme.accent,
                 )
@@ -394,42 +393,50 @@ private fun DrawScope.drawImpactEffects(
     center: Offset,
     ringRadius: Float,
     strokeWidth: Float,
-    knobFraction: Float,
     pulse: Float,
     accent: Color,
 ) {
-    // Knob-Position reproducing drawKnob's math.
-    val angle = knobFraction * (2f * Math.PI.toFloat()) - (Math.PI.toFloat() / 2f)
-    val kx = center.x + ringRadius * cos(angle)
-    val ky = center.y + ringRadius * sin(angle)
+    // 1) Center flash: hell-gefüllter Kreis vom Dial-Zentrum, der kurz aufflashed
+    // und dann ausklingt. Füllt die Innenfläche des Dials während des Impact-Peaks.
+    val flashInnerRadius = ringRadius - strokeWidth * 0.5f - 6.dp.toPx()
+    val flashEaseIn = (pulse / 0.2f).coerceIn(0f, 1f)
+    val flashEaseOut = ((1f - pulse) / 0.8f).coerceIn(0f, 1f)
+    val flashAlpha = (flashEaseIn * flashEaseOut) * 0.55f
+    if (flashAlpha > 0f) {
+        drawCircle(
+            brush = Brush.radialGradient(
+                0f to accent.copy(alpha = flashAlpha),
+                1f to accent.copy(alpha = 0f),
+                center = center,
+                radius = flashInnerRadius,
+            ),
+            radius = flashInnerRadius,
+            center = center,
+        )
+    }
 
-    // 1) Knob aura bloom — radius expands, alpha fades.
-    val auraRadius = 16.dp.toPx() + (60.dp.toPx() - 16.dp.toPx()) * pulse
-    val auraAlpha = (1f - pulse).coerceAtLeast(0f) * 0.55f
-    drawCircle(
-        color = accent.copy(alpha = auraAlpha),
-        radius = auraRadius,
-        center = Offset(kx, ky),
-    )
-
-    // 2) Three concentric shockwave ripples, phase-shifted.
-    // Each ripple has its own normalized lifetime within the impact pulse.
+    // 2) Drei konzentrische Shockwave-Ripples vom Dial-Zentrum, phase-shifted. Sie
+    // beginnen als dicker Ring nahe der Dial-Mitte und expandieren bis knapp über den
+    // äußeren Rand — der Puls „schwappt" also über das ganze Dial.
+    val rippleStart = ringRadius * 0.2f
+    val rippleEnd = ringRadius * 1.15f
     for (offset in IMPACT_RIPPLE_OFFSETS) {
         val local = ((pulse - offset) / (1f - offset)).coerceIn(0f, 1f)
         if (local <= 0f) continue
-        val rippleRadius = 10.dp.toPx() + (70.dp.toPx() - 10.dp.toPx()) * local
-        val rippleStroke = (6.dp.toPx() - 5.5f.dp.toPx() * local).coerceAtLeast(0.5f.dp.toPx())
-        val rippleAlpha = (1f - local) * 0.9f
+        val rippleRadius = rippleStart + (rippleEnd - rippleStart) * local
+        val rippleStroke =
+            (6.dp.toPx() - 5.5f.dp.toPx() * local).coerceAtLeast(0.5f.dp.toPx())
+        val rippleAlpha = (1f - local) * 0.8f
         drawCircle(
             color = accent.copy(alpha = rippleAlpha),
             radius = rippleRadius,
-            center = Offset(kx, ky),
+            center = center,
             style = Stroke(width = rippleStroke),
         )
     }
 
-    // 3) Ring-Alpha-Boost: bright flash layered over the existing progress arc.
-    // Eases in quickly (0→0.3) and fades over the rest of the pulse.
+    // 3) Ring-Alpha-Boost: heller Overlay über dem bestehenden Progress-Arc.
+    // Schneller Anstieg (0→0.3), langsames Ausklingen (0.3→1.0).
     val boostAlpha = when {
         pulse < 0.3f -> pulse / 0.3f
         else -> (1f - pulse) / 0.7f
