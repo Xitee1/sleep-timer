@@ -44,6 +44,7 @@ fun PlayButton(
     crouchProgress: Float = 0f,
     iconLaunching: Boolean = false,
     targetIconRotationDeg: Float = 0f,
+    buttonScale: Float = 1f,
 ) {
     val theme = appTheme()
     val view = LocalView.current
@@ -68,8 +69,6 @@ fun PlayButton(
         Modifier
     }
 
-    // Linear interpolate button scale: 1.0 at crouchProgress=0, 0.92 at crouchProgress=1
-    val buttonScale = 1f - 0.08f * crouchProgress.coerceIn(0f, 1f)
     // Icon rotation during crouch: 0° → targetIconRotationDeg as crouchProgress goes 0→1.
     // `iconRotation` (orientation-based) is added on top so landscape still rotates the
     // idle icon correctly.
