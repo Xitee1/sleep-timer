@@ -20,6 +20,8 @@
     <string name="category_appearance">Appearance</string>
     <string name="stars_title">Stars background</string>
     <string name="stars_description">Drifting starfield behind the dial</string>
+    <string name="launch_animation_title">Launch animation</string>
+    <string name="launch_animation_description">Rocket-style play button animation when starting the timer</string>
     <string name="stars_unavailable">Not available on this theme</string>
     <string name="category_sleep_timer">Sleep Timer</string>
     <string name="playback_title">Playback</string>

@@ -43,6 +43,7 @@ fun CircularDial(
     onMinutesChanged: (Int) -> Unit,
     onMinutesCommitted: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    impactPulse: Float = 0f,
 ) {
     val theme = appTheme()
     val view = LocalView.current
@@ -200,6 +201,16 @@ fun CircularDial(
                 theme = theme,
                 dimmed = isRunning && !state.isDragging,
             )
+
+            if (impactPulse > 0f) {
+                drawImpactEffects(
+                    center = center,
+                    ringRadius = radius,
+                    strokeWidth = strokeWidth,
+                    pulse = impactPulse.coerceIn(0f, 1f),
+                    accent = theme.accent,
+                )
+            }
         }
     }
 }
@@ -377,3 +388,70 @@ private fun DrawScope.drawKnob(
         center = Offset(kx, ky),
     )
 }
+
+private fun DrawScope.drawImpactEffects(
+    center: Offset,
+    ringRadius: Float,
+    strokeWidth: Float,
+    pulse: Float,
+    accent: Color,
+) {
+    // 1) Weißer Flash-„Bang" vom Dial-Zentrum — kurz, hell, weitet sich auf ~80dp.
+    // 1:1 nach Prototyp `impactFlash`: r 6dp → 80dp, opacity 0.95 → 0.
+    val bangProgress = (pulse / 0.63f).coerceIn(0f, 1f) // expansion completes at ~380ms of 600ms
+    val bangRadius = 6.dp.toPx() + (80.dp.toPx() - 6.dp.toPx()) * bangProgress
+    val bangAlpha = (1f - bangProgress).coerceAtLeast(0f) * 0.95f
+    if (bangAlpha > 0f) {
+        drawCircle(
+            brush = Brush.radialGradient(
+                0f to Color.White.copy(alpha = bangAlpha),
+                0.5f to Color.White.copy(alpha = bangAlpha * 0.45f),
+                1f to Color.White.copy(alpha = 0f),
+                center = center,
+                radius = bangRadius,
+            ),
+            radius = bangRadius,
+            center = center,
+        )
+    }
+
+    // 2) Drei Shockwave-Ringe, die vom Progress-Ring nach außen schwappen — wie
+    // wenn der Ring selbst Energie abgibt. 1:1 nach Prototyp: r 130 → 210 (= +62%
+    // über ringRadius), Stroke schrumpft von ~8 auf ~0.5dp während der Expansion.
+    // Offsets ~0ms/110ms/220ms bei 600ms Impact.
+    val rippleStart = ringRadius
+    val rippleEnd = ringRadius + 32.dp.toPx()
+    val rippleStrokeStart = 8.dp.toPx()
+    val rippleStrokeEnd = 0.5f.dp.toPx()
+    for (offset in IMPACT_RIPPLE_OFFSETS) {
+        val local = ((pulse - offset) / (1f - offset)).coerceIn(0f, 1f)
+        if (local <= 0f) continue
+        val rippleRadius = rippleStart + (rippleEnd - rippleStart) * local
+        val rippleStroke = rippleStrokeStart + (rippleStrokeEnd - rippleStrokeStart) * local
+        val rippleAlpha = (1f - local) * 0.9f
+        drawCircle(
+            color = accent.copy(alpha = rippleAlpha),
+            radius = rippleRadius,
+            center = center,
+            style = Stroke(width = rippleStroke),
+        )
+    }
+
+    // 3) Ring-Glow-Boost: das Outer-Glow-Feld um den Progress-Ring intensiviert
+    // sich kurz („igniting"-Phase). Schneller Anstieg, langsames Ausklingen.
+    val boostAlpha = when {
+        pulse < 0.12f -> pulse / 0.12f
+        else -> (1f - pulse) / 0.88f
+    }.coerceIn(0f, 1f) * 0.5f
+    if (boostAlpha > 0f) {
+        drawCircle(
+            color = accent.copy(alpha = boostAlpha),
+            radius = ringRadius,
+            center = center,
+            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+        )
+    }
+}
+
+// Ripple-Offsets entsprechen ~0ms / 110ms / 220ms bei 600ms Impact (wie im Prototyp).
+private val IMPACT_RIPPLE_OFFSETS = floatArrayOf(0f, 0.18f, 0.37f)
