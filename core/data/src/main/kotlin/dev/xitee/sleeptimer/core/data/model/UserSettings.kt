@@ -12,4 +12,5 @@ data class UserSettings(
     val starsEnabled: Boolean = true,
     val stepMinutes: Int = 5,
     val presetMinutes: Int = 15,
+    val launchAnimationEnabled: Boolean = true,
 )
