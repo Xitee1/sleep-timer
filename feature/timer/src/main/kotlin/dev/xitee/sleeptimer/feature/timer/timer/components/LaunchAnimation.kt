@@ -2,9 +2,6 @@ package dev.xitee.sleeptimer.feature.timer.timer.components
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
@@ -75,45 +72,23 @@ class LaunchAnimationController(private val scope: CoroutineScope) {
             launch { iconScale.animateTo(0.9f, crouchSpec) }
             delay(140)
 
-            // Phase 2: Launch (140–560ms, 420ms).
-            //
-            // Pacing in vier Teilen:
-            //   1. Lift-off (0–100ms): ease-in-out, Icon hebt ab auf 22% Strecke.
-            //      Decceleriert am Ende → Velocity nahe Null.
-            //   2. Hold (100–135ms): 35ms Standstill auf 22% — der „Hang" direkt nach
-            //      dem Verlassen des Buttons, sichtbar aber kurz.
-            //   3. Cruise (135–336ms): linearer, schneller Flug zu 84% (spürbar
-            //      höhere Konstantgeschwindigkeit als in Phase 1).
-            //   4. Approach (336–420ms): linearer Rest zum Einschlag auf 100%.
-            //
-            // Der Hold erzeugt die Pause ohne die „Vollbremsung"-Qualität einer
-            // geketteten ease-in-out Sequenz. Danach springt die Geschwindigkeit
-            // abrupt auf Cruise-Speed — das gibt der Launch-Phase ihren Power-Burst.
+            // Phase 2: Launch (140–560ms, 420ms) — drei Segmente mit ease-in-out pro
+            // Segment. Waypoints: Travel 0 → 0.28 (30%) → 0.84 (80%) → 1.0 (100%),
+            // Scale 0.9 → 1.1 → 0.9 → 0.5. An den Segmentgrenzen fällt die Velocity
+            // nahezu auf Null (ease-out des einen, ease-in des nächsten) — das
+            // erzeugt die charakteristischen „Hang"-Momente.
             phase = LaunchPhase.Launch
+            val launchEasing = CubicBezierEasing(0.4f, 0f, 0.2f, 1f)
             launch { buttonScale.animateTo(1f, tween(180)) }
             launch {
-                iconTravel.animateTo(
-                    targetValue = 1f,
-                    animationSpec = keyframes {
-                        durationMillis = 420
-                        0.22f at 100 using FastOutSlowInEasing
-                        0.22f at 135 using LinearEasing
-                        0.84f at 336 using LinearEasing
-                    },
-                )
+                iconTravel.animateTo(0.28f, tween(126, easing = launchEasing))
+                iconTravel.animateTo(0.84f, tween(210, easing = launchEasing))
+                iconTravel.animateTo(1f, tween(84, easing = launchEasing))
             }
             launch {
-                iconScale.animateTo(
-                    targetValue = 0.5f,
-                    animationSpec = keyframes {
-                        durationMillis = 420
-                        // Scale peaked at 1.1 während Lift-off, hält durch den Hang,
-                        // schrumpft dann im Cruise auf 0.9 und am Ende perspektivisch auf 0.5.
-                        1.1f at 100 using FastOutSlowInEasing
-                        1.1f at 135 using LinearEasing
-                        0.9f at 336 using LinearEasing
-                    },
-                )
+                iconScale.animateTo(1.1f, tween(126, easing = launchEasing))
+                iconScale.animateTo(0.9f, tween(210, easing = launchEasing))
+                iconScale.animateTo(0.5f, tween(84, easing = launchEasing))
             }
             delay(420)
 
