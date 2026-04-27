@@ -14,8 +14,6 @@ scmVersion {
     }
 }
 
-val resolvedScmVersion: String = scmVersion.version
-
 allprojects {
-    version = resolvedScmVersion
+    version = rootProject.scmVersion.version
 }
