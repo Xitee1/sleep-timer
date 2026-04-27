@@ -5,4 +5,15 @@ plugins {
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.hilt.android) apply false
     alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.axion.release)
+}
+
+scmVersion {
+    tag {
+        prefix.set("v")
+    }
+}
+
+allprojects {
+    version = rootProject.scmVersion.version
 }
