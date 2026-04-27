@@ -12,6 +12,7 @@ androidxCoreKtx = "1.18.0"
 androidxActivityCompose = "1.13.0"
 kotlinxSerializationJson = "1.11.0"
 shizuku = "13.1.5"
+axionRelease = "1.18.16"
 
 [libraries]
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
@@ -49,3 +50,4 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+axion-release = { id = "pl.allegro.tech.build.axion-release", version.ref = "axionRelease" }

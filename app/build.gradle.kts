@@ -6,6 +6,10 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+val gitCommitCount: Provider<Int> = providers.exec {
+    commandLine("git", "rev-list", "--count", "HEAD")
+}.standardOutput.asText.map { it.trim().toInt() }
+
 android {
     namespace = "dev.xitee.sleeptimer"
     compileSdk = 36
@@ -14,9 +18,8 @@ android {
         applicationId = "dev.xitee.sleeptimer"
         minSdk = 26
         targetSdk = 36
-        // Schema: major * 100000 + minor * 1000 + patch * 10 (last digit reserved for hotfixes)
-        versionCode = 1 * 100000 + 0 * 1000 + 1 * 10
-        versionName = "1.0.1"
+        versionCode = gitCommitCount.get()
+        versionName = project.version.toString()
     }
 
     signingConfigs {

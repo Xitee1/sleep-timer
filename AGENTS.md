@@ -12,7 +12,7 @@ Toolchain: JDK 17, Android SDK platform 36 (`compileSdk`/`targetSdk`), `minSdk =
 - `./gradlew testDebugUnitTest` — unit tests (currently no test sources exist; CI runs the task anyway to catch new ones)
 - Single-module variants: `./gradlew :feature:timer:lintDebug`, `./gradlew :core:service:testDebugUnitTest`, etc.
 
-`versionCode` in `app/build.gradle.kts` follows the schema `major*100_000 + minor*1_000 + patch*10`; the last digit is reserved for hotfixes. Bump both `versionCode` and `versionName` together. Release tags named `v*` trigger `.github/workflows/release.yml`, which builds a signed APK and publishes a GitHub Release.
+Versioning is dynamic via the [axion-release](https://github.com/allegro/axion-release-plugin) plugin (applied at the root). `versionName` is derived from the latest `v*` git tag (`project.version`); `versionCode` is the `git rev-list --count HEAD` commit count. Don't hand-edit either field in `app/build.gradle.kts`. To cut a release, push a new `v<x.y.z>` tag — `.github/workflows/release.yml` builds a signed APK and publishes the GitHub Release. CI checkouts must use `fetch-depth: 0` so tags and full history are visible.
 
 ## Module architecture
 
