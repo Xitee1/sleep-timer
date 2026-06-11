@@ -6,9 +6,16 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-val gitCommitCount: Provider<Int> = providers.exec {
-    commandLine("git", "rev-list", "--count", "HEAD")
-}.standardOutput.asText.map { it.trim().toInt() }
+// Schema: major * 100000 + minor * 1000 + patch * 10, derived from the axion-release tag
+// version so versionCode stays monotonic with already-published releases (v1.0.1 = 100010).
+// Axion only accepts SemVer tags (v<major>.<minor>.<patch>); a hotfix is the next patch tag.
+fun versionCodeFrom(version: String): Int {
+    val parts = version.substringBefore("-").split(".").map { it.toInt() }
+    require(parts.size == 3 && parts[1] <= 99 && parts[2] <= 99) {
+        "Cannot derive versionCode from version '$version'"
+    }
+    return parts[0] * 100_000 + parts[1] * 1_000 + parts[2] * 10
+}
 
 android {
     namespace = "dev.xitee.sleeptimer"
@@ -18,7 +25,7 @@ android {
         applicationId = "dev.xitee.sleeptimer"
         minSdk = 26
         targetSdk = 36
-        versionCode = gitCommitCount.get()
+        versionCode = versionCodeFrom(project.version.toString())
         versionName = project.version.toString()
     }
 

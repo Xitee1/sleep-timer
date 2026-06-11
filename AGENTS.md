@@ -12,7 +12,7 @@ Toolchain: JDK 17, Android SDK platform 36 (`compileSdk`/`targetSdk`), `minSdk =
 - `./gradlew testDebugUnitTest` — unit tests (currently no test sources exist; CI runs the task anyway to catch new ones)
 - Single-module variants: `./gradlew :feature:timer:lintDebug`, `./gradlew :core:service:testDebugUnitTest`, etc.
 
-Versioning is dynamic via the [axion-release](https://github.com/allegro/axion-release-plugin) plugin (applied at the root). `versionName` is derived from the latest `v*` git tag (`project.version`); `versionCode` is the `git rev-list --count HEAD` commit count. Don't hand-edit either field in `app/build.gradle.kts`. To cut a release, push a new `v<x.y.z>` tag — `.github/workflows/release.yml` builds a signed APK and publishes the GitHub Release. CI checkouts must use `fetch-depth: 0` so tags and full history are visible.
+Versioning is dynamic via the [axion-release](https://github.com/allegro/axion-release-plugin) plugin (applied at the root). `versionName` is derived from the latest `v*` git tag (`project.version`); `versionCode` is computed from that same tag version with the schema `major*100_000 + minor*1_000 + patch*10` (tag `v1.0.1` → `100010`), keeping it monotonic with releases published before dynamic versioning. Tags must be plain SemVer after the `v` prefix — axion-release fails the build on anything else (e.g. `v1.0.1.1`), so a hotfix is just the next patch tag. Don't hand-edit either field in `app/build.gradle.kts`. To cut a release, push a new `v<x.y.z>` tag — `.github/workflows/release.yml` builds a signed APK and publishes the GitHub Release. CI checkouts must use `fetch-depth: 0` so tags and full history are visible.
 
 ## Module architecture
 
