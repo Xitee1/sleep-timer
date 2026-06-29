@@ -3,6 +3,9 @@
 > [!Warning]
 > Because Google decided to lock down Android as of September 2026, this app will stop working soon (without a setting that could be removed at any time). If you want to avoid that, sign the petition and hope for the best. For more details read here: https://keepandroidopen.org/
 
+> [!Note]
+> This project is not abandoned, I'm just waiting for Claude Fable to come back. It's in a pretty solid state though.
+
 A minimal, privacy-respecting sleep timer for Android. Starts a countdown that
 stops media playback, fades audio out, and optionally locks the screen when it
 ends — so you can fall asleep without your phone draining the battery or
