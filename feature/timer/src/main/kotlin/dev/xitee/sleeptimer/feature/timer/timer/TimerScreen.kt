@@ -38,7 +38,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -57,13 +56,14 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.xitee.sleeptimer.core.data.model.MAX_TIMER_MINUTES
 import dev.xitee.sleeptimer.core.data.util.remainingMillisToDisplayMinutes
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import dev.xitee.sleeptimer.feature.timer.R
 import dev.xitee.sleeptimer.feature.timer.settings.components.DeviceAdminRequiredDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.ShizukuRequiredDialog
 import dev.xitee.sleeptimer.feature.timer.theme.AppThemes
-import dev.xitee.sleeptimer.feature.timer.theme.LocalAppTheme
+import dev.xitee.sleeptimer.feature.timer.theme.ProvideAppTheme
 import dev.xitee.sleeptimer.feature.timer.theme.appTheme
 import dev.xitee.sleeptimer.feature.timer.theme.rememberAnimatedAppTheme
 import dev.xitee.sleeptimer.feature.timer.timer.components.CircularDial
@@ -82,7 +82,7 @@ fun TimerScreen(
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val animatedTheme = rememberAnimatedAppTheme(AppThemes.byId(settings.theme))
-    CompositionLocalProvider(LocalAppTheme provides animatedTheme) {
+    ProvideAppTheme(animatedTheme) {
         TimerContent(
             onNavigateToSettings = onNavigateToSettings,
             viewModel = viewModel,
@@ -368,7 +368,7 @@ private fun TimerContent(
                         val step = settings.stepMinutes
                         val current = dialState.totalMinutes
                         val next = (current / step + 1) * step
-                        viewModel.commitMinutes(next.coerceAtMost(300))
+                        viewModel.commitMinutes(next.coerceAtMost(MAX_TIMER_MINUTES))
                     }
                 },
                 isMinusEnabled = if (isRunning) {
@@ -376,8 +376,11 @@ private fun TimerContent(
                 } else {
                     dialState.totalMinutes > 1
                 },
-                isPlusEnabled = !isRunning && dialState.totalMinutes < 300,
-                plusStepVisibleWhileRunning = true,
+                isPlusEnabled = if (isRunning) {
+                    runningRemainingSeconds < MAX_TIMER_MINUTES * 60
+                } else {
+                    dialState.totalMinutes < MAX_TIMER_MINUTES
+                },
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -489,7 +492,6 @@ private fun ActionRow(
     onPlusStep: () -> Unit,
     isMinusEnabled: Boolean,
     isPlusEnabled: Boolean,
-    plusStepVisibleWhileRunning: Boolean,
 ) {
     androidx.compose.foundation.layout.Row(
         modifier = Modifier
@@ -517,7 +519,7 @@ private fun ActionRow(
             contentDescription = stringResource(R.string.cd_step_plus),
             onClick = onPlusStep,
             hapticEnabled = hapticEnabled,
-            enabled = if (isRunning) plusStepVisibleWhileRunning else isPlusEnabled,
+            enabled = isPlusEnabled,
             iconRotation = iconRotation,
         )
     }

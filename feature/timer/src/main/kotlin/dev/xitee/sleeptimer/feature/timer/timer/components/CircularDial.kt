@@ -15,6 +15,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +30,7 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import dev.xitee.sleeptimer.core.data.model.MAX_TIMER_MINUTES
 import dev.xitee.sleeptimer.feature.timer.theme.AppTheme
 import dev.xitee.sleeptimer.feature.timer.theme.appTheme
 import kotlin.math.cos
@@ -55,6 +57,15 @@ fun CircularDial(
     }
     var lastReportedMinutes by remember { mutableStateOf(state.totalMinutes) }
 
+    // pointerInput(Unit) never restarts, so plain parameter captures inside the
+    // gesture lambdas freeze at the value they had when the pointer coroutine first
+    // launched. Read everything that changes over time through rememberUpdatedState.
+    val currentIsRunning by rememberUpdatedState(isRunning)
+    val currentRunningMinutes by rememberUpdatedState(runningMinutes)
+    val currentHapticEnabled by rememberUpdatedState(hapticEnabled)
+    val currentOnMinutesChanged by rememberUpdatedState(onMinutesChanged)
+    val currentOnMinutesCommitted by rememberUpdatedState(onMinutesCommitted)
+
     val targetMinutes: Float = if (isRunning && !state.isDragging) {
         runningMinutes
     } else {
@@ -77,7 +88,7 @@ fun CircularDial(
     val displayMinutes: Float = animatedMinutes.value
     val minuteInRing = ((displayMinutes % 60f) + 60f) % 60f
     val ringFraction = minuteInRing / 60f
-    val hoursComplete = (displayMinutes / 60f).toInt().coerceIn(0, 5)
+    val hoursComplete = (displayMinutes / 60f).toInt().coerceIn(0, state.maxRevolutions)
 
     Box(
         modifier = modifier.aspectRatio(1f),
@@ -92,9 +103,9 @@ fun CircularDial(
                             // While running, dialState tracks the last idle preset, not
                             // the ticking remaining time. Seed it to the currently-shown
                             // minutes so the drag continues from the right position.
-                            if (isRunning) {
-                                val seed = kotlin.math.ceil(runningMinutes.coerceAtLeast(0f))
-                                    .toInt().coerceIn(1, 300)
+                            if (currentIsRunning) {
+                                val seed = kotlin.math.ceil(currentRunningMinutes.coerceAtLeast(0f))
+                                    .toInt().coerceIn(1, MAX_TIMER_MINUTES)
                                 state.setMinutes(seed)
                             }
                             state.onDragStart(
@@ -113,18 +124,18 @@ fun CircularDial(
                                 y = change.position.y,
                             )
                             if (state.totalMinutes != lastReportedMinutes) {
-                                if (hapticEnabled) {
+                                if (currentHapticEnabled) {
                                     view.performHapticFeedback(tickHapticType)
                                 }
                                 lastReportedMinutes = state.totalMinutes
-                                onMinutesChanged(state.totalMinutes)
+                                currentOnMinutesChanged(state.totalMinutes)
                             }
                         },
                         onDragEnd = {
                             state.onDragEnd()
                             // Persist only at drag end to avoid DataStore write flood
                             // during the gesture (30+ writes/sec otherwise).
-                            onMinutesCommitted(state.totalMinutes)
+                            currentOnMinutesCommitted(state.totalMinutes)
                         },
                     )
                 },
@@ -191,7 +202,7 @@ fun CircularDial(
                 )
             }
 
-            drawHourDots(center, radius, hoursComplete, theme)
+            drawHourDots(center, radius, hoursComplete, state.maxRevolutions, theme)
 
             drawKnob(
                 center = center,
@@ -323,11 +334,17 @@ private fun DrawScope.drawProgressArc(
     }
 }
 
-private fun DrawScope.drawHourDots(center: Offset, radius: Float, hoursComplete: Int, theme: AppTheme) {
+private fun DrawScope.drawHourDots(
+    center: Offset,
+    radius: Float,
+    hoursComplete: Int,
+    totalDots: Int,
+    theme: AppTheme,
+) {
     val rDot = radius - 42.dp.toPx()
-    for (i in 0 until 5) {
+    for (i in 0 until totalDots) {
         val active = i < hoursComplete
-        val angle = (i / 5f) * (2f * Math.PI.toFloat()) - (Math.PI.toFloat() / 2f)
+        val angle = (i / totalDots.toFloat()) * (2f * Math.PI.toFloat()) - (Math.PI.toFloat() / 2f)
         val x = center.x + rDot * cos(angle)
         val y = center.y + rDot * sin(angle)
         drawCircle(

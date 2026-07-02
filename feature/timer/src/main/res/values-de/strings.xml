@@ -87,6 +87,7 @@
     <string name="screen_method_soft_description">Simuliert Power-Taste. Biometrische Entsperrung bleibt aktiv.</string>
     <string name="screen_method_active_hard">Display ausschalten - Geräteadministrator</string>
     <string name="screen_method_active_soft">Display ausschalten - Shizuku</string>
+    <string name="screen_method_hard_revoked">Display ausschalten - Geräteadministrator-Berechtigung fehlt</string>
 
     <!-- Über die App -->
     <string name="category_about">Über</string>

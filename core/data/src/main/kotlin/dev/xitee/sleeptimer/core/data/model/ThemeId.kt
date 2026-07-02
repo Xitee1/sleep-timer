@@ -13,6 +13,6 @@ enum class ThemeId {
         val Default: ThemeId = Midnight
 
         fun fromStorage(value: String?): ThemeId =
-            values().firstOrNull { it.name == value } ?: Default
+            entries.firstOrNull { it.name == value } ?: Default
     }
 }
