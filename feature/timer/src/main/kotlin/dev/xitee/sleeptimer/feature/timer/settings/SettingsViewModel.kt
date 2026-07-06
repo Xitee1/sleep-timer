@@ -1,14 +1,13 @@
 package dev.xitee.sleeptimer.feature.timer.settings
 
-import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
 import dev.xitee.sleeptimer.core.data.model.ThemeId
 import dev.xitee.sleeptimer.core.data.repository.SettingsRepository
+import dev.xitee.sleeptimer.core.service.screen.ScreenLockHelper
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,15 +21,8 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val shizukuManager: ShizukuManager,
-    @ApplicationContext private val context: Context,
+    private val screenLockHelper: ScreenLockHelper,
 ) : ViewModel() {
-
-    private val devicePolicyManager =
-        context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-    private val adminComponent = ComponentName(
-        context,
-        "dev.xitee.sleeptimer.receiver.SleepTimerDeviceAdminReceiver",
-    )
 
     // Tick to re-query isAdminActive. Admin grants can be revoked from system Settings
     // without any callback into the app, so nothing else drives a refresh. Bumped from
@@ -47,13 +39,13 @@ class SettingsViewModel @Inject constructor(
             SettingsUiState(
                 settings = settings,
                 shizukuState = shizukuState,
+                isDeviceAdminActive = screenLockHelper.isAdminActive(),
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    fun isDeviceAdminActive(): Boolean =
-        devicePolicyManager.isAdminActive(adminComponent)
+    fun isDeviceAdminActive(): Boolean = screenLockHelper.isAdminActive()
 
-    fun getAdminComponent(): ComponentName = adminComponent
+    fun getAdminComponent(): ComponentName = screenLockHelper.adminComponent
 
     fun refreshShizuku() = shizukuManager.refresh()
 
@@ -98,6 +90,10 @@ class SettingsViewModel @Inject constructor(
 
     fun updateStarsEnabled(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.updateStarsEnabled(enabled) }
+    }
+
+    fun updateAutoRotateMode(mode: AutoRotateMode) {
+        viewModelScope.launch { settingsRepository.updateAutoRotateMode(mode) }
     }
 
     fun updateStepMinutes(minutes: Int) {

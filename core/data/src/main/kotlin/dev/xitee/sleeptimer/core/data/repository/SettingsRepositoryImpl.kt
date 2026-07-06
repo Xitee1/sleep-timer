@@ -5,9 +5,12 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
+import dev.xitee.sleeptimer.core.data.model.MAX_TIMER_MINUTES
 import dev.xitee.sleeptimer.core.data.model.ThemeId
 import dev.xitee.sleeptimer.core.data.model.UserSettings
 import dev.xitee.sleeptimer.core.data.util.isSystemReduceMotionEnabled
@@ -15,8 +18,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -36,6 +41,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val HAPTIC_FEEDBACK = booleanPreferencesKey("haptic_feedback")
         val THEME = stringPreferencesKey("theme")
         val STARS_ENABLED = booleanPreferencesKey("stars_enabled")
+        val AUTO_ROTATE_MODE = stringPreferencesKey("auto_rotate_mode")
         val STEP_MINUTES = intPreferencesKey("step_minutes")
         val PRESET_MINUTES = intPreferencesKey("preset_minutes")
         val LAUNCH_ANIMATION_ENABLED = booleanPreferencesKey("launch_animation_enabled")
@@ -61,7 +67,13 @@ class SettingsRepositoryImpl @Inject constructor(
         }
     }
 
-    override val settings: Flow<UserSettings> = dataStore.data.map { prefs ->
+    override val settings: Flow<UserSettings> = dataStore.data
+        .catch { error ->
+            // A failed read must not crash collectors — SleepTimerService reads this
+            // flow with runBlocking in onCreate. Fall back to defaults.
+            if (error is IOException) emit(emptyPreferences()) else throw error
+        }
+        .map { prefs ->
         // Single source of truth: defaults come from UserSettings(), so adding a new
         // field only requires updating the data class.
         val d = UserSettings()
@@ -75,8 +87,11 @@ class SettingsRepositoryImpl @Inject constructor(
             hapticFeedbackEnabled = prefs[HAPTIC_FEEDBACK] ?: d.hapticFeedbackEnabled,
             theme = ThemeId.fromStorage(prefs[THEME]),
             starsEnabled = prefs[STARS_ENABLED] ?: d.starsEnabled,
+            autoRotateMode = AutoRotateMode.fromStorage(prefs[AUTO_ROTATE_MODE]),
             stepMinutes = prefs[STEP_MINUTES] ?: d.stepMinutes,
-            presetMinutes = prefs[PRESET_MINUTES] ?: d.presetMinutes,
+            // Clamp on read too: values persisted before the cap changed must not
+            // leak an out-of-range preset into the dial.
+            presetMinutes = (prefs[PRESET_MINUTES] ?: d.presetMinutes).coerceIn(1, MAX_TIMER_MINUTES),
             launchAnimationEnabled = prefs[LAUNCH_ANIMATION_ENABLED] ?: d.launchAnimationEnabled,
         )
     }
@@ -117,12 +132,16 @@ class SettingsRepositoryImpl @Inject constructor(
         dataStore.edit { it[STARS_ENABLED] = enabled }
     }
 
+    override suspend fun updateAutoRotateMode(mode: AutoRotateMode) {
+        dataStore.edit { it[AUTO_ROTATE_MODE] = mode.name }
+    }
+
     override suspend fun updateStepMinutes(minutes: Int) {
         dataStore.edit { it[STEP_MINUTES] = minutes.coerceIn(1, 30) }
     }
 
     override suspend fun updatePresetMinutes(minutes: Int) {
-        dataStore.edit { it[PRESET_MINUTES] = minutes.coerceIn(1, 300) }
+        dataStore.edit { it[PRESET_MINUTES] = minutes.coerceIn(1, MAX_TIMER_MINUTES) }
     }
 
     override suspend fun updateLaunchAnimationEnabled(enabled: Boolean) {

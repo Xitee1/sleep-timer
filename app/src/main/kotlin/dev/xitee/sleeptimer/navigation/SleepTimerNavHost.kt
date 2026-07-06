@@ -6,6 +6,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -15,6 +17,7 @@ import dev.xitee.sleeptimer.feature.timer.about.AboutScreen
 import dev.xitee.sleeptimer.feature.timer.settings.SettingsScreen
 import dev.xitee.sleeptimer.feature.timer.settings.ThemePickerScreen
 import dev.xitee.sleeptimer.feature.timer.timer.AppOrientationController
+import dev.xitee.sleeptimer.feature.timer.timer.AppOrientationViewModel
 import dev.xitee.sleeptimer.feature.timer.timer.DeviceOrientation
 import dev.xitee.sleeptimer.feature.timer.timer.TimerScreen
 import dev.xitee.sleeptimer.feature.timer.timer.rememberDeviceOrientation
@@ -30,7 +33,9 @@ fun SleepTimerNavHost() {
     // briefly shows Timer's counter-rotated content being rotated by the
     // window manager, appearing upside-down. In natural portrait there is no
     // orientation flip, so the fade is kept.
-    val deviceOrientation by rememberDeviceOrientation()
+    val autoRotateMode by hiltViewModel<AppOrientationViewModel>()
+        .autoRotateMode.collectAsStateWithLifecycle()
+    val deviceOrientation by rememberDeviceOrientation(mode = autoRotateMode)
     val animate = deviceOrientation == DeviceOrientation.PORTRAIT
 
     AppOrientationController(orientation = deviceOrientation, lockPortrait = isTimer)

@@ -12,6 +12,11 @@ android {
         minSdk = 26
     }
 
+    buildFeatures {
+        // For the Shizuku user-service interface (IShellUserService.aidl).
+        aidl = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -31,7 +36,6 @@ dependencies {
     ksp(libs.hilt.android.compiler)
 
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.service)
 
     implementation(libs.shizuku.api)
 }

@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import dev.xitee.sleeptimer.core.data.model.MAX_TIMER_MINUTES
 import kotlin.math.atan2
 import kotlin.math.roundToInt
 
@@ -23,7 +24,7 @@ class CircularDialState {
     private var previousAngle = 90f
     private var cumulativeDegrees = 0f
 
-    val maxRevolutions = 5 // 5 hours
+    val maxRevolutions = MAX_TIMER_MINUTES / 60
     private val minMinutes = 1
     private val maxMinutes = maxRevolutions * 60
     private val minDegrees = (minMinutes / 60f) * 360f

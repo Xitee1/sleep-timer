@@ -23,6 +23,14 @@
     <string name="launch_animation_title">Launch-Animation</string>
     <string name="launch_animation_description">Raketenartige Animation des Play-Buttons beim Timer-Start</string>
     <string name="stars_unavailable">Für dieses Theme nicht verfügbar</string>
+    <string name="auto_rotate_title">Automatisch drehen</string>
+    <string name="auto_rotate_dialog_title">Drehverhalten wählen</string>
+    <string name="auto_rotate_system_title">Systemeinstellung</string>
+    <string name="auto_rotate_system_description">Dreht nur, wenn die Bildschirmdrehung im System aktiviert ist</string>
+    <string name="auto_rotate_always_title">Immer</string>
+    <string name="auto_rotate_always_description">Dreht mit dem Gerät, auch wenn die Drehung im System gesperrt ist</string>
+    <string name="auto_rotate_portrait_title">Hochformat</string>
+    <string name="auto_rotate_portrait_description">Nie drehen</string>
     <string name="category_sleep_timer">Sleep Timer</string>
     <string name="playback_title">Wiedergabe</string>
     <string name="playback_description">Medienwiedergabe stoppen</string>
@@ -89,6 +97,7 @@
     <string name="screen_method_soft_description">Simuliert Power-Taste. Biometrische Entsperrung bleibt aktiv.</string>
     <string name="screen_method_active_hard">Display ausschalten - Geräteadministrator</string>
     <string name="screen_method_active_soft">Display ausschalten - Shizuku</string>
+    <string name="screen_method_hard_revoked">Display ausschalten - Geräteadministrator-Berechtigung fehlt</string>
 
     <!-- Über die App -->
     <string name="category_about">Über</string>
