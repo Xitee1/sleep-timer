@@ -23,10 +23,10 @@ app ──▶ feature:timer ──▶ core:service ──▶ core:data
                     └───────────────────▶ core:data
 ```
 
-- **`app/`** — `@HiltAndroidApp` (`SleepTimerApp`), `MainActivity` (edge-to-edge Compose host), `SleepTimerNavHost` (type-safe Navigation-Compose routes in `navigation/Routes.kt`), and `SleepTimerDeviceAdminReceiver` for the hard-lock path. The `ShizukuProvider` is declared here in `AndroidManifest.xml`; `shizuku-provider` is only on `:app`'s classpath so lint can resolve it.
-- **`feature:timer/`** — all Compose UI: `timer/` (dial, starfield, `TimerViewModel`, `AppOrientationController`), `settings/`, `theme/` (light/dark + six palettes in `AppThemes.kt`, animated transitions in `AnimatedAppTheme.kt`), `about/`. ViewModels use `@HiltViewModel` and dispatch to the service via `Intent`s (see below).
-- **`core:service/`** — the `SleepTimerService` foreground service (the runtime "source of truth" while a timer is active), `TimerNotificationManager` (notification with +/−/cancel actions), `MediaVolumeController` (fade-out / fade-in), `ScreenLockHelper` (Device-Admin `lockNow`), and `shizuku/` (Shizuku state machine + Wi-Fi, Bluetooth, soft screen-off controllers).
-- **`core:data/`** — `UserSettings` + `TimerState`/`TimerPhase` models, `SettingsRepository` (Jetpack DataStore Preferences, single `settings` file), `TimerRepository` (in-process `StateFlow<TimerState>` — process state, **not** persisted), and Hilt `DataModule`. Repositories are bound as `@Singleton` via `@Binds`.
+- **`app/`** — `@HiltAndroidApp` (`SleepTimerApp`), `MainActivity` (edge-to-edge Compose host), `SleepTimerNavHost` (type-safe Navigation-Compose routes in `navigation/Routes.kt`), `receiver/SleepTimerDeviceAdminReceiver` for the hard-lock path, and `di/AppModule` (provides the `@DeviceAdminComponent` `ComponentName` so lower modules receive the receiver by injection instead of hard-coding its class). The `ShizukuProvider` is declared here in `AndroidManifest.xml`; `shizuku-provider` is only on `:app`'s classpath so lint can resolve it.
+- **`feature:timer/`** — all Compose UI: `timer/` (dial, starfield, `TimerViewModel`, `AppOrientationController`), `settings/`, `theme/` (light/dark + six palettes in `AppThemes.kt`, animated transitions in `AnimatedAppTheme.kt`, and `ProvideAppTheme` which mirrors the active palette into a Material `ColorScheme` and keeps system-bar icon contrast in sync), `about/`. ViewModels use `@HiltViewModel` and dispatch to the service via `Intent`s (see below).
+- **`core:service/`** — the `SleepTimerService` foreground service (the runtime "source of truth" while a timer is active), `TimerNotificationManager` (notification with +/−/cancel actions), `MediaVolumeController` (fade-out / fade-in), `ScreenLockHelper` (Device-Admin `lockNow`), and `shizuku/` (Shizuku state machine, the `ShellUserService` shell-exec bridge, and Wi-Fi, Bluetooth, soft screen-off controllers).
+- **`core:data/`** — `UserSettings` + `TimerState`/`TimerPhase` + `ThemeId` models, `SettingsRepository` (Jetpack DataStore Preferences, single `settings` file), `TimerRepository` (in-process `StateFlow<TimerState>` — process state, **not** persisted), and the Hilt data module. Repositories are bound as `@Singleton` via `@Binds`.
 
 All modules apply the Kotlin compiler flag `-Xannotation-default-target=param-property` (needed for Hilt/Compose annotation targeting under Kotlin 2.x).
 
@@ -43,12 +43,18 @@ The service writes to `TimerRepositoryImpl` on every tick; the UI observes `time
 
 Two non-obvious behaviors worth preserving when editing the service:
 
-1. **Restart-resilience**: if `onStartCommand` is invoked by the OS (or by a stale `PendingIntent` from a surviving notification) with any action other than `ACTION_START` while `countdownJob == null`, the service calls `stopSelf` **before** returning. Skipping this branch will crash with `ForegroundServiceDidNotStartInTimeException` because `startForeground` is never called within the 5-second window.
+1. **Restart-resilience**: if `onStartCommand` is invoked by the OS (or by a stale `PendingIntent` from a surviving notification) with any action other than `ACTION_START` while no countdown is active (`countdownJob?.isActive != true`), the service calls `stopSelf` **before** returning. Skipping this branch will crash with `ForegroundServiceDidNotStartInTimeException` because `startForeground` is never called within the 5-second window.
 2. **Add-during-fade**: when the user taps "+" while the timer is in `FADING_OUT`, the new countdown job wraps `oldJob.cancelAndJoin()` so a subsequent Cancel can interrupt the fade-in + restart sequence. The countdown and fade-in run in parallel — the clock starts from the tap, not from the end of the fade-in.
 
 ## Shizuku integration
 
-Shizuku is optional. `ShizukuManager` models a four-state machine (`NotInstalled` / `NotRunning` / `PermissionRequired` / `Ready`) driven by `Shizuku.OnBinderReceivedListener` etc. Use `awaitInitialState(timeoutMs)` (not `isReady()`) for startup checks — a cold `pingBinder()` race otherwise reports `NotRunning` even when Shizuku is up. All three opt-in features (Wi-Fi off, Bluetooth off, soft screen-off) go through Shizuku because modern Android blocks direct toggling; the hard-lock path uses Device Admin and is independent of Shizuku. The `<queries>` block in `app/src/main/AndroidManifest.xml` is required on targetSdk 30+ to see the Shizuku package.
+Shizuku is optional. `ShizukuManager` models a four-state machine (`NotInstalled` / `NotRunning` / `PermissionRequired` / `Ready`) driven by `Shizuku.OnBinderReceivedListener` etc. Use `awaitInitialState(timeoutMs)` (not `isReady()`) for the initial startup check — a cold `pingBinder()` race otherwise reports `NotRunning` even when Shizuku is up; on the runtime path `ShizukuShell.exec` gates on `isReady()` directly. All three opt-in features (Wi-Fi off, Bluetooth off, soft screen-off) go through Shizuku because modern Android blocks direct toggling; the hard-lock path uses Device Admin and is independent of Shizuku. The `<queries>` block in `app/src/main/AndroidManifest.xml` is required on targetSdk 30+ to see the Shizuku package.
+
+Shell commands run through a **bound Shizuku UserService**, not the private `newProcess` AIDL (which rikka has announced for removal). `ShizukuShell` binds `ShellUserService` — an `IShellUserService.Stub` (interface in `shizuku/IShellUserService.aidl`) that Shizuku spawns in a separate shell-uid (2000) process and that stays bound for the app's lifetime (`daemon(false)` ties the spawned process to ours, so it dies with the app). Three things follow from this that are easy to break:
+
+- `core:service` enables `buildFeatures { aidl = true }` to compile the interface.
+- `ShellUserService` is instantiated by Shizuku in its own process via the no-arg constructor — keep it Hilt-free with no constructor params, and don't reference app infrastructure from it.
+- Bump `ShizukuShell.USER_SERVICE_VERSION` whenever the AIDL or the service's behavior changes; Shizuku only replaces an already-running user service when the version differs.
 
 ## Privacy/scope constraints (hard rules)
 
