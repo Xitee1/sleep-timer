@@ -1,0 +1,26 @@
+Ein minimaler, datenschutzfreundlicher Sleep-Timer für Android. Startet einen Countdown, stoppt am Ende die Medienwiedergabe, blendet das Audio sanft aus und sperrt optional den Bildschirm – damit du einschlafen kannst, ohne dass das Handy nachts den Akku leersaugt oder um 3 Uhr Podcasts schmettert.
+
+Keine Konten, keine Werbung, keine Tracker, kein Netzwerkzugriff.
+
+Funktionen:
+
+* Einfacher Countdown mit +/- Tasten und Abbrechen direkt aus der Benachrichtigung (Schrittweite konfigurierbar, Standard 5 Minuten)
+* Zeigt die exakte Uhrzeit, zu der der Timer endet
+* Stoppt am Ende app-übergreifend die Audio- und Videowiedergabe
+* Konfigurierbare Fade-out-Dauer vor dem Stopp
+* Optionale Bildschirmsperre am Timer-Ende – wahlweise per Geräteadministrator (Standard-Android-Sperre, PIN/Passwort zum Entsperren) oder per Shizuku Soft-Lock (simuliert den Power-Button, Biometrie funktioniert weiter)
+* Optionales WLAN- und Bluetooth-Aus am Ende (beides via Shizuku, da moderne Android-Versionen das direkte Umschalten unterbinden)
+* Sechs eingebaute Themes (Midnight, Ocean, Ember, Light, Basic, AMOLED) mit optionalem Sternenfeld hinter der Wählscheibe
+* Haptisches Feedback für Timer-Bedienung (abschaltbar)
+* Ein Foreground-Service hält den Timer auch im Hintergrund zuverlässig am Laufen
+
+Datenschutz:
+
+* Keine Analytik, kein Crash-Reporting, keine Telemetrie
+* Keine Drittanbieter-SDKs (kein Firebase, keine Google Play Services, keine Werbung)
+* Alle Einstellungen liegen lokal auf dem Gerät
+* Keine Daten verlassen dein Gerät
+
+Die App fordert die INTERNET-Berechtigung nicht an. Sie kann sich mit keinem Netzwerk verbinden.
+
+Open Source unter GPL-3.0-or-later: https://github.com/Xitee1/sleep-timer
