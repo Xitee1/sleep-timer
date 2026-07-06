@@ -4,6 +4,7 @@ import android.content.ComponentName
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
 import dev.xitee.sleeptimer.core.data.model.ThemeId
 import dev.xitee.sleeptimer.core.data.repository.SettingsRepository
 import dev.xitee.sleeptimer.core.service.screen.ScreenLockHelper
@@ -89,6 +90,10 @@ class SettingsViewModel @Inject constructor(
 
     fun updateStarsEnabled(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.updateStarsEnabled(enabled) }
+    }
+
+    fun updateAutoRotateMode(mode: AutoRotateMode) {
+        viewModelScope.launch { settingsRepository.updateAutoRotateMode(mode) }
     }
 
     fun updateStepMinutes(minutes: Int) {

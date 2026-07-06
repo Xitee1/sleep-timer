@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
 import dev.xitee.sleeptimer.core.data.model.MAX_TIMER_MINUTES
 import dev.xitee.sleeptimer.core.data.model.ThemeId
 import dev.xitee.sleeptimer.core.data.model.UserSettings
@@ -32,6 +33,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val HAPTIC_FEEDBACK = booleanPreferencesKey("haptic_feedback")
         val THEME = stringPreferencesKey("theme")
         val STARS_ENABLED = booleanPreferencesKey("stars_enabled")
+        val AUTO_ROTATE_MODE = stringPreferencesKey("auto_rotate_mode")
         val STEP_MINUTES = intPreferencesKey("step_minutes")
         val PRESET_MINUTES = intPreferencesKey("preset_minutes")
     }
@@ -56,6 +58,7 @@ class SettingsRepositoryImpl @Inject constructor(
             hapticFeedbackEnabled = prefs[HAPTIC_FEEDBACK] ?: d.hapticFeedbackEnabled,
             theme = ThemeId.fromStorage(prefs[THEME]),
             starsEnabled = prefs[STARS_ENABLED] ?: d.starsEnabled,
+            autoRotateMode = AutoRotateMode.fromStorage(prefs[AUTO_ROTATE_MODE]),
             stepMinutes = prefs[STEP_MINUTES] ?: d.stepMinutes,
             // Clamp on read too: values persisted before the cap changed must not
             // leak an out-of-range preset into the dial.
@@ -97,6 +100,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun updateStarsEnabled(enabled: Boolean) {
         dataStore.edit { it[STARS_ENABLED] = enabled }
+    }
+
+    override suspend fun updateAutoRotateMode(mode: AutoRotateMode) {
+        dataStore.edit { it[AUTO_ROTATE_MODE] = mode.name }
     }
 
     override suspend fun updateStepMinutes(minutes: Int) {

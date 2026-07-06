@@ -10,6 +10,7 @@ data class UserSettings(
     val hapticFeedbackEnabled: Boolean = true,
     val theme: ThemeId = ThemeId.Default,
     val starsEnabled: Boolean = true,
+    val autoRotateMode: AutoRotateMode = AutoRotateMode.Default,
     val stepMinutes: Int = 5,
     val presetMinutes: Int = 15,
 )

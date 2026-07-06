@@ -1,6 +1,11 @@
 package dev.xitee.sleeptimer.feature.timer.timer
 
+import android.content.Context
 import android.content.pm.ActivityInfo
+import android.database.ContentObserver
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
 import android.view.OrientationEventListener
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -8,6 +13,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
 
 enum class DeviceOrientation(val degrees: Int) {
     PORTRAIT(0),
@@ -31,11 +37,27 @@ fun DeviceOrientation.toActivityInfoOrientation(): Int = when (this) {
 }
 
 @Composable
-fun rememberDeviceOrientation(): State<DeviceOrientation> {
+fun rememberDeviceOrientation(mode: AutoRotateMode): State<DeviceOrientation> {
     val context = LocalContext.current
     val state = remember { mutableStateOf(DeviceOrientation.PORTRAIT) }
 
-    DisposableEffect(Unit) {
+    // Resolve whether rotation is allowed. In System mode this follows the OS-wide
+    // auto-rotate flag; the ContentObserver inside rememberSystemAutoRotate only exists
+    // in the composition while this branch is active, so it self-disposes on mode change.
+    val enabled = when (mode) {
+        AutoRotateMode.System -> rememberSystemAutoRotate().value
+        AutoRotateMode.Always -> true
+        AutoRotateMode.Portrait -> false
+    }
+
+    DisposableEffect(enabled) {
+        if (!enabled) {
+            // Auto-rotate is off: pin to portrait and never register the sensor so
+            // AppOrientationController locks the window and the timer content stops
+            // counter-rotating, at no battery cost.
+            state.value = DeviceOrientation.PORTRAIT
+            return@DisposableEffect onDispose {}
+        }
         val listener = object : OrientationEventListener(context) {
             override fun onOrientationChanged(orientation: Int) {
                 if (orientation == ORIENTATION_UNKNOWN) return
@@ -53,6 +75,40 @@ fun rememberDeviceOrientation(): State<DeviceOrientation> {
 
     return state
 }
+
+// Tracks the system-wide auto-rotate flag (Settings > Display > Auto-rotate, or the
+// quick-settings tile). Readable and observable without any permission. The observer is
+// process-scoped, so flips made while the app is backgrounded still land before the user
+// returns; the synchronous initial read means there is no wrong-value first frame.
+@Composable
+private fun rememberSystemAutoRotate(): State<Boolean> {
+    val context = LocalContext.current
+    val state = remember { mutableStateOf(readSystemAutoRotate(context)) }
+
+    DisposableEffect(context) {
+        state.value = readSystemAutoRotate(context)
+        val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean) {
+                state.value = readSystemAutoRotate(context)
+            }
+        }
+        context.contentResolver.registerContentObserver(
+            Settings.System.getUriFor(Settings.System.ACCELEROMETER_ROTATION),
+            false,
+            observer,
+        )
+        onDispose { context.contentResolver.unregisterContentObserver(observer) }
+    }
+
+    return state
+}
+
+private fun readSystemAutoRotate(context: Context): Boolean =
+    Settings.System.getInt(
+        context.contentResolver,
+        Settings.System.ACCELEROMETER_ROTATION,
+        0,
+    ) == 1
 
 // Hysteresis: stick with the current bucket until the device pose is more than
 // 60° away from its centre — 15° past the natural 45° boundary — so small wobbles
