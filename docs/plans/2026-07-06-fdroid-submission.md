@@ -42,6 +42,9 @@ Builds:
       - yes
     gradleprops:
       - disableSigning=true
+    binary: https://github.com/Xitee1/sleep-timer/releases/download/v%v/SleepTimer-v%v.apk
+
+AllowedAPKSigningKeys: 87e5fe65c58d5b8406d239d68e7a9d6d7f40245ee6c3a1f458e67094b0a67fb0
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v\d+\.\d+\.\d+$
@@ -49,6 +52,15 @@ UpdateCheckData: app/version.properties|versionCode=(\d+)|.|versionName=(.+)
 CurrentVersion: 1.1.1
 CurrentVersionCode: 101010
 ```
+
+This is the **reproducible-builds (your-key)** form: `binary:` points F-Droid at your
+signed GitHub release APK as the reference, and `AllowedAPKSigningKeys` is the SHA-256 of
+your release signing certificate (`CN=Xitee`, extracted from the v1.1.0 release APK — valid
+as long as v1.1.1 is signed with the same keystore). F-Droid rebuilds from source, confirms
+its build is byte-identical to your APK, and ships your APK's signature. **Only submit this
+form if the probe below passes for v1.1.1.** If it does not, drop `binary:` and
+`AllowedAPKSigningKeys:` and F-Droid signs with its own key (a one-way door — you cannot
+switch to your signature later).
 
 Notes:
 - No `Summary:`/`Description:` — the fastlane metadata in this repo supplies them.
@@ -62,36 +74,47 @@ Notes:
 - After the first release, the checkupdates bot appends new build entries automatically
   (copying `gradleprops`), so future releases need no recipe edits.
 
-## Reproducible-builds probe (decide before opening the MR)
+## Reproducible-builds probe — preliminary result (already run against v1.1.0)
 
 Reproducible builds are a one-way door: if the F-Droid build is bit-identical to the
-signed GitHub release APK, F-Droid publishes *your* signature (users can cross-update
-between GitHub and F-Droid). If not enabled at inclusion time, F-Droid signs with its own
-key and you cannot switch later. Test first:
+signed GitHub release APK, F-Droid ships *your* signature (users cross-update between
+GitHub and F-Droid); if not enabled at inclusion time, F-Droid signs with its own key and
+you cannot switch later.
+
+**A preliminary probe was run on 2026-07-06 against the existing v1.1.0 release** (build the
+`v1.1.0` tag from a clean clone, unsigned, and compare its zip entries by CRC against
+`SleepTimer-v1.1.0.apk`). Result: **121 of 122 entries were already byte-identical** —
+including all DEX, resources, and `resources.arsc`. The only mismatch was
+`libdatastore_shared_counter.so` (the AndroidX DataStore native lib, 4 ABIs): GitHub Actions
+**strips** it (host-dependent, via the runner's NDK), while a plain build leaves it as the
+pristine bytes shipped in the `datastore-core` AAR. The unstripped bytes are fixed by the
+dependency version, so they are identical on every machine.
+
+**Fix applied in this repo** (`app/build.gradle.kts`): a `packaging { jniLibs {
+keepDebugSymbols += "**/*.so" } }` block, which tells AGP not to strip native libs, so every
+environment (GitHub Actions, F-Droid, local) packages the pristine AAR bytes. Verified: with
+the block, the four `.so` CRCs equal the pristine AAR CRCs. This **must ship in the v1.1.1
+tag** so the reference GitHub APK is also unstripped — with it in place, all 122 entries
+match and the build is reproducible.
+
+**Confirm on v1.1.1 before submitting** (definitive check, once v1.1.1 is tagged & released):
 
 ```sh
-# at the v1.1.1 tag, with JDK 17:
+# at the v1.1.1 tag, JDK 17, ANDROID_HOME set:
 ./gradlew :app:assembleRelease -PdisableSigning
+export PATH="$ANDROID_HOME/build-tools/<ver>:$PATH"   # for apksigner
 pip install apksigcopier
-apksigcopier compare --unsigned \
-  app/build/outputs/apk/release/app-release-unsigned.apk \
-  SleepTimer-v1.1.1.apk        # the asset from the GitHub v1.1.1 release
+apksigcopier compare SleepTimer-v1.1.1.apk \
+  --unsigned app/build/outputs/apk/release/app-release-unsigned.apk
+# apksigcopier 1.1.1 may error parsing the signing block; the robust fallback is a
+# per-entry CRC diff of `unzip -v` on both APKs (ignoring META-INF signature files).
 ```
 
-If it reports the APKs match, add to the build entry:
-
-```yaml
-    binary: https://github.com/Xitee1/sleep-timer/releases/download/v%v/SleepTimer-v%v.apk
-```
-
-and top-level (get the hash from `apksigner verify --print-certs SleepTimer-v1.1.1.apk`):
-
-```yaml
-AllowedAPKSigningKeys: <sha256 of the signing cert>
-```
-
-If it does not match (R8/JDK nondeterminism is the usual cause), skip these fields and
-write "No, I don't want this." in the MR reproducibility question.
+The definitive check is F-Droid's own CI on the submission MR (or a local
+`fdroid build` in a fdroiddata checkout), which builds in F-Droid's controlled environment.
+Given the preliminary result (only the now-fixed `.so` differed), it is very likely to pass.
+If it unexpectedly fails, drop `binary:` + `AllowedAPKSigningKeys:` from the recipe and write
+"No, I don't want this." in the MR reproducibility question.
 
 ## Local validation
 

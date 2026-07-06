@@ -66,6 +66,16 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    packaging {
+        jniLibs {
+            // Package the DataStore native libs as shipped in the dependency instead of
+            // letting AGP strip them — stripping is host-dependent (build machine's NDK),
+            // which breaks F-Droid's reproducible-build match against the release APK.
+            // The unstripped bytes come straight from the AAR, so every build agrees.
+            keepDebugSymbols += "**/*.so"
+        }
+    }
+
     buildFeatures {
         compose = true
     }
