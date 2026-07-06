@@ -21,6 +21,14 @@
     <string name="stars_title">Stars background</string>
     <string name="stars_description">Drifting starfield behind the dial</string>
     <string name="stars_unavailable">Not available on this theme</string>
+    <string name="auto_rotate_title">Auto-rotate</string>
+    <string name="auto_rotate_dialog_title">Choose rotation mode</string>
+    <string name="auto_rotate_system_title">System setting</string>
+    <string name="auto_rotate_system_description">Rotate only when system auto-rotate is on</string>
+    <string name="auto_rotate_always_title">Always</string>
+    <string name="auto_rotate_always_description">Rotate with the device, even if system rotation is locked</string>
+    <string name="auto_rotate_portrait_title">Portrait</string>
+    <string name="auto_rotate_portrait_description">Never rotate</string>
     <string name="category_sleep_timer">Sleep Timer</string>
     <string name="playback_title">Playback</string>
     <string name="playback_description">Stop audio and video playback</string>

@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
 import dev.xitee.sleeptimer.core.data.model.ThemeId
 import dev.xitee.sleeptimer.core.data.model.UserSettings
 import kotlinx.coroutines.flow.Flow
@@ -28,6 +29,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val HAPTIC_FEEDBACK = booleanPreferencesKey("haptic_feedback")
         val THEME = stringPreferencesKey("theme")
         val STARS_ENABLED = booleanPreferencesKey("stars_enabled")
+        val AUTO_ROTATE_MODE = stringPreferencesKey("auto_rotate_mode")
         val STEP_MINUTES = intPreferencesKey("step_minutes")
         val PRESET_MINUTES = intPreferencesKey("preset_minutes")
     }
@@ -46,6 +48,7 @@ class SettingsRepositoryImpl @Inject constructor(
             hapticFeedbackEnabled = prefs[HAPTIC_FEEDBACK] ?: d.hapticFeedbackEnabled,
             theme = ThemeId.fromStorage(prefs[THEME]),
             starsEnabled = prefs[STARS_ENABLED] ?: d.starsEnabled,
+            autoRotateMode = AutoRotateMode.fromStorage(prefs[AUTO_ROTATE_MODE]),
             stepMinutes = prefs[STEP_MINUTES] ?: d.stepMinutes,
             presetMinutes = prefs[PRESET_MINUTES] ?: d.presetMinutes,
         )
@@ -85,6 +88,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun updateStarsEnabled(enabled: Boolean) {
         dataStore.edit { it[STARS_ENABLED] = enabled }
+    }
+
+    override suspend fun updateAutoRotateMode(mode: AutoRotateMode) {
+        dataStore.edit { it[AUTO_ROTATE_MODE] = mode.name }
     }
 
     override suspend fun updateStepMinutes(minutes: Int) {

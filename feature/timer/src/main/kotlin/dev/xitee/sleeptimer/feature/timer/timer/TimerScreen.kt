@@ -101,7 +101,7 @@ private fun TimerContent(
     val context = LocalContext.current
     val screenDescription = stringResource(R.string.screen_description)
 
-    val orientation by rememberDeviceOrientation()
+    val orientation by rememberDeviceOrientation(mode = settings.autoRotateMode)
     val isLandscape = orientation == DeviceOrientation.LANDSCAPE_LEFT ||
         orientation == DeviceOrientation.LANDSCAPE_RIGHT
     val animatedAngle = animatedRotationAngle(orientation)

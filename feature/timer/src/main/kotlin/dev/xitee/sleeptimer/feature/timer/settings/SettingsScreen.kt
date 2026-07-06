@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MusicOff
 import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Icon
@@ -53,9 +54,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
+import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
 import dev.xitee.sleeptimer.feature.timer.R
+import dev.xitee.sleeptimer.feature.timer.settings.components.AutoRotateModeDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.FadeOutSlider
 import dev.xitee.sleeptimer.feature.timer.settings.components.ScreenLockMethodDialog
+import dev.xitee.sleeptimer.feature.timer.settings.components.labelRes
 import dev.xitee.sleeptimer.feature.timer.settings.components.SettingsToggleRow
 import dev.xitee.sleeptimer.feature.timer.settings.components.SettingsTopBar
 import dev.xitee.sleeptimer.feature.timer.settings.components.ShizukuRequiredDialog
@@ -115,6 +119,7 @@ private fun SettingsContent(
     var shizukuDialogExplanation by remember { mutableStateOf<String?>(null) }
     var pendingShizukuToggle by remember { mutableStateOf<(() -> Unit)?>(null) }
     var showMethodDialog by remember { mutableStateOf(false) }
+    var showAutoRotateDialog by remember { mutableStateOf(false) }
 
     fun requestWithShizuku(explanation: String, enableAction: () -> Unit) {
         if (viewModel.isShizukuReady()) {
@@ -164,6 +169,14 @@ private fun SettingsContent(
                 }
             },
             onDismiss = { showMethodDialog = false },
+        )
+    }
+
+    if (showAutoRotateDialog) {
+        AutoRotateModeDialog(
+            selected = uiState.settings.autoRotateMode,
+            onSelect = { viewModel.updateAutoRotateMode(it) },
+            onDismiss = { showAutoRotateDialog = false },
         )
     }
 
@@ -223,6 +236,12 @@ private fun SettingsContent(
                     checked = uiState.settings.starsEnabled,
                     onCheckedChange = { viewModel.updateStarsEnabled(it) },
                     enabled = AppThemes.byId(uiState.settings.theme).allowStars,
+                )
+                SettingsNavigationRow(
+                    icon = Icons.Default.ScreenRotation,
+                    title = stringResource(R.string.auto_rotate_title),
+                    description = stringResource(uiState.settings.autoRotateMode.labelRes),
+                    onClick = { showAutoRotateDialog = true },
                 )
 
                 SectionHeader(stringResource(R.string.category_sleep_timer))
