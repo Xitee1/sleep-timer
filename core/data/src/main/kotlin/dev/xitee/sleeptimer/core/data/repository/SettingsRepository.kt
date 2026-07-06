@@ -1,5 +1,6 @@
 package dev.xitee.sleeptimer.core.data.repository
 
+import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
 import dev.xitee.sleeptimer.core.data.model.ThemeId
 import dev.xitee.sleeptimer.core.data.model.UserSettings
 import kotlinx.coroutines.flow.Flow
@@ -15,6 +16,7 @@ interface SettingsRepository {
     suspend fun updateHapticFeedback(enabled: Boolean)
     suspend fun updateTheme(theme: ThemeId)
     suspend fun updateStarsEnabled(enabled: Boolean)
+    suspend fun updateAutoRotateMode(mode: AutoRotateMode)
     suspend fun updateStepMinutes(minutes: Int)
     suspend fun updatePresetMinutes(minutes: Int)
 }
