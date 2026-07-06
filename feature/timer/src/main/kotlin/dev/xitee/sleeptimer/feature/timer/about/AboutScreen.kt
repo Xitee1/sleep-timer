@@ -34,7 +34,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -49,7 +48,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.xitee.sleeptimer.feature.timer.R
 import dev.xitee.sleeptimer.feature.timer.theme.AppThemes
-import dev.xitee.sleeptimer.feature.timer.theme.LocalAppTheme
+import dev.xitee.sleeptimer.feature.timer.theme.ProvideAppTheme
 import dev.xitee.sleeptimer.feature.timer.theme.appTheme
 import dev.xitee.sleeptimer.feature.timer.timer.components.TimerBackground
 
@@ -63,7 +62,7 @@ fun AboutScreen(
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
 
-    CompositionLocalProvider(LocalAppTheme provides AppThemes.byId(settings.theme)) {
+    ProvideAppTheme(AppThemes.byId(settings.theme)) {
         AboutContent(
             starsEnabled = settings.starsEnabled,
             onBack = onBack,

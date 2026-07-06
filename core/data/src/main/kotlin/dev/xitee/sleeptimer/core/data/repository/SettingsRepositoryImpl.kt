@@ -4,13 +4,17 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
+import dev.xitee.sleeptimer.core.data.model.MAX_TIMER_MINUTES
 import dev.xitee.sleeptimer.core.data.model.ThemeId
 import dev.xitee.sleeptimer.core.data.model.UserSettings
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -34,7 +38,13 @@ class SettingsRepositoryImpl @Inject constructor(
         val PRESET_MINUTES = intPreferencesKey("preset_minutes")
     }
 
-    override val settings: Flow<UserSettings> = dataStore.data.map { prefs ->
+    override val settings: Flow<UserSettings> = dataStore.data
+        .catch { error ->
+            // A failed read must not crash collectors — SleepTimerService reads this
+            // flow with runBlocking in onCreate. Fall back to defaults.
+            if (error is IOException) emit(emptyPreferences()) else throw error
+        }
+        .map { prefs ->
         // Single source of truth: defaults come from UserSettings(), so adding a new
         // field only requires updating the data class.
         val d = UserSettings()
@@ -50,7 +60,9 @@ class SettingsRepositoryImpl @Inject constructor(
             starsEnabled = prefs[STARS_ENABLED] ?: d.starsEnabled,
             autoRotateMode = AutoRotateMode.fromStorage(prefs[AUTO_ROTATE_MODE]),
             stepMinutes = prefs[STEP_MINUTES] ?: d.stepMinutes,
-            presetMinutes = prefs[PRESET_MINUTES] ?: d.presetMinutes,
+            // Clamp on read too: values persisted before the cap changed must not
+            // leak an out-of-range preset into the dial.
+            presetMinutes = (prefs[PRESET_MINUTES] ?: d.presetMinutes).coerceIn(1, MAX_TIMER_MINUTES),
         )
     }
 
@@ -99,6 +111,6 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updatePresetMinutes(minutes: Int) {
-        dataStore.edit { it[PRESET_MINUTES] = minutes.coerceIn(1, 300) }
+        dataStore.edit { it[PRESET_MINUTES] = minutes.coerceIn(1, MAX_TIMER_MINUTES) }
     }
 }

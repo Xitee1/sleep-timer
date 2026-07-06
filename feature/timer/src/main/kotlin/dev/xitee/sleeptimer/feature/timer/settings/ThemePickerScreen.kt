@@ -36,6 +36,7 @@ import dev.xitee.sleeptimer.feature.timer.settings.components.ThemePreviewIcon
 import dev.xitee.sleeptimer.feature.timer.theme.AppTheme
 import dev.xitee.sleeptimer.feature.timer.theme.AppThemes
 import dev.xitee.sleeptimer.feature.timer.theme.LocalAppTheme
+import dev.xitee.sleeptimer.feature.timer.theme.ProvideAppTheme
 import dev.xitee.sleeptimer.feature.timer.theme.rememberAnimatedAppTheme
 import dev.xitee.sleeptimer.feature.timer.timer.components.TimerBackground
 
@@ -48,7 +49,7 @@ fun ThemePickerScreen(
     val ready = uiState ?: return
 
     val animatedTheme = rememberAnimatedAppTheme(AppThemes.byId(ready.settings.theme))
-    CompositionLocalProvider(LocalAppTheme provides animatedTheme) {
+    ProvideAppTheme(animatedTheme) {
         ThemePickerContent(
             selected = ready.settings.theme,
             starsEnabled = ready.settings.starsEnabled,

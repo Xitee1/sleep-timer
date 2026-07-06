@@ -95,6 +95,7 @@
     <string name="screen_method_soft_description">Simulates power button. Biometric unlock stays active.</string>
     <string name="screen_method_active_hard">Turn off display - Device admin</string>
     <string name="screen_method_active_soft">Turn off display - Shizuku</string>
+    <string name="screen_method_hard_revoked">Turn off display - Device admin permission missing</string>
 
     <!-- About -->
     <string name="category_about">About</string>

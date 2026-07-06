@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.xitee.sleeptimer.core.data.model.MAX_TIMER_MINUTES
 import dev.xitee.sleeptimer.core.data.model.TimerPhase
 import dev.xitee.sleeptimer.core.data.model.UserSettings
 import dev.xitee.sleeptimer.core.data.repository.SettingsRepository
@@ -33,7 +34,7 @@ class TimerViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
-    private val _selectedMinutes = MutableStateFlow(15)
+    private val _selectedMinutes = MutableStateFlow(DEFAULT_SELECTED_MINUTES)
 
     val settings: StateFlow<UserSettings> = settingsRepository.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UserSettings())
@@ -46,7 +47,10 @@ class TimerViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            _selectedMinutes.value = settingsRepository.settings.first().presetMinutes
+            val preset = settingsRepository.settings.first().presetMinutes
+            // compareAndSet: don't stomp a value the user already dialed in the
+            // brief window before the preset finished loading.
+            _selectedMinutes.compareAndSet(DEFAULT_SELECTED_MINUTES, preset)
         }
     }
 
@@ -55,7 +59,7 @@ class TimerViewModel @Inject constructor(
         _selectedMinutes,
     ) { timerState, selectedMin ->
         when (timerState.phase) {
-            TimerPhase.IDLE, TimerPhase.FINISHED -> {
+            TimerPhase.IDLE -> {
                 TimerUiState.Idle(selectedMinutes = selectedMin)
             }
             TimerPhase.RUNNING -> {
@@ -106,9 +110,8 @@ class TimerViewModel @Inject constructor(
      * once the running session ends.
      */
     fun setMinutes(minutes: Int) {
-        val phase = timerRepository.timerState.value.phase
-        if (phase != TimerPhase.IDLE && phase != TimerPhase.FINISHED) return
-        _selectedMinutes.value = minutes.coerceIn(1, 300)
+        if (timerRepository.timerState.value.phase != TimerPhase.IDLE) return
+        _selectedMinutes.value = minutes.coerceIn(1, MAX_TIMER_MINUTES)
     }
 
     /**
@@ -116,7 +119,7 @@ class TimerViewModel @Inject constructor(
      * timer is running, dispatches to the service to adjust remaining time.
      */
     fun commitMinutes(minutes: Int) {
-        val coerced = minutes.coerceIn(1, 300)
+        val coerced = minutes.coerceIn(1, MAX_TIMER_MINUTES)
         val state = timerRepository.timerState.value
         when (state.phase) {
             TimerPhase.RUNNING -> {
@@ -162,6 +165,12 @@ class TimerViewModel @Inject constructor(
             action = actionName
             setClassName(context, SleepTimerService::class.java.name)
         }
+
+    private companion object {
+        // Must match UserSettings().presetMinutes so the compareAndSet in init only
+        // yields when the user hasn't touched the dial yet.
+        const val DEFAULT_SELECTED_MINUTES = 15
+    }
 }
 
 data class StartupPermissionCheck(

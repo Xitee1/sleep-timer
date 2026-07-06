@@ -14,10 +14,9 @@
 }
 -keep,includedescriptorclasses class dev.xitee.sleeptimer.navigation.**$$serializer { *; }
 
-# Shizuku AIDL + provider: the AAR ships consumer-proguard rules, but we reference
-# rikka.shizuku.ShizukuProvider by fully-qualified name in AndroidManifest.xml.
-# The manifest reference keeps the class; this keeps the IShizukuService AIDL stub
-# we use in ShizukuShell.
--keep class moe.shizuku.server.IShizukuService { *; }
--keep class moe.shizuku.server.IShizukuService$Stub { *; }
--keep class moe.shizuku.server.IRemoteProcess { *; }
+# Shizuku user service: ShellUserService is instantiated by name inside the
+# Shizuku-spawned shell process, and the AIDL stub crosses the binder — neither
+# may be renamed or stripped.
+-keep class dev.xitee.sleeptimer.core.service.shizuku.ShellUserService { *; }
+-keep class dev.xitee.sleeptimer.core.service.shizuku.IShellUserService { *; }
+-keep class dev.xitee.sleeptimer.core.service.shizuku.IShellUserService$Stub { *; }
