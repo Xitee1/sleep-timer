@@ -12,6 +12,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
@@ -23,7 +24,12 @@ import androidx.core.view.WindowCompat
  */
 @Composable
 fun ProvideAppTheme(theme: AppTheme, content: @Composable () -> Unit) {
-    SyncSystemBarAppearance(isDark = theme.isDark)
+    // Key the bar-icon contrast off the actually-rendered background luminance, not the
+    // theme's isDark flag. During a theme cross-fade bgSolid animates while isDark would
+    // snap at t=0, washing the icons out over the still-transitioning background for the
+    // whole 350ms; luminance flips them at the visual midpoint instead. Equivalent at
+    // rest — every palette has bgSolid.luminance() < 0.5 exactly when isDark is true.
+    SyncSystemBarAppearance(isDark = theme.bgSolid.luminance() < 0.5f)
     CompositionLocalProvider(LocalAppTheme provides theme) {
         MaterialTheme(
             colorScheme = theme.toMaterialColorScheme(),

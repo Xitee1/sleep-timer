@@ -115,6 +115,13 @@ class ShizukuShell @Inject constructor(
                     boundService = null
                 }
             }
+            // If the caller times out (BIND_TIMEOUT_MS) or is cancelled before the
+            // service connects, detach the pending connection. Otherwise Shizuku keeps
+            // it bound and a late onServiceConnected orphans a live binder — which is
+            // never cached (continuation is dead) nor unbound — for the app's lifetime.
+            continuation.invokeOnCancellation {
+                runCatching { Shizuku.unbindUserService(userServiceArgs, connection, true) }
+            }
             try {
                 Shizuku.bindUserService(userServiceArgs, connection)
             } catch (t: Throwable) {

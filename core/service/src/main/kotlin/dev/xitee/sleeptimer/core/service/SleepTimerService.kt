@@ -212,6 +212,10 @@ class SleepTimerService : Service() {
         when (timerRepository.timerState.value.phase) {
             TimerPhase.RUNNING -> {
                 if (countdownJob?.isActive != true) return
+                // Already at 0 and the job is mid-teardown in onTimerExpired (no fade,
+                // phase still RUNNING): adding here would set a deadline no loop reads,
+                // and the teardown then resets to IDLE — the tap would be silently lost.
+                if (remainingMillis <= 0L) return
                 val stepMillis = stepMinutes * 60_000L
                 setRemaining((remainingMillis + stepMillis).coerceAtMost(MAX_TIMER_MILLIS))
                 totalDurationMillis = (totalDurationMillis + stepMillis).coerceAtMost(MAX_TIMER_MILLIS)
@@ -243,6 +247,8 @@ class SleepTimerService : Service() {
     private fun setRemainingMinutes(minutes: Int) {
         if (timerRepository.timerState.value.phase != TimerPhase.RUNNING) return
         if (countdownJob?.isActive != true) return
+        // Ignore a dial-commit that lands in the post-expiry teardown window (see addStep).
+        if (remainingMillis <= 0L) return
         setRemaining(minutes.coerceIn(1, MAX_TIMER_MINUTES) * 60_000L)
         totalDurationMillis = maxOf(totalDurationMillis, remainingMillis)
         updateTimerState(TimerPhase.RUNNING)
