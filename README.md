@@ -73,7 +73,7 @@ Signed APKs are published on the [Releases page](https://github.com/Xitee1/sleep
 Requirements:
 
 - JDK 17
-- Android SDK with platform 35 (`compileSdk`)
+- Android SDK with platform 36 (`compileSdk`)
 - `minSdk` is 26 (Android 8.0)
 
 ```sh

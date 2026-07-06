@@ -1,0 +1,1 @@
+* Intern: Vorbereitung für F-Droid – Versions-Metadatendatei, Unterstützung für reproduzierbare unsignierte Builds und Änderungsprotokolle pro Version. Keine sichtbaren Änderungen.

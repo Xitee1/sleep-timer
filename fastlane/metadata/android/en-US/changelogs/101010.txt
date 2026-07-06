@@ -1,0 +1,1 @@
+* Internal: prepared the app for F-Droid — added a version metadata file, support for reproducible unsigned builds, and per-release changelogs. No user-facing changes.
