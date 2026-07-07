@@ -99,4 +99,8 @@ class SettingsViewModel @Inject constructor(
     fun updateStepMinutes(minutes: Int) {
         viewModelScope.launch { settingsRepository.updateStepMinutes(minutes) }
     }
+
+    fun updateLaunchAnimationEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.updateLaunchAnimationEnabled(enabled) }
+    }
 }

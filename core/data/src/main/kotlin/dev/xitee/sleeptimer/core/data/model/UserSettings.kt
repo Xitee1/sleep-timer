@@ -13,4 +13,5 @@ data class UserSettings(
     val autoRotateMode: AutoRotateMode = AutoRotateMode.Default,
     val stepMinutes: Int = 5,
     val presetMinutes: Int = 15,
+    val launchAnimationEnabled: Boolean = true,
 )

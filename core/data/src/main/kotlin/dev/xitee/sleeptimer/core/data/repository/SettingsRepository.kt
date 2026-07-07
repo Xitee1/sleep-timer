@@ -19,4 +19,5 @@ interface SettingsRepository {
     suspend fun updateAutoRotateMode(mode: AutoRotateMode)
     suspend fun updateStepMinutes(minutes: Int)
     suspend fun updatePresetMinutes(minutes: Int)
+    suspend fun updateLaunchAnimationEnabled(enabled: Boolean)
 }
