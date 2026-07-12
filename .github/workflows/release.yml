@@ -34,6 +34,19 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Verify release metadata matches tag
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          IFS=. read -r MA MI PA <<< "${VER%%-*}"   # strip any -suffix, matching versionCodeFrom
+          CODE=$((MA * 100000 + MI * 1000 + PA * 10))
+          grep -qx "versionName=$VER"  app/version.properties
+          grep -qx "versionCode=$CODE" app/version.properties
+          for LOCALE in en-US de-DE; do
+            FILE="fastlane/metadata/android/$LOCALE/changelogs/$CODE.txt"
+            test -f "$FILE" || { echo "Missing F-Droid changelog: $FILE"; exit 1; }
+            test "$(wc -c < "$FILE")" -le 500 || { echo "Changelog over 500 chars: $FILE"; exit 1; }
+          done
+
       - name: Decode release keystore
         if: ${{ env.SIGNING_KEYSTORE_BASE64 != '' }}
         env:

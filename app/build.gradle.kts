@@ -49,12 +49,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            // Use release signing when SIGNING_KEYSTORE_PATH env var is provided (CI with secrets);
-            // otherwise fall back to debug signing so local/CI builds without secrets still succeed.
-            signingConfig = if (!System.getenv("SIGNING_KEYSTORE_PATH").isNullOrBlank()) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
+            // F-Droid builds pass -PdisableSigning to emit an unsigned release APK it signs itself.
+            // Otherwise use release signing when SIGNING_KEYSTORE_PATH is provided (CI with secrets),
+            // and fall back to debug signing so local/CI builds without secrets still succeed.
+            signingConfig = when {
+                project.hasProperty("disableSigning") -> null
+                !System.getenv("SIGNING_KEYSTORE_PATH").isNullOrBlank() ->
+                    signingConfigs.getByName("release")
+                else -> signingConfigs.getByName("debug")
             }
         }
     }
@@ -62,6 +64,16 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    packaging {
+        jniLibs {
+            // Package the DataStore native libs as shipped in the dependency instead of
+            // letting AGP strip them — stripping is host-dependent (build machine's NDK),
+            // which breaks F-Droid's reproducible-build match against the release APK.
+            // The unstripped bytes come straight from the AAR, so every build agrees.
+            keepDebugSymbols += "**/*.so"
+        }
     }
 
     buildFeatures {

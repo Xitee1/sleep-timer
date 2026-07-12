@@ -1,0 +1,5 @@
+* Neu: Neues App-Symbol im Nachthimmel-Design mit Monduhr.
+* Neu: Einstellung für den Bildschirm-Rotationsmodus (automatisch, Hoch- oder Querformat).
+* Behoben: Korrektheit der Timer-Laufzeit und Darstellungsprobleme.
+* Behoben: Shizuku-Startup-Race, das Shizuku kurz als „nicht laufend“ melden konnte.
+* Intern: Shizuku-Shell-Zugriff auf einen gebundenen UserService umgestellt.

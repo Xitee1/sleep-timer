@@ -14,6 +14,13 @@ Toolchain: JDK 17, Android SDK platform 36 (`compileSdk`/`targetSdk`), `minSdk =
 
 Versioning is dynamic via the [axion-release](https://github.com/allegro/axion-release-plugin) plugin (applied at the root). `versionName` is derived from the latest `v*` git tag (`project.version`); `versionCode` is computed from that same tag version with the schema `major*100_000 + minor*1_000 + patch*10` (tag `v1.0.1` → `100010`), keeping it monotonic with releases published before dynamic versioning. Tags must be plain SemVer after the `v` prefix — axion-release fails the build on anything else (e.g. `v1.0.1.1`), so a hotfix is just the next patch tag. Don't hand-edit either field in `app/build.gradle.kts`. To cut a release, push a new `v<x.y.z>` tag — `.github/workflows/release.yml` builds a signed APK and publishes the GitHub Release. CI checkouts must use `fetch-depth: 0` so tags and full history are visible.
 
+**Release checklist (do this in the commit you will tag, before pushing the tag):**
+
+1. Bump `app/version.properties` to the new `versionName`/`versionCode`. This file is **not** read by Gradle — axion-release still derives the real build values from the tag — it exists only so F-Droid's `checkupdates` can read the version statically (see `UpdateCheckData` in the fdroiddata recipe). It must match the tag or the release build fails.
+2. Hand-write the changelog for the new `versionCode` in **both** locales: `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` and `.../de-DE/changelogs/<versionCode>.txt`, each ≤500 chars, user-facing tone. F-Droid displays only the current version's file and reads it from the tagged tree.
+
+The `release.yml` workflow enforces both (a `Verify release metadata matches tag` step) and fails the tag build if `version.properties` disagrees with the tag or a changelog is missing/oversized. If it fails, fix on `main`, then delete and re-push the tag. F-Droid builds the app itself from source (unsigned via `-PdisableSigning`); the GitHub release APK is unaffected.
+
 ## Module architecture
 
 Four Gradle modules with a strict one-way dependency flow:

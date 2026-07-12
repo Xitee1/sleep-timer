@@ -1,0 +1,5 @@
+* New: night-sky moon-clock launcher icon.
+* New: screen rotation mode setting (auto, portrait, or landscape).
+* Fixed: timer runtime correctness and theming issues.
+* Fixed: Shizuku startup race that could briefly report Shizuku as not running.
+* Internal: migrated Shizuku shell access to a bound UserService.
