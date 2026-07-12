@@ -1,0 +1,1 @@
+* Intern: Google-Play-Abhängigkeits-Metadatenblock aus dem APK entfernt (Voraussetzung für die F-Droid-Aufnahme). Keine sichtbaren Änderungen.

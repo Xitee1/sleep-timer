@@ -1,0 +1,1 @@
+* Internal: removed the Google Play dependency-metadata block from the APK (required for F-Droid inclusion). No user-facing changes.
