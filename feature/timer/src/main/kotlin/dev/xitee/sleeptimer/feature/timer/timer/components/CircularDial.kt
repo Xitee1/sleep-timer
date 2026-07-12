@@ -45,7 +45,9 @@ fun CircularDial(
     onMinutesChanged: (Int) -> Unit,
     onMinutesCommitted: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    impactPulse: Float = 0f,
+    // Lambda statt Float: der Wert wird erst im Draw-Pass gelesen, sodass jeder
+    // Impact-Frame nur den Canvas neu zeichnet statt den Dial zu recomposen.
+    impactPulse: () -> Float = { 0f },
 ) {
     val theme = appTheme()
     val view = LocalView.current
@@ -213,12 +215,13 @@ fun CircularDial(
                 dimmed = isRunning && !state.isDragging,
             )
 
-            if (impactPulse > 0f) {
+            val pulse = impactPulse()
+            if (pulse > 0f) {
                 drawImpactEffects(
                     center = center,
                     ringRadius = radius,
                     strokeWidth = strokeWidth,
-                    pulse = impactPulse.coerceIn(0f, 1f),
+                    pulse = pulse.coerceIn(0f, 1f),
                     accent = theme.accent,
                 )
             }

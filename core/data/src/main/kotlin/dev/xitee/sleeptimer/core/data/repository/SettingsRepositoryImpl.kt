@@ -19,6 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -45,24 +46,31 @@ class SettingsRepositoryImpl @Inject constructor(
         val STEP_MINUTES = intPreferencesKey("step_minutes")
         val PRESET_MINUTES = intPreferencesKey("preset_minutes")
         val LAUNCH_ANIMATION_ENABLED = booleanPreferencesKey("launch_animation_enabled")
-        val LAUNCH_ANIMATION_SEEDED = booleanPreferencesKey("launch_animation_seeded")
     }
 
-    // Einmaliger Init-Scope. IO-Dispatcher ist angemessen für DataStore-Writes,
-    // SupervisorJob verhindert dass eine Child-Exception weitere Writes stoppt.
+    // Einmaliger Init-Scope fürs Seeding. IO-Dispatcher ist angemessen für DataStore-Zugriffe.
     private val initScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     init {
-        // Seed-on-first-install: ist der „seeded"-Flag nicht gesetzt, wird das
-        // launchAnimationEnabled-Feld einmalig basierend auf der System-Reduce-Motion-
-        // Präferenz persistiert. Danach gewinnen User-Overrides. Spätere System-Änderungen
-        // werden bewusst nicht reflektiert (siehe Spec, Out-of-Scope).
+        // Seed-on-first-install: solange der Key noch nie geschrieben wurde, wird
+        // launchAnimationEnabled einmalig aus der System-Reduce-Motion-Präferenz
+        // abgeleitet. Key-Absenz statt separatem "seeded"-Flag: ein User-Toggle, das
+        // zuerst landet, kann so nie überschrieben werden. Der Read vor dem edit spart
+        // die Write-Transaktion bei jedem weiteren Prozess-Start. Spätere System-
+        // Änderungen werden bewusst nicht reflektiert (siehe Spec, Out-of-Scope).
         initScope.launch {
-            dataStore.edit { prefs ->
-                if (prefs[LAUNCH_ANIMATION_SEEDED] != true) {
-                    prefs[LAUNCH_ANIMATION_ENABLED] = !isSystemReduceMotionEnabled(context)
-                    prefs[LAUNCH_ANIMATION_SEEDED] = true
+            try {
+                if (LAUNCH_ANIMATION_ENABLED !in dataStore.data.first()) {
+                    dataStore.edit { prefs ->
+                        if (LAUNCH_ANIMATION_ENABLED !in prefs) {
+                            prefs[LAUNCH_ANIMATION_ENABLED] = !isSystemReduceMotionEnabled(context)
+                        }
+                    }
                 }
+            } catch (_: IOException) {
+                // Seeding ist best-effort: ohne Seed greift der UserSettings-Default.
+                // Ein I/O-Fehler darf den Prozess nicht crashen (Read-Pfad unten
+                // behandelt IOException genauso).
             }
         }
     }

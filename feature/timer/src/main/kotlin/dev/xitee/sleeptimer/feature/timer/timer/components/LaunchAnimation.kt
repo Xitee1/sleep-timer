@@ -2,6 +2,7 @@ package dev.xitee.sleeptimer.feature.timer.timer.components
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
@@ -19,14 +20,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.lerp
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import dev.xitee.sleeptimer.feature.timer.theme.appTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 enum class LaunchPhase { Idle, Crouch, Launch, Impact }
@@ -57,76 +61,102 @@ class LaunchAnimationController(private val scope: CoroutineScope) {
 
     /**
      * Startet die Animations-Choreographie. Idempotent: wenn bereits nicht-Idle, no-op.
-     * @param targetIconRotationDeg Grad, auf den das Play-Icon während Crouch rotieren soll
-     *                              (meist der Winkel zum Dial-Zentrum; siehe TimerScreen).
+     *
+     * Die Phasen schalten weiter, sobald ihre Animationen fertig sind — bewusst kein
+     * wall-clock `delay()`: Animatable respektiert den System-Animator-Duration-Scale
+     * (MotionDurationScale), `delay()` nicht; bei z.B. 2x würde die State-Machine sonst
+     * mitten im Flug auf Impact springen. So leben die Dauern außerdem nur in den Specs.
+     *
+     * @param startIconRotationDeg Ausgangswinkel des Icons — die Orientierungs-Rotation
+     *                             des Button-Icons, damit die Übergabe vom `PlayButton`
+     *                             ans Overlay auch in Landscape nahtlos ist.
+     * @param targetIconRotationDeg Grad, auf den das Play-Icon während Crouch rotieren
+     *                              soll (der Winkel zum Dial-Zentrum; siehe TimerScreen).
      */
-    fun launch(targetIconRotationDeg: Float) {
+    fun launch(startIconRotationDeg: Float, targetIconRotationDeg: Float) {
         if (phase != LaunchPhase.Idle) return
+        // Synchron setzen, nicht erst im Job: der Idle-Guard oben wirkt damit auch
+        // gegen einen zweiten Tap im selben Frame (Job-Start ist dispatched).
+        phase = LaunchPhase.Crouch
+        val previousJob = currentJob
         currentJob = scope.launch {
-            // Phase 1: Crouch (0–140ms)
-            phase = LaunchPhase.Crouch
-            val crouchEasing = CubicBezierEasing(0.4f, 0f, 0.2f, 1f)
-            val crouchSpec = tween<Float>(140, easing = crouchEasing)
-            launch { buttonScale.animateTo(0.92f, crouchSpec) }
-            launch { iconRotationDeg.animateTo(targetIconRotationDeg, crouchSpec) }
-            launch { iconScale.animateTo(0.9f, crouchSpec) }
-            delay(140)
+            // Ein evtl. noch ausstehender reset()-Snap darf nicht in diese Choreographie
+            // hineinschneiden — erst abwarten, dann von sauberen Idle-Werten starten.
+            previousJob?.cancelAndJoin()
+            snapToIdleValues()
+            iconRotationDeg.snapTo(startIconRotationDeg)
 
-            // Phase 2: Launch (140–560ms, 420ms) — drei Segmente mit ease-in-out pro
-            // Segment. Waypoints: Travel 0 → 0.28 (30%) → 0.84 (80%) → 1.0 (100%),
+            // Phase 1: Crouch (140ms)
+            val crouchSpec = tween<Float>(140, easing = FastOutSlowInEasing)
+            coroutineScope {
+                launch { buttonScale.animateTo(0.92f, crouchSpec) }
+                launch { iconRotationDeg.animateTo(targetIconRotationDeg, crouchSpec) }
+                launch { iconScale.animateTo(0.9f, crouchSpec) }
+            }
+
+            // Phase 2: Launch (420ms) — drei Segmente mit ease-in-out pro Segment.
+            // Waypoints: Travel 0 → 0.28 (30%) → 0.84 (80%) → 1.0 (100%),
             // Scale 0.9 → 1.1 → 0.9 → 0.5. An den Segmentgrenzen fällt die Velocity
             // nahezu auf Null (ease-out des einen, ease-in des nächsten) — das
             // erzeugt die charakteristischen „Hang"-Momente.
             phase = LaunchPhase.Launch
-            val launchEasing = CubicBezierEasing(0.4f, 0f, 0.2f, 1f)
-            launch { buttonScale.animateTo(1f, tween(180)) }
-            launch {
-                iconTravel.animateTo(0.28f, tween(126, easing = launchEasing))
-                iconTravel.animateTo(0.84f, tween(210, easing = launchEasing))
-                iconTravel.animateTo(1f, tween(84, easing = launchEasing))
+            coroutineScope {
+                launch { buttonScale.animateTo(1f, tween(180)) }
+                launch {
+                    iconTravel.animateTo(0.28f, tween(126, easing = FastOutSlowInEasing))
+                    iconTravel.animateTo(0.84f, tween(210, easing = FastOutSlowInEasing))
+                    iconTravel.animateTo(1f, tween(84, easing = FastOutSlowInEasing))
+                }
+                launch {
+                    iconScale.animateTo(1.1f, tween(126, easing = FastOutSlowInEasing))
+                    iconScale.animateTo(0.9f, tween(210, easing = FastOutSlowInEasing))
+                    iconScale.animateTo(0.5f, tween(84, easing = FastOutSlowInEasing))
+                }
             }
-            launch {
-                iconScale.animateTo(1.1f, tween(126, easing = launchEasing))
-                iconScale.animateTo(0.9f, tween(210, easing = launchEasing))
-                iconScale.animateTo(0.5f, tween(84, easing = launchEasing))
-            }
-            delay(420)
 
-            // Phase 3: Impact (560–1160ms, 600ms). Länger als der Prototyp-Impact (260ms)
+            // Phase 3: Impact (600ms). Länger als der Prototyp-Impact (260ms)
             // weil wir die Shockwave-Expansion in derselben Pulse-Kurve steuern — dort
             // nutzt der Prototyp separate 900ms CSS-Animations die die Phase überdauern.
             phase = LaunchPhase.Impact
-            val impactEasing = CubicBezierEasing(0.12f, 0.85f, 0.3f, 1f)
-            val impactSpec = tween<Float>(600, easing = impactEasing)
-            launch {
-                buttonScale.animateTo(
-                    1.04f,
-                    tween(130, easing = CubicBezierEasing(0.2f, 1.8f, 0.4f, 1f)),
-                )
-                buttonScale.animateTo(1f, tween(170))
+            val impactSpec = tween<Float>(600, easing = CubicBezierEasing(0.12f, 0.85f, 0.3f, 1f))
+            coroutineScope {
+                launch {
+                    buttonScale.animateTo(
+                        1.04f,
+                        tween(130, easing = CubicBezierEasing(0.2f, 1.8f, 0.4f, 1f)),
+                    )
+                    buttonScale.animateTo(1f, tween(170))
+                }
+                launch { impactPulse.animateTo(1f, impactSpec) }
             }
-            launch { impactPulse.animateTo(1f, impactSpec) }
-            delay(600)
 
             // Zurück auf Idle (snap, nicht animiert, weil nächstes Frame den echten Running-State hat).
-            reset()
+            snapToIdleValues()
+            phase = LaunchPhase.Idle
         }
     }
 
     /**
      * Bricht eine laufende Animation ab und snapt alle Werte auf Idle-Defaults zurück.
+     * `phase` wird synchron zurückgesetzt; die Werte snappen in einem Job, den ein
+     * nachfolgendes launch() via cancelAndJoin abwartet — der Snap kann also nie in
+     * eine neue Choreographie hineinschneiden.
      */
     fun reset() {
-        currentJob?.cancel()
-        currentJob = null
-        scope.launch {
-            buttonScale.snapTo(1f)
-            iconRotationDeg.snapTo(0f)
-            iconTravel.snapTo(0f)
-            iconScale.snapTo(1f)
-            impactPulse.snapTo(0f)
+        val previousJob = currentJob
+        currentJob = scope.launch {
+            previousJob?.cancelAndJoin()
+            snapToIdleValues()
         }
         phase = LaunchPhase.Idle
+    }
+
+    private suspend fun snapToIdleValues() {
+        buttonScale.snapTo(1f)
+        iconRotationDeg.snapTo(0f)
+        iconTravel.snapTo(0f)
+        iconScale.snapTo(1f)
+        impactPulse.snapTo(0f)
     }
 }
 
@@ -137,71 +167,59 @@ fun rememberLaunchAnimationController(): LaunchAnimationController {
 }
 
 /**
- * Overlay, das das Play-Icon durchgängig rendert: im Idle sitzt es zentriert auf dem
- * Button (dunkles `iconTint` auf Accent-Background), während des Fluges reist es zur
- * Dial-Mitte mit einem weichen Accent-Glow zur Sichtbarkeit vor dem dunklen Hintergrund.
- * Im Impact ist es „eingeschlagen" und nicht mehr sichtbar (Dial-Effekte übernehmen).
- * Während der Timer läuft, übernimmt das Stop-Icon im `PlayButton` via Crossfade.
+ * Overlay, das das fliegende Play-Icon während Crouch + Launch rendert: es reist vom
+ * Button zur Dial-Mitte mit einem weichen Accent-Glow zur Sichtbarkeit vor dem dunklen
+ * Hintergrund. Im Idle (und während der Timer läuft) zeichnet der `PlayButton` sein
+ * Icon selbst — das Overlay übernimmt nur für die Flug-Phasen, in denen der Button
+ * sein Play-Icon per Alpha versteckt. Im Impact ist das Icon „eingeschlagen" und
+ * unsichtbar (Dial-Effekte übernehmen).
+ *
+ * Alle Animatable-Reads passieren in graphicsLayer-/Draw-Lambdas, damit jeder
+ * Animations-Frame nur ein Layer-Update bzw. Redraw ist, keine Recomposition.
  */
 @Composable
 fun LaunchOverlay(
     controller: LaunchAnimationController,
-    isRunning: Boolean,
     buttonCenter: Offset,
     dialCenter: Offset,
-    iconTint: Color,
-    glowColor: Color,
 ) {
     val phase = controller.phase
-    val shouldRender = when (phase) {
-        LaunchPhase.Impact -> false
-        LaunchPhase.Idle -> !isRunning
-        LaunchPhase.Crouch, LaunchPhase.Launch -> true
-    }
-    if (!shouldRender) return
-    // Brauchen mindestens Button-Position; Dial-Position ist nur relevant sobald
-    // travel > 0 (wird in onToggle vor controller.launch() gegated).
-    if (buttonCenter == Offset.Zero) return
+    if (phase != LaunchPhase.Crouch && phase != LaunchPhase.Launch) return
+    // Beide Positionen sind vor controller.launch() gegated (siehe onToggle) —
+    // dieser Guard ist nur ein Sicherheitsnetz.
+    if (buttonCenter == Offset.Zero || dialCenter == Offset.Zero) return
 
-    val travel = controller.iconTravel.value
-    val iconScaleValue = controller.iconScale.value
-    // Icon fadet über die letzten 20% des Fluges aus — matched den Prototyp.
-    val alphaValue =
-        if (travel < 0.8f) 1f else (1f - (travel - 0.8f) / 0.2f).coerceIn(0f, 1f)
-    // Glow um das Icon herum — wächst mit Entfernung vom Button.
-    val glowAlpha = travel.coerceIn(0f, 1f) * 0.9f
-
-    val currentX = buttonCenter.x + (dialCenter.x - buttonCenter.x) * travel
-    val currentY = buttonCenter.y + (dialCenter.y - buttonCenter.y) * travel
+    val theme = appTheme()
 
     // Trail: leuchtende Bahn vom Button bis zur aktuellen Icon-Position. Nur während
     // des Flugs gerendert. Das ist das wesentliche „Wow"-Element — ohne Trail wirkt
     // das fliegende Icon wie ein simples Schieben; mit Trail wird daraus ein Rocket-
     // Launch mit Abgasspur. Width konstant, Alpha-Kurve wie im Prototyp: steigt bis
     // ~40% Flugzeit auf Peak, fadet in den letzten 60% aus.
-    if (phase == LaunchPhase.Launch && travel > 0.02f && dialCenter != Offset.Zero) {
-        val trailAlpha = when {
-            travel < 0.4f -> travel / 0.4f
-            else -> (1f - (travel - 0.4f) / 0.6f).coerceAtLeast(0f)
-        }
-        if (trailAlpha > 0f) {
-            val trailHead = Offset(currentX, currentY)
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawLine(
-                    brush = Brush.linearGradient(
-                        0f to Color.Transparent,
-                        0.25f to glowColor.copy(alpha = 0.35f * trailAlpha),
-                        0.75f to glowColor.copy(alpha = 1f * trailAlpha),
-                        1f to Color.White.copy(alpha = trailAlpha),
-                        start = buttonCenter,
-                        end = trailHead,
-                    ),
+    if (phase == LaunchPhase.Launch) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val travel = controller.iconTravel.value
+            if (travel <= 0.02f) return@Canvas
+            val trailAlpha = when {
+                travel < 0.4f -> travel / 0.4f
+                else -> (1f - (travel - 0.4f) / 0.6f).coerceAtLeast(0f)
+            }
+            if (trailAlpha <= 0f) return@Canvas
+            val trailHead = lerp(buttonCenter, dialCenter, travel)
+            drawLine(
+                brush = Brush.linearGradient(
+                    0f to Color.Transparent,
+                    0.25f to theme.accent.copy(alpha = 0.35f * trailAlpha),
+                    0.75f to theme.accent.copy(alpha = 1f * trailAlpha),
+                    1f to Color.White.copy(alpha = trailAlpha),
                     start = buttonCenter,
                     end = trailHead,
-                    strokeWidth = 10.dp.toPx(),
-                    cap = StrokeCap.Round,
-                )
-            }
+                ),
+                start = buttonCenter,
+                end = trailHead,
+                strokeWidth = 10.dp.toPx(),
+                cap = StrokeCap.Round,
+            )
         }
     }
 
@@ -210,32 +228,36 @@ fun LaunchOverlay(
         modifier = Modifier
             .size(60.dp)
             .graphicsLayer {
+                val travel = controller.iconTravel.value
+                val current = lerp(buttonCenter, dialCenter, travel)
                 val halfPx = 30.dp.toPx()
-                translationX = currentX - halfPx
-                translationY = currentY - halfPx
+                translationX = current.x - halfPx
+                translationY = current.y - halfPx
                 rotationZ = controller.iconRotationDeg.value
-                scaleX = iconScaleValue
-                scaleY = iconScaleValue
-                alpha = alphaValue
+                scaleX = controller.iconScale.value
+                scaleY = controller.iconScale.value
+                // Icon fadet über die letzten 20% des Fluges aus — matched den Prototyp.
+                alpha = if (travel < 0.8f) 1f else (1f - (travel - 0.8f) / 0.2f).coerceIn(0f, 1f)
             },
         contentAlignment = Alignment.Center,
     ) {
-        if (glowAlpha > 0f) {
-            Canvas(modifier = Modifier.size(60.dp)) {
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        0f to glowColor.copy(alpha = glowAlpha),
-                        1f to glowColor.copy(alpha = 0f),
-                        radius = size.minDimension / 2f,
-                    ),
+        Canvas(modifier = Modifier.size(60.dp)) {
+            // Glow um das Icon herum — wächst mit Entfernung vom Button.
+            val glowAlpha = controller.iconTravel.value.coerceIn(0f, 1f) * 0.9f
+            if (glowAlpha <= 0f) return@Canvas
+            drawCircle(
+                brush = Brush.radialGradient(
+                    0f to theme.accent.copy(alpha = glowAlpha),
+                    1f to theme.accent.copy(alpha = 0f),
                     radius = size.minDimension / 2f,
-                )
-            }
+                ),
+                radius = size.minDimension / 2f,
+            )
         }
         Icon(
             imageVector = Icons.Default.PlayArrow,
             contentDescription = null,
-            tint = iconTint,
+            tint = theme.accentInk,
             modifier = Modifier.size(34.dp),
         )
     }
