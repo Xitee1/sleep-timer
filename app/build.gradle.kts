@@ -66,6 +66,14 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    dependenciesInfo {
+        // AGP embeds a Play-encrypted dependency list in the APK signing block by default.
+        // F-Droid's scanner rejects that opaque blob ("extra signing block 'Dependency
+        // metadata'"), and nothing but Google Play can read it — drop it entirely.
+        includeInApk = false
+        includeInBundle = false
+    }
+
     packaging {
         jniLibs {
             // Package the DataStore native libs as shipped in the dependency instead of
