@@ -119,8 +119,6 @@ private fun TimerContent(
     val launchController = rememberLaunchAnimationController()
     var buttonCenter by remember { mutableStateOf(Offset.Zero) }
     var dialCenter by remember { mutableStateOf(Offset.Zero) }
-    val animationEnabled = settings.launchAnimationEnabled &&
-        !isSystemReduceMotionEnabled(context)
 
     // Snap zurück auf Idle, wenn die App in den Hintergrund geht.
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
@@ -323,7 +321,7 @@ private fun TimerContent(
                             hapticEnabled = settings.hapticFeedbackEnabled,
                             onMinutesChanged = viewModel::setMinutes,
                             onMinutesCommitted = viewModel::commitMinutes,
-                            impactPulse = launchController.impactPulse.value,
+                            impactPulse = { launchController.impactPulse.value },
                             modifier = Modifier.fillMaxSize(),
                         )
 
@@ -361,28 +359,26 @@ private fun TimerContent(
             val launchPhase = launchController.phase
             // Der Button zeigt die Running-Visuals (Stop-Icon + Shape-Morph) erst NACHDEM
             // die Launch-Animation komplett durchgelaufen ist. Während der Flug läuft,
-            // soll der Button leer bleiben — sonst sieht es aus als käme ein zweites
-            // Icon hinten aus dem Button raus. Sobald der Controller wieder auf Idle
-            // steht (nach der Impact-Phase) und der Timer tatsächlich läuft, wechselt
-            // der Button via Crossfade auf Stop.
+            // versteckt der Button sein Play-Icon (hidePlayIcon) — sonst sieht es aus
+            // als käme ein zweites Icon hinten aus dem Button raus. Sobald der Controller
+            // wieder auf Idle steht (nach der Impact-Phase) und der Timer tatsächlich
+            // läuft, wechselt der Button via Crossfade auf Stop.
             val playButtonShowsRunning = isRunning && launchPhase == LaunchPhase.Idle
-            // Ziel-Rotation des Icons relativ zur X-Achse (Icon zeigt standardmäßig rechts).
-            val targetIconAngleDeg = remember(buttonCenter, dialCenter) {
-                if (buttonCenter == Offset.Zero || dialCenter == Offset.Zero) 0f
-                else {
-                    val dx = dialCenter.x - buttonCenter.x
-                    val dy = dialCenter.y - buttonCenter.y
-                    Math.toDegrees(atan2(dy, dx).toDouble()).toFloat()
-                }
-            }
 
             ActionRow(
-                isRunning = isRunning,
                 playButtonShowsRunning = playButtonShowsRunning,
+                // Semantik folgt der echten Aktion: während der Animation stoppt ein
+                // Tap den bereits laufenden Timer — also "Stop" ansagen, nicht den
+                // visuellen Zustand.
+                playButtonDescribesRunning = isRunning || launchPhase != LaunchPhase.Idle,
+                hidePlayIcon = launchPhase != LaunchPhase.Idle,
                 hapticEnabled = settings.hapticFeedbackEnabled,
                 iconRotation = animatedAngle,
                 onToggle = {
-                    val animating = launchPhase != LaunchPhase.Idle
+                    // Live vom Controller lesen, nicht den Composition-Snapshot:
+                    // launch() setzt phase synchron, damit ist auch ein zweiter Tap
+                    // im selben Frame korrekt als "animiert bereits" erkannt.
+                    val animating = launchController.phase != LaunchPhase.Idle
                     if (isRunning || animating) {
                         viewModel.stopTimer()
                     } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -394,11 +390,22 @@ private fun TimerContent(
                         notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                     } else {
                         viewModel.startTimer()
-                        if (animationEnabled &&
+                        // Gate erst am Tap auswerten: kein Settings.Global-Read pro
+                        // Recomposition, und Laufzeit-Änderungen des System-Settings
+                        // werden mitgenommen.
+                        if (settings.launchAnimationEnabled &&
+                            !isSystemReduceMotionEnabled(context) &&
                             buttonCenter != Offset.Zero &&
                             dialCenter != Offset.Zero
                         ) {
-                            launchController.launch(targetIconAngleDeg)
+                            // Ziel-Rotation relativ zur X-Achse (Icon zeigt standardmäßig rechts).
+                            val dx = dialCenter.x - buttonCenter.x
+                            val dy = dialCenter.y - buttonCenter.y
+                            launchController.launch(
+                                startIconRotationDeg = animatedAngle,
+                                targetIconRotationDeg =
+                                    Math.toDegrees(atan2(dy, dx).toDouble()).toFloat(),
+                            )
                         }
                     }
                 },
@@ -432,7 +439,7 @@ private fun TimerContent(
                 } else {
                     dialState.totalMinutes < MAX_TIMER_MINUTES
                 },
-                buttonScale = launchController.buttonScale.value,
+                buttonScale = { launchController.buttonScale.value },
                 onButtonPositioned = { buttonCenter = it },
             )
 
@@ -474,11 +481,8 @@ private fun TimerContent(
 
         LaunchOverlay(
             controller = launchController,
-            isRunning = isRunning,
             buttonCenter = buttonCenter,
             dialCenter = dialCenter,
-            iconTint = appTheme().accentInk,
-            glowColor = appTheme().accent,
         )
     }
 }
@@ -546,8 +550,9 @@ private fun HomeTopBar(
 
 @Composable
 private fun ActionRow(
-    isRunning: Boolean,
     playButtonShowsRunning: Boolean,
+    playButtonDescribesRunning: Boolean,
+    hidePlayIcon: Boolean,
     hapticEnabled: Boolean,
     iconRotation: Float,
     onToggle: () -> Unit,
@@ -555,7 +560,7 @@ private fun ActionRow(
     onPlusStep: () -> Unit,
     isMinusEnabled: Boolean,
     isPlusEnabled: Boolean,
-    buttonScale: Float,
+    buttonScale: () -> Float,
     onButtonPositioned: (Offset) -> Unit,
 ) {
     androidx.compose.foundation.layout.Row(
@@ -579,6 +584,8 @@ private fun ActionRow(
             onClick = onToggle,
             iconRotation = iconRotation,
             buttonScale = buttonScale,
+            hidePlayIcon = hidePlayIcon,
+            describesRunning = playButtonDescribesRunning,
             modifier = Modifier.onGloballyPositioned { coords ->
                 onButtonPositioned(coords.boundsInRoot().center)
             },

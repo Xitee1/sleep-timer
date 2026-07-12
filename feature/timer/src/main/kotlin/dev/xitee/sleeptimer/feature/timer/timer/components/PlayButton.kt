@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -36,11 +37,19 @@ import dev.xitee.sleeptimer.feature.timer.R
 import dev.xitee.sleeptimer.feature.timer.theme.appTheme
 
 /**
- * Der Play/Stop-Button. Das Play-Icon wird NICHT hier gezeichnet — es lebt im
- * `LaunchOverlay`, um kontinuierlich animiert zu werden (Crouch, Flug, Impact)
- * ohne Wechsel zwischen zwei Icon-Instanzen. Hier wird nur das Stop-Icon
- * gerendert (via Crossfade), sobald der Timer läuft. Im Idle-Zustand ist die
- * Button-Fläche leer und der Overlay-Icon sitzt visuell zentriert darauf.
+ * Der Play/Stop-Button. Der Button zeichnet sein Icon selbst (inkl. Orientierungs-
+ * Rotation und Play↔Stop-Crossfade). Nur während die Launch-Animation das Icon
+ * fliegt, wird das Play-Icon hier per Alpha versteckt ([hidePlayIcon]) und vom
+ * `LaunchOverlay` an seiner Stelle gerendert.
+ *
+ * @param isRunning Visueller Zustand (Stop-Icon + Shape-Morph). Läuft die Launch-
+ *                  Animation, bleibt das bewusst false, bis sie fertig ist.
+ * @param describesRunning Semantischer Zustand für Accessibility: was ein Tap JETZT
+ *                         tut. Während der Animation stoppt ein Tap den bereits
+ *                         laufenden Timer, obwohl visuell noch kein Stop-Icon zu
+ *                         sehen ist — die Ansage muss der Aktion folgen.
+ * @param buttonScale Als Lambda, gelesen im graphicsLayer-Block: Animations-Frames
+ *                    sind so reine Layer-Updates ohne Recomposition.
  */
 @Composable
 fun PlayButton(
@@ -49,7 +58,9 @@ fun PlayButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     iconRotation: Float = 0f,
-    buttonScale: Float = 1f,
+    buttonScale: () -> Float = { 1f },
+    hidePlayIcon: Boolean = false,
+    describesRunning: Boolean = isRunning,
 ) {
     val theme = appTheme()
     val view = LocalView.current
@@ -75,15 +86,16 @@ fun PlayButton(
     }
 
     val description = stringResource(
-        if (isRunning) R.string.stop_timer else R.string.start_timer,
+        if (describesRunning) R.string.stop_timer else R.string.start_timer,
     )
 
     Box(
         modifier = modifier
             .size(84.dp)
             .graphicsLayer {
-                scaleX = buttonScale
-                scaleY = buttonScale
+                val scale = buttonScale()
+                scaleX = scale
+                scaleY = scale
             }
             .then(shadowModifier)
             .clip(shape)
@@ -116,18 +128,21 @@ fun PlayButton(
         Crossfade(
             targetState = isRunning,
             animationSpec = tween(durationMillis = 180),
-            label = "stopIconFade",
+            label = "playIcon",
         ) { running ->
-            if (running) {
-                Icon(
-                    imageVector = Icons.Default.Stop,
-                    contentDescription = null,
-                    tint = theme.accentInk,
-                    modifier = Modifier
-                        .size(34.dp)
-                        .graphicsLayer { rotationZ = iconRotation },
-                )
-            }
+            val icon: ImageVector = if (running) Icons.Default.Stop else Icons.Default.PlayArrow
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = theme.accentInk,
+                modifier = Modifier
+                    .size(34.dp)
+                    .graphicsLayer {
+                        rotationZ = iconRotation
+                        // Während des Fluges rendert das LaunchOverlay das Play-Icon.
+                        alpha = if (!running && hidePlayIcon) 0f else 1f
+                    },
+            )
         }
     }
 }

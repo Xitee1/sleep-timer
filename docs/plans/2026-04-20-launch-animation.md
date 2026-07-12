@@ -1,5 +1,11 @@
 # Play-Button Launch-Animation Implementation Plan
 
+> **Hinweis (2026-07-07):** Historischer Implementierungsplan — die finale Implementierung
+> weicht in Details ab (u.a. bleibt das Play-Icon im `PlayButton` und wird während des
+> Fluges nur per Alpha versteckt; die Phasen schalten durch Abwarten der Animationen
+> weiter statt per wall-clock `delay()`; das Seeding nutzt kein separates "seeded"-Flag).
+> Maßgeblich ist der Code.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Eine Rocket-Launch-Animation auf den Play-Button packen: Icon dreht sich Richtung Dial, fliegt zum Dial-Zentrum, schlägt ein, Knob pulsiert und Shockwave rippelt — gesteuert durch ein neues Settings-Toggle und gegated durch Androids System-Reduce-Motion.
@@ -8,7 +14,7 @@
 
 **Tech Stack:** Kotlin, Jetpack Compose, `androidx.compose.animation.core.Animatable`, `Modifier.onGloballyPositioned`, DataStore Preferences, Hilt.
 
-**Spec reference:** `docs/superpowers/specs/2026-04-20-launch-animation-design.md`
+**Spec reference:** `docs/plans/2026-04-20-launch-animation-design.md`
 
 **Testing approach:** Dieses Projekt hat keine Tests — weder Unit- noch Instrumentation-Tests. Jeder Task endet mit **manueller Verifikation** (Build + ggf. visuelle Prüfung auf einem Debug-Build) und einem optionalen Commit. Der Executor entscheidet pro Task, ob committet wird; CLAUDE.md schreibt Commits nicht generell vor, die Anweisungen hier sind Vorschläge.
 
