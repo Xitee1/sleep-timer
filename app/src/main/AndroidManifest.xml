@@ -35,6 +35,19 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
+        <!-- Per-instance widget configuration, launched by the widget host on
+             placement (pre-Android 12) and via long-press -> edit (12+). Exported
+             because some launchers start it directly rather than through the
+             system's AppWidget grant mechanism. -->
+        <activity
+            android:name=".widget.SleepTimerWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.SleepTimer">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <!-- Home screen widget. exported=false is safe: APPWIDGET_UPDATE is a
              protected system broadcast (delivered regardless), and it keeps the
              internal WIDGET_START_TIMER trampoline action unreachable for other

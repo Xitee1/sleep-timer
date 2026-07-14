@@ -40,10 +40,12 @@
     <string name="step_minutes_value">%d min</string>
     <string name="screen_title">Screen</string>
     <string name="screen_description">Lock screen when timer ends (Shizuku optional)</string>
-    <string name="category_widget">Home Screen Widget</string>
+    <string name="widget_config_title">Widget settings</string>
+    <string name="widget_config_description">Choose what a tap on this widget starts. Each widget can be configured individually.</string>
+    <string name="widget_config_save">Save</string>
     <string name="widget_fixed_duration_title">Fixed duration</string>
-    <string name="widget_fixed_duration_off">Widget starts with the last used time</string>
-    <string name="widget_fixed_duration_on">Widget always starts with the duration below</string>
+    <string name="widget_fixed_duration_off">This widget starts with the last used time</string>
+    <string name="widget_fixed_duration_on">This widget always starts with the duration below</string>
     <string name="widget_duration_title">Widget duration</string>
     <string name="widget_duration_value">%d min</string>
 

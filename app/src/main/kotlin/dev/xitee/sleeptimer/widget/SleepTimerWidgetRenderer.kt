@@ -12,35 +12,31 @@ import dev.xitee.sleeptimer.core.data.model.TimerPhase
 import dev.xitee.sleeptimer.core.service.SleepTimerService
 
 /**
- * Builds and pushes the widget's [RemoteViews] for a given timer phase. The single
- * tap target toggles with the phase: idle starts the preset timer (via the
- * [SleepTimerWidgetProvider] trampoline), running/fading cancels the service.
+ * Builds and pushes a single widget instance's [RemoteViews] for a given timer
+ * phase. The tap target toggles with the phase: idle starts that instance's
+ * configured duration (via the [SleepTimerWidgetProvider] trampoline),
+ * running/fading cancels the service.
  */
 internal object SleepTimerWidgetRenderer {
 
     // Distinct from TimerNotificationManager's request codes (1-3) so the widget's
     // cancel PendingIntent never aliases a notification action.
-    private const val REQUEST_CODE_START = 100
     private const val REQUEST_CODE_CANCEL = 101
 
-    /** Renders [phase] into every placed widget instance; no-op when none exist. */
-    fun updateAllWidgets(context: Context, phase: TimerPhase, minutes: Int) {
-        val manager = AppWidgetManager.getInstance(context)
-        val ids = manager.getAppWidgetIds(
+    /** The currently placed instances of our widget. */
+    fun widgetIds(context: Context, appWidgetManager: AppWidgetManager): IntArray =
+        appWidgetManager.getAppWidgetIds(
             ComponentName(context, SleepTimerWidgetProvider::class.java),
         )
-        if (ids.isEmpty()) return
-        render(context, manager, ids, phase, minutes)
-    }
 
     /**
-     * @param minutes the preset minutes when idle, the remaining display minutes
-     * while running; ignored during fade-out.
+     * @param minutes the instance's configured start minutes when idle, the
+     * remaining display minutes while running; ignored during fade-out.
      */
     fun render(
         context: Context,
         appWidgetManager: AppWidgetManager,
-        appWidgetIds: IntArray,
+        appWidgetId: Int,
         phase: TimerPhase,
         minutes: Int,
     ) {
@@ -56,7 +52,10 @@ internal object SleepTimerWidgetRenderer {
                     R.id.widget_label,
                     context.getString(R.string.widget_tap_to_start),
                 )
-                views.setOnClickPendingIntent(R.id.widget_root, startPendingIntent(context))
+                views.setOnClickPendingIntent(
+                    R.id.widget_root,
+                    startPendingIntent(context, appWidgetId),
+                )
             }
             TimerPhase.RUNNING -> {
                 views.setViewVisibility(R.id.widget_minutes, View.VISIBLE)
@@ -79,15 +78,19 @@ internal object SleepTimerWidgetRenderer {
                 views.setOnClickPendingIntent(R.id.widget_root, cancelPendingIntent(context))
             }
         }
-        appWidgetManager.updateAppWidget(appWidgetIds, views)
+        appWidgetManager.updateAppWidget(appWidgetId, views)
     }
 
-    private fun startPendingIntent(context: Context): PendingIntent {
+    private fun startPendingIntent(context: Context, appWidgetId: Int): PendingIntent {
         val intent = Intent(context, SleepTimerWidgetProvider::class.java)
             .setAction(SleepTimerWidgetProvider.ACTION_START_TIMER)
+            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+        // requestCode = appWidgetId: extras don't participate in PendingIntent
+        // identity (Intent.filterEquals), so without a per-instance request code
+        // every widget would share one PendingIntent and start the same duration.
         return PendingIntent.getBroadcast(
             context,
-            REQUEST_CODE_START,
+            appWidgetId,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )

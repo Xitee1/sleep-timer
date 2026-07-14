@@ -3,7 +3,12 @@
      updatePeriodMillis=0: updates are pushed by TimerWidgetUpdater/the provider,
      never polled. targetCell*/previewLayout/description are API 31+ and silently
      ignored on older releases. -->
+<!-- configure: per-instance setup (last used vs fixed duration).
+     widgetFeatures (API 31+): configuration_optional lets the launcher place the
+     widget instantly with defaults, reconfigurable enables long-press -> edit.
+     Pre-31 launchers open the configure activity on placement instead. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="dev.xitee.sleeptimer.widget.SleepTimerWidgetConfigActivity"
     android:description="@string/widget_description"
     android:initialLayout="@layout/widget_sleep_timer"
     android:minWidth="110dp"
@@ -15,4 +20,5 @@
     android:targetCellWidth="2"
     android:targetCellHeight="1"
     android:updatePeriodMillis="0"
-    android:widgetCategory="home_screen" />
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable|configuration_optional" />
