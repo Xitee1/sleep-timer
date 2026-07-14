@@ -2,4 +2,12 @@
 <resources>
     <color name="ic_launcher_background">#1C2A5E</color>
     <color name="midnight_bg">#1A1830</color>
+
+    <!-- Home screen widget — matches the default "Midnight" palette in
+         feature/timer AppThemes.kt; replaced by Material You dynamic colors in
+         values-v31. -->
+    <color name="widget_background">@color/midnight_bg</color>
+    <color name="widget_accent">#C9B8FF</color>
+    <color name="widget_text">#FFFFFF</color>
+    <color name="widget_text_secondary">#B3FFFFFF</color>
 </resources>

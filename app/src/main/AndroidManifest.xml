@@ -35,6 +35,21 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
+        <!-- Home screen widget. exported=false is safe: APPWIDGET_UPDATE is a
+             protected system broadcast (delivered regardless), and it keeps the
+             internal WIDGET_START_TIMER trampoline action unreachable for other
+             apps — only our own PendingIntent can trigger it. -->
+        <receiver
+            android:name=".widget.SleepTimerWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_sleep_timer_info" />
+        </receiver>
+
         <receiver
             android:name=".receiver.SleepTimerDeviceAdminReceiver"
             android:exported="true"

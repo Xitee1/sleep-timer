@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Overridden in values-v31 with the system widget radius so the background
+         matches the launcher's corner clipping exactly. -->
+    <dimen name="widget_corner_radius">16dp</dimen>
+</resources>
