@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- updatePeriodMillis=0: updates are pushed by TimerWidgetUpdater/the provider,
+<!-- Default size 2x1 (one cell of height = 40dp per the 70*n-30 formula).
+     updatePeriodMillis=0: updates are pushed by TimerWidgetUpdater/the provider,
      never polled. targetCell*/previewLayout/description are API 31+ and silently
      ignored on older releases. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_description"
     android:initialLayout="@layout/widget_sleep_timer"
     android:minWidth="110dp"
-    android:minHeight="110dp"
+    android:minHeight="40dp"
     android:minResizeWidth="110dp"
-    android:minResizeHeight="110dp"
+    android:minResizeHeight="40dp"
     android:previewLayout="@layout/widget_sleep_timer"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="2"
-    android:targetCellHeight="2"
+    android:targetCellHeight="1"
     android:updatePeriodMillis="0"
     android:widgetCategory="home_screen" />

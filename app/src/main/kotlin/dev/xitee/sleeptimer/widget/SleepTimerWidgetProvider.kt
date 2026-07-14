@@ -18,9 +18,10 @@ import javax.inject.Inject
  * Home-screen widget that starts the sleep timer with a single tap.
  *
  * The idle tap does not carry the duration in its PendingIntent — it broadcasts
- * [ACTION_START_TIMER] back to this receiver, which reads the current preset from
- * DataStore at tap time. Baking the duration into the widget's PendingIntent would
- * go stale whenever the preset changes without the widget being re-rendered.
+ * [ACTION_START_TIMER] back to this receiver, which reads the configured start
+ * duration (last used time, or the fixed widget duration when set) from DataStore
+ * at tap time. Baking the duration into the widget's PendingIntent would go stale
+ * whenever those settings change without the widget being re-rendered.
  *
  * Starting the foreground service from here is allowed even though the app is in
  * the background: a widget tap is a documented exemption from the FGS
@@ -50,7 +51,8 @@ class SleepTimerWidgetProvider : AppWidgetProvider() {
         // and the foreground service keeps the process alive while a timer runs).
         val state = timerRepository.timerState.value
         val minutes = when (state.phase) {
-            TimerPhase.IDLE -> runBlocking { settingsRepository.settings.first().presetMinutes }
+            TimerPhase.IDLE ->
+                runBlocking { settingsRepository.settings.first().widgetStartMinutes() }
             else -> remainingMillisToDisplayMinutes(state.remainingMillis)
         }
         SleepTimerWidgetRenderer.render(context, appWidgetManager, appWidgetIds, state.phase, minutes)
@@ -60,11 +62,11 @@ class SleepTimerWidgetProvider : AppWidgetProvider() {
         // The rendered tap target can be momentarily stale (timer started from the
         // app right before the tap landed) — never restart a timer that is active.
         if (timerRepository.timerState.value.phase != TimerPhase.IDLE) return
-        val presetMinutes = runBlocking { settingsRepository.settings.first().presetMinutes }
+        val startMinutes = runBlocking { settingsRepository.settings.first().widgetStartMinutes() }
         val serviceIntent = Intent().apply {
             action = SleepTimerService.ACTION_START
             setClassName(context, SleepTimerService::class.java.name)
-            putExtra(SleepTimerService.EXTRA_DURATION_MILLIS, presetMinutes * 60_000L)
+            putExtra(SleepTimerService.EXTRA_DURATION_MILLIS, startMinutes * 60_000L)
         }
         context.startForegroundService(serviceIntent)
     }

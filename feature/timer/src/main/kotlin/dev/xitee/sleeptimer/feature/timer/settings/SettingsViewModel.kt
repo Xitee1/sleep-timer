@@ -103,4 +103,12 @@ class SettingsViewModel @Inject constructor(
     fun updateLaunchAnimationEnabled(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.updateLaunchAnimationEnabled(enabled) }
     }
+
+    fun updateWidgetUseFixedDuration(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.updateWidgetUseFixedDuration(enabled) }
+    }
+
+    fun updateWidgetFixedMinutes(minutes: Int) {
+        viewModelScope.launch { settingsRepository.updateWidgetFixedMinutes(minutes) }
+    }
 }

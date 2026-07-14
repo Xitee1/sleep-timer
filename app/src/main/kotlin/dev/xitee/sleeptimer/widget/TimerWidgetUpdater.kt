@@ -21,7 +21,8 @@ import javax.inject.Singleton
  * process. That is exactly the window in which the widget can go stale: while a
  * timer is active the foreground service keeps the process alive, and once the
  * process dies the last render is guaranteed to be the idle state (drawn when the
- * timer ended). Preset edits made in the app are also picked up here.
+ * timer ended). Edits to the preset or the widget duration settings made in the
+ * app are also picked up here.
  */
 @Singleton
 class TimerWidgetUpdater @Inject constructor(
@@ -43,7 +44,7 @@ class TimerWidgetUpdater @Inject constructor(
                 WidgetUi(
                     phase = state.phase,
                     minutes = when (state.phase) {
-                        TimerPhase.IDLE -> settings.presetMinutes
+                        TimerPhase.IDLE -> settings.widgetStartMinutes()
                         else -> remainingMillisToDisplayMinutes(state.remainingMillis)
                     },
                 )

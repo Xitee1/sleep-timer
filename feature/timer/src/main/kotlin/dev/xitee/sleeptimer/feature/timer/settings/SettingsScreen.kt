@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.Vibration
+import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -65,6 +66,7 @@ import dev.xitee.sleeptimer.feature.timer.settings.components.SettingsTopBar
 import dev.xitee.sleeptimer.feature.timer.settings.components.ShizukuRequiredDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.StepMinutesSlider
 import dev.xitee.sleeptimer.feature.timer.settings.components.ThemeRow
+import dev.xitee.sleeptimer.feature.timer.settings.components.WidgetDurationSlider
 import dev.xitee.sleeptimer.feature.timer.theme.AppThemes
 import dev.xitee.sleeptimer.feature.timer.theme.ProvideAppTheme
 import dev.xitee.sleeptimer.feature.timer.theme.appTheme
@@ -322,6 +324,25 @@ private fun SettingsContent(
                         }
                     },
                 )
+
+                SectionHeader(stringResource(R.string.category_widget))
+                SettingsToggleRow(
+                    icon = Icons.Default.Widgets,
+                    title = stringResource(R.string.widget_fixed_duration_title),
+                    description = if (uiState.settings.widgetUseFixedDuration) {
+                        stringResource(R.string.widget_fixed_duration_on)
+                    } else {
+                        stringResource(R.string.widget_fixed_duration_off)
+                    },
+                    checked = uiState.settings.widgetUseFixedDuration,
+                    onCheckedChange = { viewModel.updateWidgetUseFixedDuration(it) },
+                )
+                if (uiState.settings.widgetUseFixedDuration) {
+                    WidgetDurationSlider(
+                        minutes = uiState.settings.widgetFixedMinutes,
+                        onMinutesChanged = { viewModel.updateWidgetFixedMinutes(it) },
+                    )
+                }
 
                 SectionHeader(stringResource(R.string.category_haptic))
                 SettingsToggleRow(

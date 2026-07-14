@@ -20,4 +20,6 @@ interface SettingsRepository {
     suspend fun updateStepMinutes(minutes: Int)
     suspend fun updatePresetMinutes(minutes: Int)
     suspend fun updateLaunchAnimationEnabled(enabled: Boolean)
+    suspend fun updateWidgetUseFixedDuration(enabled: Boolean)
+    suspend fun updateWidgetFixedMinutes(minutes: Int)
 }

@@ -46,6 +46,8 @@ class SettingsRepositoryImpl @Inject constructor(
         val STEP_MINUTES = intPreferencesKey("step_minutes")
         val PRESET_MINUTES = intPreferencesKey("preset_minutes")
         val LAUNCH_ANIMATION_ENABLED = booleanPreferencesKey("launch_animation_enabled")
+        val WIDGET_USE_FIXED_DURATION = booleanPreferencesKey("widget_use_fixed_duration")
+        val WIDGET_FIXED_MINUTES = intPreferencesKey("widget_fixed_minutes")
     }
 
     // Einmaliger Init-Scope fürs Seeding. IO-Dispatcher ist angemessen für DataStore-Zugriffe.
@@ -101,6 +103,9 @@ class SettingsRepositoryImpl @Inject constructor(
             // leak an out-of-range preset into the dial.
             presetMinutes = (prefs[PRESET_MINUTES] ?: d.presetMinutes).coerceIn(1, MAX_TIMER_MINUTES),
             launchAnimationEnabled = prefs[LAUNCH_ANIMATION_ENABLED] ?: d.launchAnimationEnabled,
+            widgetUseFixedDuration = prefs[WIDGET_USE_FIXED_DURATION] ?: d.widgetUseFixedDuration,
+            widgetFixedMinutes = (prefs[WIDGET_FIXED_MINUTES] ?: d.widgetFixedMinutes)
+                .coerceIn(1, MAX_TIMER_MINUTES),
         )
     }
 
@@ -154,5 +159,13 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun updateLaunchAnimationEnabled(enabled: Boolean) {
         dataStore.edit { it[LAUNCH_ANIMATION_ENABLED] = enabled }
+    }
+
+    override suspend fun updateWidgetUseFixedDuration(enabled: Boolean) {
+        dataStore.edit { it[WIDGET_USE_FIXED_DURATION] = enabled }
+    }
+
+    override suspend fun updateWidgetFixedMinutes(minutes: Int) {
+        dataStore.edit { it[WIDGET_FIXED_MINUTES] = minutes.coerceIn(1, MAX_TIMER_MINUTES) }
     }
 }
