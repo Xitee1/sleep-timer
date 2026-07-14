@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Deliberately minimal: no event types, no window-content access, no flags.
+     The service exists solely to perform GLOBAL_ACTION_LOCK_SCREEN when the
+     sleep timer expires. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:description="@string/accessibility_service_description" />

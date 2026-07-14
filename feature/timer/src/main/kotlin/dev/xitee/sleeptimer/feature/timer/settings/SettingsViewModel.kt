@@ -5,8 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
+import dev.xitee.sleeptimer.core.data.model.ScreenLockMethod
 import dev.xitee.sleeptimer.core.data.model.ThemeId
 import dev.xitee.sleeptimer.core.data.repository.SettingsRepository
+import dev.xitee.sleeptimer.core.service.screen.AccessibilityLockHelper
 import dev.xitee.sleeptimer.core.service.screen.ScreenLockHelper
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,36 +24,40 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val shizukuManager: ShizukuManager,
     private val screenLockHelper: ScreenLockHelper,
+    private val accessibilityLockHelper: AccessibilityLockHelper,
 ) : ViewModel() {
 
-    // Tick to re-query isAdminActive. Admin grants can be revoked from system Settings
-    // without any callback into the app, so nothing else drives a refresh. Bumped from
-    // SettingsScreen on ON_RESUME so returning from Settings → Security → Device admin
-    // reflects the current state.
-    private val adminRefreshTicker = MutableStateFlow(0)
+    // Tick to re-query isAdminActive / isServiceEnabled. Both grants can be revoked
+    // from system Settings without any callback into the app, so nothing else drives
+    // a refresh. Bumped from SettingsScreen on ON_RESUME so returning from the system
+    // settings reflects the current state.
+    private val permissionRefreshTicker = MutableStateFlow(0)
 
     val uiState: StateFlow<SettingsUiState?> =
         combine(
             settingsRepository.settings,
             shizukuManager.state,
-            adminRefreshTicker,
+            permissionRefreshTicker,
         ) { settings, shizukuState, _ ->
             SettingsUiState(
                 settings = settings,
                 shizukuState = shizukuState,
                 isDeviceAdminActive = screenLockHelper.isAdminActive(),
+                isAccessibilityLockEnabled = accessibilityLockHelper.isServiceEnabled(),
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun isDeviceAdminActive(): Boolean = screenLockHelper.isAdminActive()
 
+    fun isAccessibilityLockEnabled(): Boolean = accessibilityLockHelper.isServiceEnabled()
+
     fun getAdminComponent(): ComponentName = screenLockHelper.adminComponent
 
     fun refreshShizuku() = shizukuManager.refresh()
 
-    /** Triggers a re-read of the device-admin active flag. */
-    fun refreshDeviceAdminState() {
-        adminRefreshTicker.value = adminRefreshTicker.value + 1
+    /** Triggers a re-read of the device-admin and accessibility-service grants. */
+    fun refreshPermissionState() {
+        permissionRefreshTicker.value = permissionRefreshTicker.value + 1
     }
     fun requestShizukuPermission() = shizukuManager.requestPermission()
     fun isShizukuReady(): Boolean = shizukuManager.isReady()
@@ -68,8 +74,8 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.updateScreenOff(enabled) }
     }
 
-    fun updateSoftScreenOff(enabled: Boolean) {
-        viewModelScope.launch { settingsRepository.updateSoftScreenOff(enabled) }
+    fun updateScreenLockMethod(method: ScreenLockMethod) {
+        viewModelScope.launch { settingsRepository.updateScreenLockMethod(method) }
     }
 
     fun updateTurnOffWifi(enabled: Boolean) {

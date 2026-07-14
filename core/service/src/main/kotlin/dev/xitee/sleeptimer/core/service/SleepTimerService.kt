@@ -10,6 +10,7 @@ import android.os.SystemClock
 import androidx.core.app.ServiceCompat
 import dagger.hilt.android.AndroidEntryPoint
 import dev.xitee.sleeptimer.core.data.model.MAX_TIMER_MINUTES
+import dev.xitee.sleeptimer.core.data.model.ScreenLockMethod
 import dev.xitee.sleeptimer.core.data.model.TimerPhase
 import dev.xitee.sleeptimer.core.data.model.TimerState
 import dev.xitee.sleeptimer.core.data.model.UserSettings
@@ -18,6 +19,7 @@ import dev.xitee.sleeptimer.core.data.repository.TimerRepositoryImpl
 import dev.xitee.sleeptimer.core.data.util.remainingMillisToDisplayMinutes
 import dev.xitee.sleeptimer.core.service.media.MediaVolumeController
 import dev.xitee.sleeptimer.core.service.notification.TimerNotificationManager
+import dev.xitee.sleeptimer.core.service.screen.AccessibilityLockHelper
 import dev.xitee.sleeptimer.core.service.screen.ScreenLockHelper
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuBluetoothController
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
@@ -45,6 +47,7 @@ class SleepTimerService : Service() {
     @Inject lateinit var notificationManager: TimerNotificationManager
     @Inject lateinit var mediaVolumeController: MediaVolumeController
     @Inject lateinit var screenLockHelper: ScreenLockHelper
+    @Inject lateinit var accessibilityLockHelper: AccessibilityLockHelper
     @Inject lateinit var shizukuManager: ShizukuManager
     @Inject lateinit var shizukuScreenOffHelper: ShizukuScreenOffHelper
     @Inject lateinit var shizukuWifiController: ShizukuWifiController
@@ -304,19 +307,35 @@ class SleepTimerService : Service() {
         }
 
         if (settings.screenOff) {
-            if (settings.softScreenOff && shizukuManager.isReady()) {
-                // KEYCODE_POWER is a toggle: only send it while the screen is on,
-                // otherwise "turn off the screen" would wake a sleeping device. If
-                // the screen is already off there is nothing to do — falling back
-                // to the hard lock here would defeat the user's choice to keep
-                // biometric unlock working.
-                if (powerManager.isInteractive && !shizukuScreenOffHelper.turnOffScreen()) {
+            when (settings.screenLockMethod) {
+                ScreenLockMethod.Shizuku -> {
+                    if (shizukuManager.isReady()) {
+                        // KEYCODE_POWER is a toggle: only send it while the screen is
+                        // on, otherwise "turn off the screen" would wake a sleeping
+                        // device. If the screen is already off there is nothing to do —
+                        // falling back to the hard lock here would defeat the user's
+                        // choice to keep biometric unlock working.
+                        if (powerManager.isInteractive && !shizukuScreenOffHelper.turnOffScreen()) {
+                            screenLockHelper.lockScreen()
+                        }
+                    } else {
+                        // Shizuku chosen but unavailable — fall back to the hard lock.
+                        screenLockHelper.lockScreen()
+                    }
+                }
+                ScreenLockMethod.Accessibility -> {
+                    // GLOBAL_ACTION_LOCK_SCREEN locks like the power button and is
+                    // idempotent on an already-locked device — no isInteractive gate
+                    // needed. Fall back to the hard lock if the accessibility service
+                    // was disabled (or the device runs API < 28).
+                    if (!accessibilityLockHelper.lockScreen()) {
+                        screenLockHelper.lockScreen()
+                    }
+                }
+                ScreenLockMethod.DeviceAdmin -> {
+                    // Hard-lock: forces credential on next unlock.
                     screenLockHelper.lockScreen()
                 }
-            } else {
-                // Hard-lock: also the path when softScreenOff is on but Shizuku is
-                // unavailable. Forces credential on next unlock.
-                screenLockHelper.lockScreen()
             }
         }
 

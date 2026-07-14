@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
 import dev.xitee.sleeptimer.core.data.model.MAX_TIMER_MINUTES
+import dev.xitee.sleeptimer.core.data.model.ScreenLockMethod
 import dev.xitee.sleeptimer.core.data.model.ThemeId
 import dev.xitee.sleeptimer.core.data.model.UserSettings
 import dev.xitee.sleeptimer.core.data.util.isSystemReduceMotionEnabled
@@ -36,6 +37,10 @@ class SettingsRepositoryImpl @Inject constructor(
         val STOP_MEDIA = booleanPreferencesKey("stop_media_playback")
         val FADE_OUT_DURATION = intPreferencesKey("fade_out_duration_seconds")
         val SCREEN_OFF = booleanPreferencesKey("screen_off")
+        val SCREEN_LOCK_METHOD = stringPreferencesKey("screen_lock_method")
+
+        // Legacy key from before ScreenLockMethod existed (true = Shizuku soft
+        // screen-off, false = device admin). Only read for migration, never written.
         val SOFT_SCREEN_OFF = booleanPreferencesKey("soft_screen_off")
         val TURN_OFF_WIFI = booleanPreferencesKey("turn_off_wifi")
         val TURN_OFF_BLUETOOTH = booleanPreferencesKey("turn_off_bluetooth")
@@ -89,7 +94,8 @@ class SettingsRepositoryImpl @Inject constructor(
             stopMediaPlayback = prefs[STOP_MEDIA] ?: d.stopMediaPlayback,
             fadeOutDurationSeconds = prefs[FADE_OUT_DURATION] ?: d.fadeOutDurationSeconds,
             screenOff = prefs[SCREEN_OFF] ?: d.screenOff,
-            softScreenOff = prefs[SOFT_SCREEN_OFF] ?: d.softScreenOff,
+            screenLockMethod = prefs[SCREEN_LOCK_METHOD]?.let { ScreenLockMethod.fromStorage(it) }
+                ?: if (prefs[SOFT_SCREEN_OFF] == true) ScreenLockMethod.Shizuku else d.screenLockMethod,
             turnOffWifi = prefs[TURN_OFF_WIFI] ?: d.turnOffWifi,
             turnOffBluetooth = prefs[TURN_OFF_BLUETOOTH] ?: d.turnOffBluetooth,
             hapticFeedbackEnabled = prefs[HAPTIC_FEEDBACK] ?: d.hapticFeedbackEnabled,
@@ -116,8 +122,8 @@ class SettingsRepositoryImpl @Inject constructor(
         dataStore.edit { it[SCREEN_OFF] = enabled }
     }
 
-    override suspend fun updateSoftScreenOff(enabled: Boolean) {
-        dataStore.edit { it[SOFT_SCREEN_OFF] = enabled }
+    override suspend fun updateScreenLockMethod(method: ScreenLockMethod) {
+        dataStore.edit { it[SCREEN_LOCK_METHOD] = method.name }
     }
 
     override suspend fun updateTurnOffWifi(enabled: Boolean) {

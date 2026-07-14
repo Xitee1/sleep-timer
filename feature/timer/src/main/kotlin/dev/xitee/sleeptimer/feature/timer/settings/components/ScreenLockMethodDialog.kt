@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Accessibility
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.PhoneAndroid
@@ -24,12 +25,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import dev.xitee.sleeptimer.core.service.screen.AccessibilityLockHelper
 import dev.xitee.sleeptimer.feature.timer.R
 
 @Composable
 fun ScreenLockMethodDialog(
-    onHardLockSelected: () -> Unit,
-    onSoftLockSelected: () -> Unit,
+    onDeviceAdminSelected: () -> Unit,
+    onAccessibilitySelected: () -> Unit,
+    onShizukuSelected: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
@@ -42,14 +45,24 @@ fun ScreenLockMethodDialog(
                     icon = Icons.Default.AdminPanelSettings,
                     title = stringResource(R.string.screen_method_hard_title),
                     description = stringResource(R.string.screen_method_hard_description),
-                    onClick = { onHardLockSelected(); onDismiss() },
+                    onClick = { onDeviceAdminSelected(); onDismiss() },
                 )
+                // GLOBAL_ACTION_LOCK_SCREEN needs API 28 — hide the option below that.
+                if (AccessibilityLockHelper.isSupported) {
+                    Spacer(Modifier.height(8.dp))
+                    MethodOption(
+                        icon = Icons.Default.Accessibility,
+                        title = stringResource(R.string.screen_method_accessibility_title),
+                        description = stringResource(R.string.screen_method_accessibility_description),
+                        onClick = { onAccessibilitySelected(); onDismiss() },
+                    )
+                }
                 Spacer(Modifier.height(8.dp))
                 MethodOption(
                     icon = Icons.Default.Nightlight,
                     title = stringResource(R.string.screen_method_soft_title),
                     description = stringResource(R.string.screen_method_soft_description),
-                    onClick = { onSoftLockSelected(); onDismiss() },
+                    onClick = { onShizukuSelected(); onDismiss() },
                 )
             }
         },

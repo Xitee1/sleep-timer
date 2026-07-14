@@ -25,4 +25,8 @@
 
     <!-- Device Admin -->
     <string name="device_admin_description">Erforderlich, um den Bildschirm zu sperren, wenn der Schlaf-Timer endet.</string>
+
+    <!-- Accessibility lock service (shown in the system accessibility settings) -->
+    <string name="accessibility_service_label">SleepTimer Bildschirmsperre</string>
+    <string name="accessibility_service_description">Wird nur verwendet, um den Bildschirm zu sperren, wenn der Schlaf-Timer endet. SleepTimer liest oder beobachtet keine Bildschirminhalte.</string>
 </resources>
