@@ -46,8 +46,6 @@
     <string name="widget_fixed_duration_title">Feste Dauer</string>
     <string name="widget_fixed_duration_off">Dieses Widget startet mit der zuletzt verwendeten Zeit</string>
     <string name="widget_fixed_duration_on">Dieses Widget startet immer mit der unten eingestellten Dauer</string>
-    <string name="widget_duration_title">Widget-Dauer</string>
-    <string name="widget_duration_value">%d Min</string>
 
     <string name="category_haptic">Haptisches Feedback</string>
     <string name="haptic_title">Haptisches Feedback</string>

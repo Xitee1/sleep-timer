@@ -46,8 +46,6 @@
     <string name="widget_fixed_duration_title">Fixed duration</string>
     <string name="widget_fixed_duration_off">This widget starts with the last used time</string>
     <string name="widget_fixed_duration_on">This widget always starts with the duration below</string>
-    <string name="widget_duration_title">Widget duration</string>
-    <string name="widget_duration_value">%d min</string>
 
     <string name="category_haptic">Haptic Feedback</string>
     <string name="haptic_title">Haptic feedback</string>
