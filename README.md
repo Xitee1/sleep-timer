@@ -62,7 +62,9 @@ network.
 
 ### F-Droid
 
-_Submission pending._
+SleepTimer is available on [F-Droid](https://f-droid.org/packages/dev.xitee.sleeptimer/):
+
+[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/dev.xitee.sleeptimer/)
 
 ### GitHub Releases
 
