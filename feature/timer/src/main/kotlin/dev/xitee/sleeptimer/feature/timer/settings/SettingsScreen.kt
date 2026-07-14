@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.MusicOff
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.ScreenRotation
+import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Icon
@@ -58,6 +59,7 @@ import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
 import dev.xitee.sleeptimer.feature.timer.R
 import dev.xitee.sleeptimer.feature.timer.settings.components.AutoRotateModeDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.FadeOutSlider
+import dev.xitee.sleeptimer.feature.timer.settings.components.MediaEndActionDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.ScreenLockMethodDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.labelRes
 import dev.xitee.sleeptimer.feature.timer.settings.components.SettingsToggleRow
@@ -120,6 +122,7 @@ private fun SettingsContent(
     var pendingShizukuToggle by remember { mutableStateOf<(() -> Unit)?>(null) }
     var showMethodDialog by remember { mutableStateOf(false) }
     var showAutoRotateDialog by remember { mutableStateOf(false) }
+    var showMediaEndActionDialog by remember { mutableStateOf(false) }
 
     fun requestWithShizuku(explanation: String, enableAction: () -> Unit) {
         if (viewModel.isShizukuReady()) {
@@ -177,6 +180,14 @@ private fun SettingsContent(
             selected = uiState.settings.autoRotateMode,
             onSelect = { viewModel.updateAutoRotateMode(it) },
             onDismiss = { showAutoRotateDialog = false },
+        )
+    }
+
+    if (showMediaEndActionDialog) {
+        MediaEndActionDialog(
+            selected = uiState.settings.mediaEndAction,
+            onSelect = { viewModel.updateMediaEndAction(it) },
+            onDismiss = { showMediaEndActionDialog = false },
         )
     }
 
@@ -258,6 +269,12 @@ private fun SettingsContent(
                     description = stringResource(R.string.playback_description),
                     checked = uiState.settings.stopMediaPlayback,
                     onCheckedChange = { viewModel.updateStopMediaPlayback(it) },
+                )
+                SettingsNavigationRow(
+                    icon = Icons.Default.StopCircle,
+                    title = stringResource(R.string.media_end_action_title),
+                    description = stringResource(uiState.settings.mediaEndAction.labelRes),
+                    onClick = { showMediaEndActionDialog = true },
                 )
                 FadeOutSlider(
                     durationSeconds = uiState.settings.fadeOutDurationSeconds,

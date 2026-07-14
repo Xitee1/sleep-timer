@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.AudioManager
 import android.view.KeyEvent
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.xitee.sleeptimer.core.data.model.MediaEndAction
 import kotlinx.coroutines.delay
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -15,11 +16,11 @@ class MediaVolumeController @Inject constructor(
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private var originalVolume: Int = -1
 
-    suspend fun fadeOutAndPause(durationSeconds: Int) {
+    suspend fun fadeOutAndEndPlayback(durationSeconds: Int, endAction: MediaEndAction) {
         originalVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
 
         if (originalVolume <= 0 || durationSeconds <= 0) {
-            pauseMedia()
+            endPlayback(endAction)
             return
         }
 
@@ -31,7 +32,7 @@ class MediaVolumeController @Inject constructor(
             delay(intervalMs)
         }
 
-        pauseMedia()
+        endPlayback(endAction)
         restoreVolume()
     }
 
@@ -53,11 +54,13 @@ class MediaVolumeController @Inject constructor(
         originalVolume = -1
     }
 
-    fun pauseMedia() {
-        val downEvent = KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PAUSE)
-        val upEvent = KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PAUSE)
-        audioManager.dispatchMediaKeyEvent(downEvent)
-        audioManager.dispatchMediaKeyEvent(upEvent)
+    private fun endPlayback(action: MediaEndAction) {
+        val keyCode = when (action) {
+            MediaEndAction.Pause -> KeyEvent.KEYCODE_MEDIA_PAUSE
+            MediaEndAction.Stop -> KeyEvent.KEYCODE_MEDIA_STOP
+        }
+        audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
+        audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
     }
 
     fun restoreVolume() {

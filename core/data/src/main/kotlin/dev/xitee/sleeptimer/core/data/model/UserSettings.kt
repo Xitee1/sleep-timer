@@ -2,6 +2,7 @@ package dev.xitee.sleeptimer.core.data.model
 
 data class UserSettings(
     val stopMediaPlayback: Boolean = true,
+    val mediaEndAction: MediaEndAction = MediaEndAction.Default,
     val fadeOutDurationSeconds: Int = 30,
     val screenOff: Boolean = false,
     val softScreenOff: Boolean = false,

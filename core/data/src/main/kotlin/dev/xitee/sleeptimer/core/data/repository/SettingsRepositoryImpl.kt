@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
 import dev.xitee.sleeptimer.core.data.model.MAX_TIMER_MINUTES
+import dev.xitee.sleeptimer.core.data.model.MediaEndAction
 import dev.xitee.sleeptimer.core.data.model.ThemeId
 import dev.xitee.sleeptimer.core.data.model.UserSettings
 import dev.xitee.sleeptimer.core.data.util.isSystemReduceMotionEnabled
@@ -34,6 +35,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
     private companion object {
         val STOP_MEDIA = booleanPreferencesKey("stop_media_playback")
+        val MEDIA_END_ACTION = stringPreferencesKey("media_end_action")
         val FADE_OUT_DURATION = intPreferencesKey("fade_out_duration_seconds")
         val SCREEN_OFF = booleanPreferencesKey("screen_off")
         val SOFT_SCREEN_OFF = booleanPreferencesKey("soft_screen_off")
@@ -87,6 +89,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val d = UserSettings()
         UserSettings(
             stopMediaPlayback = prefs[STOP_MEDIA] ?: d.stopMediaPlayback,
+            mediaEndAction = MediaEndAction.fromStorage(prefs[MEDIA_END_ACTION]),
             fadeOutDurationSeconds = prefs[FADE_OUT_DURATION] ?: d.fadeOutDurationSeconds,
             screenOff = prefs[SCREEN_OFF] ?: d.screenOff,
             softScreenOff = prefs[SOFT_SCREEN_OFF] ?: d.softScreenOff,
@@ -106,6 +109,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun updateStopMediaPlayback(enabled: Boolean) {
         dataStore.edit { it[STOP_MEDIA] = enabled }
+    }
+
+    override suspend fun updateMediaEndAction(action: MediaEndAction) {
+        dataStore.edit { it[MEDIA_END_ACTION] = action.name }
     }
 
     override suspend fun updateFadeOutDuration(seconds: Int) {
