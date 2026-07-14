@@ -35,6 +35,22 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
+        <!-- Quick Settings tile: starts the timer with the last used duration. The
+             tile label/icon here are what the user sees in the QS edit panel. -->
+        <service
+            android:name=".tile.SleepTimerTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_timer"
+            android:label="@string/qs_tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
         <receiver
             android:name=".receiver.SleepTimerDeviceAdminReceiver"
             android:exported="true"
