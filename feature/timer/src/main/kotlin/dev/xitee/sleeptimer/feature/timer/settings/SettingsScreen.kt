@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.BatterySaver
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MusicOff
@@ -116,6 +117,14 @@ private fun SettingsContent(
         }
     }
 
+    // Refresh on return from the exemption dialog / battery settings so the row
+    // flips as soon as the system state actually changed.
+    val batteryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) {
+        viewModel.refreshSystemState()
+    }
+
     var shizukuDialogExplanation by remember { mutableStateOf<String?>(null) }
     var pendingShizukuToggle by remember { mutableStateOf<(() -> Unit)?>(null) }
     var showMethodDialog by remember { mutableStateOf(false) }
@@ -193,11 +202,11 @@ private fun SettingsContent(
         viewModel.refreshShizuku()
     }
 
-    // Device admin can be revoked from system Settings without any broadcast we're
-    // subscribed to — re-query on resume so the "Screen" row description reflects
-    // the current admin state if the user came back from Settings → Device admin.
+    // Device admin and the battery-optimization exemption can both change in system
+    // Settings without any broadcast we're subscribed to — re-query on resume so the
+    // affected rows reflect the current state when the user comes back.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        viewModel.refreshDeviceAdminState()
+        viewModel.refreshSystemState()
     }
 
     TimerBackground(
@@ -320,6 +329,32 @@ private fun SettingsContent(
                         } else {
                             viewModel.updateTurnOffBluetooth(false)
                         }
+                    },
+                )
+
+                SectionHeader(stringResource(R.string.category_system))
+                // Reflects live system state, not a persisted preference: the check
+                // is what the OS reports, and toggling only launches the matching
+                // system UI (exemption dialog on, optimization list off — Android
+                // offers no way to re-optimize programmatically). The row updates
+                // via refreshSystemState() once the user returns.
+                SettingsToggleRow(
+                    icon = Icons.Default.BatterySaver,
+                    title = stringResource(R.string.battery_optimization_title),
+                    description = if (uiState.isIgnoringBatteryOptimizations) {
+                        stringResource(R.string.battery_optimization_active)
+                    } else {
+                        stringResource(R.string.battery_optimization_description)
+                    },
+                    checked = uiState.isIgnoringBatteryOptimizations,
+                    onCheckedChange = { enabled ->
+                        batteryLauncher.launch(
+                            if (enabled) {
+                                viewModel.batteryExemptionRequestIntent()
+                            } else {
+                                viewModel.batteryOptimizationSettingsIntent()
+                            },
+                        )
                     },
                 )
 

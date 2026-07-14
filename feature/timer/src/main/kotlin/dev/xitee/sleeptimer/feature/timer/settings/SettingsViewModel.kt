@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
 import dev.xitee.sleeptimer.core.data.model.ThemeId
 import dev.xitee.sleeptimer.core.data.repository.SettingsRepository
+import dev.xitee.sleeptimer.core.service.power.BatteryOptimizationHelper
 import dev.xitee.sleeptimer.core.service.screen.ScreenLockHelper
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,24 +23,27 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val shizukuManager: ShizukuManager,
     private val screenLockHelper: ScreenLockHelper,
+    private val batteryOptimizationHelper: BatteryOptimizationHelper,
 ) : ViewModel() {
 
-    // Tick to re-query isAdminActive. Admin grants can be revoked from system Settings
-    // without any callback into the app, so nothing else drives a refresh. Bumped from
-    // SettingsScreen on ON_RESUME so returning from Settings → Security → Device admin
+    // Tick to re-query system state we get no callback for: device-admin grants and
+    // the battery-optimization exemption can both change in system Settings behind
+    // our back. Bumped from SettingsScreen on ON_RESUME so returning from Settings
     // reflects the current state.
-    private val adminRefreshTicker = MutableStateFlow(0)
+    private val systemStateRefreshTicker = MutableStateFlow(0)
 
     val uiState: StateFlow<SettingsUiState?> =
         combine(
             settingsRepository.settings,
             shizukuManager.state,
-            adminRefreshTicker,
+            systemStateRefreshTicker,
         ) { settings, shizukuState, _ ->
             SettingsUiState(
                 settings = settings,
                 shizukuState = shizukuState,
                 isDeviceAdminActive = screenLockHelper.isAdminActive(),
+                isIgnoringBatteryOptimizations =
+                    batteryOptimizationHelper.isIgnoringBatteryOptimizations(),
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
@@ -49,10 +53,15 @@ class SettingsViewModel @Inject constructor(
 
     fun refreshShizuku() = shizukuManager.refresh()
 
-    /** Triggers a re-read of the device-admin active flag. */
-    fun refreshDeviceAdminState() {
-        adminRefreshTicker.value = adminRefreshTicker.value + 1
+    /** Triggers a re-read of the device-admin and battery-exemption flags. */
+    fun refreshSystemState() {
+        systemStateRefreshTicker.value = systemStateRefreshTicker.value + 1
     }
+
+    fun batteryExemptionRequestIntent() = batteryOptimizationHelper.requestExemptionIntent()
+
+    fun batteryOptimizationSettingsIntent() =
+        batteryOptimizationHelper.batteryOptimizationSettingsIntent()
     fun requestShizukuPermission() = shizukuManager.requestPermission()
     fun isShizukuReady(): Boolean = shizukuManager.isReady()
 

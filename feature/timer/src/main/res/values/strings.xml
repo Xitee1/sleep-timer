@@ -47,6 +47,10 @@
     <string name="widget_fixed_duration_off">This widget starts with the last used time</string>
     <string name="widget_fixed_duration_on">This widget always starts with the duration below</string>
 
+    <string name="category_system">System</string>
+    <string name="battery_optimization_title">Ignore battery optimization</string>
+    <string name="battery_optimization_description">Recommended if the timer stops working in the background. Not needed on every device.</string>
+    <string name="battery_optimization_active">SleepTimer is exempt from battery optimization</string>
     <string name="category_haptic">Haptic Feedback</string>
     <string name="haptic_title">Haptic feedback</string>
     <string name="haptic_description">Vibrate when using timer and controls</string>

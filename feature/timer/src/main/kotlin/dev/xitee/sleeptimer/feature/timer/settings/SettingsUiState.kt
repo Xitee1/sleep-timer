@@ -7,4 +7,5 @@ data class SettingsUiState(
     val settings: UserSettings = UserSettings(),
     val shizukuState: ShizukuManager.State = ShizukuManager.State.NotInstalled,
     val isDeviceAdminActive: Boolean = false,
+    val isIgnoringBatteryOptimizations: Boolean = false,
 )

@@ -47,6 +47,10 @@
     <string name="widget_fixed_duration_off">Dieses Widget startet mit der zuletzt verwendeten Zeit</string>
     <string name="widget_fixed_duration_on">Dieses Widget startet immer mit der unten eingestellten Dauer</string>
 
+    <string name="category_system">System</string>
+    <string name="battery_optimization_title">Akku-Optimierung ignorieren</string>
+    <string name="battery_optimization_description">Empfohlen, falls der Timer im Hintergrund nicht zuverlässig läuft. Nicht auf jedem Gerät nötig.</string>
+    <string name="battery_optimization_active">SleepTimer ist von der Akku-Optimierung ausgenommen</string>
     <string name="category_haptic">Haptisches Feedback</string>
     <string name="haptic_title">Haptisches Feedback</string>
     <string name="haptic_description">Vibrieren bei Verwendung von Timer und Bedienelementen</string>
