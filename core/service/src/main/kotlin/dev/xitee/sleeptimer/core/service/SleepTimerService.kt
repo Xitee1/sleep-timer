@@ -292,7 +292,10 @@ class SleepTimerService : Service() {
             updateTimerState(TimerPhase.FADING_OUT)
             lastNotifiedMinutes = Int.MIN_VALUE
             notificationManager.updateNotification(0, stepMinutes, TimerPhase.FADING_OUT)
-            mediaVolumeController.fadeOutAndPause(settings.fadeOutDurationSeconds)
+            mediaVolumeController.fadeOutAndEndPlayback(
+                settings.fadeOutDurationSeconds,
+                settings.mediaEndAction,
+            )
         }
 
         if (settings.turnOffWifi && shizukuManager.isReady()) {

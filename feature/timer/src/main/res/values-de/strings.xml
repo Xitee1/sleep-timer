@@ -34,6 +34,12 @@
     <string name="category_sleep_timer">Sleep Timer</string>
     <string name="playback_title">Wiedergabe</string>
     <string name="playback_description">Medienwiedergabe stoppen</string>
+    <string name="media_end_action_title">Pausieren oder stoppen</string>
+    <string name="media_end_action_dialog_title">Aktion nach Ablauf wählen</string>
+    <string name="media_end_action_pause_title">Pausieren</string>
+    <string name="media_end_action_pause_description">Wiedergabe kann an derselben Stelle fortgesetzt werden</string>
+    <string name="media_end_action_stop_title">Stoppen</string>
+    <string name="media_end_action_stop_description">Wiedergabesitzung vollständig beenden</string>
     <string name="fade_out_title">Fade-out-Dauer</string>
     <string name="fade_out_seconds">%d Sekunden</string>
     <string name="step_minutes_title">+/− Schrittweite</string>
