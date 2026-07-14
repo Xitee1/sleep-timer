@@ -68,11 +68,13 @@
     <string name="shizuku_feature_soft_screen_off">Sanftes Bildschirmabschalten simuliert einen Druck der Power-Taste via Shizuku, sodass die biometrische Entsperrung weiterhin funktioniert.</string>
     <string name="shizuku_feature_wifi">WLAN nach Timer-Ende auszuschalten erfordert Shizuku, da moderne Android-Versionen Apps das direkte Umschalten von WLAN verbieten.</string>
     <string name="shizuku_feature_bluetooth">Bluetooth nach Timer-Ende auszuschalten erfordert Shizuku, da moderne Android-Versionen Apps das direkte Umschalten von Bluetooth verbieten.</string>
+    <string name="shizuku_feature_return_home">Nach Timer-Ende zum Startbildschirm zurückzukehren erfordert Shizuku, da moderne Android-Versionen Apps den Wechsel zu einem anderen Bildschirm aus dem Hintergrund verbieten.</string>
 
     <!-- Kurzbezeichnungen für die Bullet-Liste im Startup-Dialog -->
     <string name="shizuku_feature_label_display">Display ausschalten</string>
     <string name="shizuku_feature_label_wifi">WLAN ausschalten</string>
     <string name="shizuku_feature_label_bluetooth">Bluetooth ausschalten</string>
+    <string name="shizuku_feature_label_return_home">Zum Startbildschirm zurückkehren</string>
     <string name="shizuku_startup_intro">Die Shizuku-Berechtigung fehlt für folgende aktivierte Funktionen:</string>
 
     <!-- Geräteadministrator-Dialog (beim Start) -->
@@ -88,6 +90,8 @@
     <string name="wifi_off_description">WLAN deaktivieren (Shizuku benötigt)</string>
     <string name="bluetooth_off_title">Bluetooth ausschalten</string>
     <string name="bluetooth_off_description">Bluetooth deaktivieren (Shizuku benötigt)</string>
+    <string name="return_home_title">Zum Startbildschirm zurückkehren</string>
+    <string name="return_home_description">Nach Timer-Ende zum Startbildschirm wechseln (Shizuku benötigt)</string>
 
     <!-- Sperrmethoden-Dialog -->
     <string name="screen_method_dialog_title">Sperrmethode wählen</string>

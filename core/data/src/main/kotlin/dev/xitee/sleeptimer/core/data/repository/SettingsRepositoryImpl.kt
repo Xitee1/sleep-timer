@@ -39,6 +39,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val SOFT_SCREEN_OFF = booleanPreferencesKey("soft_screen_off")
         val TURN_OFF_WIFI = booleanPreferencesKey("turn_off_wifi")
         val TURN_OFF_BLUETOOTH = booleanPreferencesKey("turn_off_bluetooth")
+        val RETURN_TO_HOME = booleanPreferencesKey("return_to_home")
         val HAPTIC_FEEDBACK = booleanPreferencesKey("haptic_feedback")
         val THEME = stringPreferencesKey("theme")
         val STARS_ENABLED = booleanPreferencesKey("stars_enabled")
@@ -92,6 +93,7 @@ class SettingsRepositoryImpl @Inject constructor(
             softScreenOff = prefs[SOFT_SCREEN_OFF] ?: d.softScreenOff,
             turnOffWifi = prefs[TURN_OFF_WIFI] ?: d.turnOffWifi,
             turnOffBluetooth = prefs[TURN_OFF_BLUETOOTH] ?: d.turnOffBluetooth,
+            returnToHome = prefs[RETURN_TO_HOME] ?: d.returnToHome,
             hapticFeedbackEnabled = prefs[HAPTIC_FEEDBACK] ?: d.hapticFeedbackEnabled,
             theme = ThemeId.fromStorage(prefs[THEME]),
             starsEnabled = prefs[STARS_ENABLED] ?: d.starsEnabled,
@@ -126,6 +128,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun updateTurnOffBluetooth(enabled: Boolean) {
         dataStore.edit { it[TURN_OFF_BLUETOOTH] = enabled }
+    }
+
+    override suspend fun updateReturnToHome(enabled: Boolean) {
+        dataStore.edit { it[RETURN_TO_HOME] = enabled }
     }
 
     override suspend fun updateHapticFeedback(enabled: Boolean) {

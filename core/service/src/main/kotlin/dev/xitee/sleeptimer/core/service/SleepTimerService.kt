@@ -20,6 +20,7 @@ import dev.xitee.sleeptimer.core.service.media.MediaVolumeController
 import dev.xitee.sleeptimer.core.service.notification.TimerNotificationManager
 import dev.xitee.sleeptimer.core.service.screen.ScreenLockHelper
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuBluetoothController
+import dev.xitee.sleeptimer.core.service.shizuku.ShizukuHomeController
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuScreenOffHelper
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuWifiController
@@ -49,6 +50,7 @@ class SleepTimerService : Service() {
     @Inject lateinit var shizukuScreenOffHelper: ShizukuScreenOffHelper
     @Inject lateinit var shizukuWifiController: ShizukuWifiController
     @Inject lateinit var shizukuBluetoothController: ShizukuBluetoothController
+    @Inject lateinit var shizukuHomeController: ShizukuHomeController
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var countdownJob: Job? = null
@@ -301,6 +303,15 @@ class SleepTimerService : Service() {
 
         if (settings.turnOffBluetooth && shizukuManager.isReady()) {
             shizukuBluetoothController.disableBluetooth()
+        }
+
+        if (settings.returnToHome && shizukuManager.isReady()) {
+            // KEYCODE_HOME wakes a sleeping device, so only send it while the
+            // screen is still on. Runs before the screen-off step so the launcher
+            // — not the media app — is what greets the user at the next unlock.
+            if (powerManager.isInteractive) {
+                shizukuHomeController.goHome()
+            }
         }
 
         if (settings.screenOff) {

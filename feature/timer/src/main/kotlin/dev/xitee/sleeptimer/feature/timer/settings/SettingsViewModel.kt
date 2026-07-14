@@ -80,6 +80,10 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.updateTurnOffBluetooth(enabled) }
     }
 
+    fun updateReturnToHome(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.updateReturnToHome(enabled) }
+    }
+
     fun updateHapticFeedback(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.updateHapticFeedback(enabled) }
     }

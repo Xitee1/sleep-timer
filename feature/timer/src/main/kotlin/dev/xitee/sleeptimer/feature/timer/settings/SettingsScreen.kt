@@ -27,6 +27,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MusicOff
 import androidx.compose.material.icons.filled.PhoneAndroid
@@ -106,6 +107,7 @@ private fun SettingsContent(
         stringResource(R.string.shizuku_feature_soft_screen_off)
     val shizukuWifiExplanation = stringResource(R.string.shizuku_feature_wifi)
     val shizukuBluetoothExplanation = stringResource(R.string.shizuku_feature_bluetooth)
+    val shizukuReturnHomeExplanation = stringResource(R.string.shizuku_feature_return_home)
 
     val deviceAdminLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
@@ -319,6 +321,22 @@ private fun SettingsContent(
                             }
                         } else {
                             viewModel.updateTurnOffBluetooth(false)
+                        }
+                    },
+                )
+
+                SettingsToggleRow(
+                    icon = Icons.Default.Home,
+                    title = stringResource(R.string.return_home_title),
+                    description = stringResource(R.string.return_home_description),
+                    checked = uiState.settings.returnToHome,
+                    onCheckedChange = { enabled ->
+                        if (enabled) {
+                            requestWithShizuku(shizukuReturnHomeExplanation) {
+                                viewModel.updateReturnToHome(true)
+                            }
+                        } else {
+                            viewModel.updateReturnToHome(false)
                         }
                     },
                 )
