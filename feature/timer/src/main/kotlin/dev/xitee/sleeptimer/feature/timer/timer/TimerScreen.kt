@@ -180,6 +180,7 @@ private fun TimerContent(
                 ShizukuFeature.SCREEN_OFF -> stringResource(R.string.shizuku_feature_label_display)
                 ShizukuFeature.WIFI -> stringResource(R.string.shizuku_feature_label_wifi)
                 ShizukuFeature.BLUETOOTH -> stringResource(R.string.shizuku_feature_label_bluetooth)
+                ShizukuFeature.RETURN_HOME -> stringResource(R.string.shizuku_feature_label_return_home)
             }
         }
         ShizukuRequiredDialog(

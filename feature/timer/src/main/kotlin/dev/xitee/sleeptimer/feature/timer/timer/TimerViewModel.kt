@@ -98,6 +98,7 @@ class TimerViewModel @Inject constructor(
             if (s.screenOff && s.softScreenOff && !shizukuReady) add(ShizukuFeature.SCREEN_OFF)
             if (s.turnOffWifi && !shizukuReady) add(ShizukuFeature.WIFI)
             if (s.turnOffBluetooth && !shizukuReady) add(ShizukuFeature.BLUETOOTH)
+            if (s.returnToHome && !shizukuReady) add(ShizukuFeature.RETURN_HOME)
         }
         return StartupPermissionCheck(adminMissing, shizukuFeatures)
     }
@@ -178,4 +179,4 @@ data class StartupPermissionCheck(
     val shizukuMissingFeatures: List<ShizukuFeature>,
 )
 
-enum class ShizukuFeature { SCREEN_OFF, WIFI, BLUETOOTH }
+enum class ShizukuFeature { SCREEN_OFF, WIFI, BLUETOOTH, RETURN_HOME }

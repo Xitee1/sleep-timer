@@ -7,6 +7,7 @@ data class UserSettings(
     val softScreenOff: Boolean = false,
     val turnOffWifi: Boolean = false,
     val turnOffBluetooth: Boolean = false,
+    val returnToHome: Boolean = false,
     val hapticFeedbackEnabled: Boolean = true,
     val theme: ThemeId = ThemeId.Default,
     val starsEnabled: Boolean = true,

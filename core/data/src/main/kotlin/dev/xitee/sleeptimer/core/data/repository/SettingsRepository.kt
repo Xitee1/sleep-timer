@@ -13,6 +13,7 @@ interface SettingsRepository {
     suspend fun updateSoftScreenOff(enabled: Boolean)
     suspend fun updateTurnOffWifi(enabled: Boolean)
     suspend fun updateTurnOffBluetooth(enabled: Boolean)
+    suspend fun updateReturnToHome(enabled: Boolean)
     suspend fun updateHapticFeedback(enabled: Boolean)
     suspend fun updateTheme(theme: ThemeId)
     suspend fun updateStarsEnabled(enabled: Boolean)
