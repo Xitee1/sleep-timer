@@ -97,4 +97,33 @@ class WidgetConfigRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    override suspend fun remapConfigs(oldToNew: Map<Int, Int>) {
+        if (oldToNew.isEmpty()) return
+        dataStore.edit { prefs ->
+            // Snapshot the old values before touching the store: an id can appear as
+            // both an old and a new key across the remap, so reading first (then
+            // clearing all old keys, then writing the new ones) avoids clobbering a
+            // value mid-migration.
+            val moved = oldToNew.mapNotNull { (oldId, newId) ->
+                val useFixed = prefs[useFixedKey(oldId)]
+                val fixedMinutes = prefs[fixedMinutesKey(oldId)]
+                if (useFixed == null && fixedMinutes == null) {
+                    null
+                } else {
+                    Triple(newId, useFixed, fixedMinutes)
+                }
+            }
+            oldToNew.keys.forEach { oldId ->
+                prefs.remove(useFixedKey(oldId))
+                prefs.remove(fixedMinutesKey(oldId))
+            }
+            moved.forEach { (newId, useFixed, fixedMinutes) ->
+                if (useFixed != null) prefs[useFixedKey(newId)] = useFixed
+                if (fixedMinutes != null) {
+                    prefs[fixedMinutesKey(newId)] = clampFixedWidgetMinutes(fixedMinutes)
+                }
+            }
+        }
+    }
 }

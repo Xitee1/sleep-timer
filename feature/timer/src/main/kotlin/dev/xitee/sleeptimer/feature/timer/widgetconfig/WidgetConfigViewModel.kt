@@ -36,9 +36,11 @@ class WidgetConfigViewModel @Inject constructor(
         savedStateHandle[AppWidgetManager.EXTRA_APPWIDGET_ID]
             ?: AppWidgetManager.INVALID_APPWIDGET_ID
 
-    /** Only used to theme the config screen like the rest of the app. */
-    val settings: StateFlow<UserSettings> = settingsRepository.settings
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UserSettings())
+    // Only used to theme the config screen like the rest of the app. null until the
+    // stored settings have loaded, so the screen can wait for the real theme instead of
+    // flashing the default palette in first (same gate as [config] below).
+    val settings: StateFlow<UserSettings?> = settingsRepository.settings
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     // null until the stored config (or its defaults) has loaded — the screen
     // renders nothing before that instead of flashing default values.

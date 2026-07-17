@@ -49,6 +49,7 @@ class SleepTimerService : Service() {
     @Inject lateinit var shizukuScreenOffHelper: ShizukuScreenOffHelper
     @Inject lateinit var shizukuWifiController: ShizukuWifiController
     @Inject lateinit var shizukuBluetoothController: ShizukuBluetoothController
+    @Inject lateinit var timerWidgetRefresher: TimerWidgetRefresher
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var countdownJob: Job? = null
@@ -279,6 +280,9 @@ class SleepTimerService : Service() {
             // foreground session must survive this teardown.
             if (timerGeneration != generation) return@launch
             updateTimerState(TimerPhase.IDLE)
+            // Push the idle draw to the widgets before we let the process go: the
+            // in-process observer's render could be lost if we're reclaimed right after.
+            timerWidgetRefresher.refresh()
             notificationManager.cancelNotification()
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
@@ -328,6 +332,9 @@ class SleepTimerService : Service() {
 
         // Reset state before stopping foreground to avoid race with onDestroy
         timerRepository.updateState(TimerState())
+        // Push the idle draw to the widgets before we let the process go: the
+        // in-process observer's render could be lost if we're reclaimed right after.
+        timerWidgetRefresher.refresh()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }

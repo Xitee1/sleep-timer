@@ -53,6 +53,10 @@ fun WidgetConfigScreen(
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val config by viewModel.config.collectAsStateWithLifecycle()
+    // Wait for both the stored settings (for the theme) and this widget's config to
+    // load before drawing anything — otherwise the screen would flash the default
+    // palette/values before the real ones arrive.
+    val loadedSettings = settings ?: return
     val ready = config ?: return
 
     val dialState = rememberCircularDialState()
@@ -64,12 +68,12 @@ fun WidgetConfigScreen(
         }
     }
 
-    val animatedTheme = rememberAnimatedAppTheme(AppThemes.byId(settings.theme))
+    val animatedTheme = rememberAnimatedAppTheme(AppThemes.byId(loadedSettings.theme))
     ProvideAppTheme(animatedTheme) {
         val theme = appTheme()
         TimerBackground(
             animating = false,
-            starsEnabled = settings.starsEnabled,
+            starsEnabled = loadedSettings.starsEnabled,
             modifier = Modifier.fillMaxSize(),
         ) {
             Column(
@@ -116,7 +120,7 @@ fun WidgetConfigScreen(
                                 state = dialState,
                                 isRunning = false,
                                 runningMinutes = 0f,
-                                hapticEnabled = settings.hapticFeedbackEnabled,
+                                hapticEnabled = loadedSettings.hapticFeedbackEnabled,
                                 // Live drag preview comes straight from dialState
                                 // (TimeDisplay below); only the committed value is
                                 // pushed into the config being edited.
