@@ -40,6 +40,13 @@
     <string name="step_minutes_value">%d Min</string>
     <string name="screen_title">Bildschirm</string>
     <string name="screen_description">Display ausschalten (Shizuku optional)</string>
+    <string name="widget_config_title">Widget-Einstellungen</string>
+    <string name="widget_config_description">Wähle, womit ein Tipp auf dieses Widget startet. Jedes Widget kann einzeln konfiguriert werden.</string>
+    <string name="widget_config_save">Speichern</string>
+    <string name="widget_fixed_duration_title">Feste Dauer</string>
+    <string name="widget_fixed_duration_off">Dieses Widget startet mit der zuletzt verwendeten Zeit</string>
+    <string name="widget_fixed_duration_on">Dieses Widget startet immer mit der unten eingestellten Dauer</string>
+
     <string name="category_haptic">Haptisches Feedback</string>
     <string name="haptic_title">Haptisches Feedback</string>
     <string name="haptic_description">Vibrieren bei Verwendung von Timer und Bedienelementen</string>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget-picker thumbnail. previewLayout (API 31+) supersedes this; it exists so
+     pre-31 launchers, which can't render previewLayout, still show a representative
+     image instead of a blank/generic entry. Mirrors the real layout: branded card,
+     timer glyph, and two text lines. Colors resolve to Material You on 31+ and the
+     Midnight palette below. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="110dp"
+    android:height="40dp"
+    android:viewportWidth="110"
+    android:viewportHeight="40">
+
+    <!-- Rounded card background (r=8) -->
+    <path
+        android:fillColor="@color/widget_background"
+        android:pathData="M8,0 L102,0 A8,8 0 0 1 110,8 L110,32 A8,8 0 0 1 102,40 L8,40 A8,8 0 0 1 0,32 L0,8 A8,8 0 0 1 8,0 Z" />
+
+    <!-- Timer glyph (ic_timer, 24x24) scaled to ~22 and vertically centered -->
+    <group
+        android:translateX="12"
+        android:translateY="9"
+        android:scaleX="0.9166"
+        android:scaleY="0.9166">
+        <path
+            android:fillColor="@color/widget_accent"
+            android:pathData="M11.99,2C6.47,2 2,6.48 2,12s4.47,10 9.99,10C17.52,22 22,17.52 22,12S17.52,2 11.99,2zM12,20c-4.42,0 -8,-3.58 -8,-8s3.58,-8 8,-8 8,3.58 8,8 -3.58,8 -8,8z" />
+        <path
+            android:fillColor="@color/widget_accent"
+            android:pathData="M12.5,7H11v6l5.25,3.15 0.75,-1.23 -4.5,-2.67z" />
+    </group>
+
+    <!-- "15 min" line -->
+    <path
+        android:fillColor="@color/widget_text"
+        android:pathData="M44,12 h34 a2,2 0 0 1 2,2 v3 a2,2 0 0 1 -2,2 h-34 a2,2 0 0 1 -2,-2 v-3 a2,2 0 0 1 2,-2 z" />
+
+    <!-- "Tap to start" line -->
+    <path
+        android:fillColor="@color/widget_text_secondary"
+        android:pathData="M44,23 h50 a1.5,1.5 0 0 1 1.5,1.5 v2 a1.5,1.5 0 0 1 -1.5,1.5 h-50 a1.5,1.5 0 0 1 -1.5,-1.5 v-2 a1.5,1.5 0 0 1 1.5,-1.5 z" />
+</vector>
