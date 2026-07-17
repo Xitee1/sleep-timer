@@ -18,3 +18,13 @@ data class WidgetConfig(
     fun startMinutes(presetMinutes: Int): Int =
         if (useFixedDuration) fixedMinutes else presetMinutes
 }
+
+/**
+ * Start minutes for the widget instance [appWidgetId], resolved from this map of
+ * stored configs (falling back to [WidgetConfig] defaults for an instance without an
+ * entry). Single source of truth for the "an idle widget shows exactly what a tap
+ * will start" invariant — the provider's render and the live updater both resolve
+ * through here, and the tap trampoline through [WidgetConfig.startMinutes] directly.
+ */
+fun Map<Int, WidgetConfig>.startMinutesFor(appWidgetId: Int, presetMinutes: Int): Int =
+    (this[appWidgetId] ?: WidgetConfig()).startMinutes(presetMinutes)

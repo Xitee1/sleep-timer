@@ -4,9 +4,10 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import dagger.hilt.android.AndroidEntryPoint
 import dev.xitee.sleeptimer.core.data.model.TimerPhase
-import dev.xitee.sleeptimer.core.data.model.WidgetConfig
+import dev.xitee.sleeptimer.core.data.model.startMinutesFor
 import dev.xitee.sleeptimer.core.data.repository.SettingsRepository
 import dev.xitee.sleeptimer.core.data.repository.TimerRepository
 import dev.xitee.sleeptimer.core.data.repository.WidgetConfigRepository
@@ -65,7 +66,7 @@ class SleepTimerWidgetProvider : AppWidgetProvider() {
                     widgetConfigRepository.configs.first()
             }
             appWidgetIds.forEach { id ->
-                val minutes = (configs[id] ?: WidgetConfig()).startMinutes(presetMinutes)
+                val minutes = configs.startMinutesFor(id, presetMinutes)
                 SleepTimerWidgetRenderer.render(context, appWidgetManager, id, state.phase, minutes)
             }
         } else {
@@ -94,10 +95,20 @@ class SleepTimerWidgetProvider : AppWidgetProvider() {
             setClassName(context, SleepTimerService::class.java.name)
             putExtra(SleepTimerService.EXTRA_DURATION_MILLIS, startMinutes * 60_000L)
         }
-        context.startForegroundService(serviceIntent)
+        try {
+            context.startForegroundService(serviceIntent)
+        } catch (e: IllegalStateException) {
+            // A widget tap normally grants the FGS background-start exemption, but a
+            // background-restricted app (Settings → "Don't allow background activity")
+            // is denied it and startForegroundService throws
+            // ForegroundServiceStartNotAllowedException (an IllegalStateException).
+            // Swallow it so the tap is a harmless no-op instead of crashing onReceive.
+            Log.w(TAG, "Foreground service start denied for widget tap", e)
+        }
     }
 
     companion object {
+        private const val TAG = "SleepTimerWidget"
         const val ACTION_START_TIMER = "dev.xitee.sleeptimer.action.WIDGET_START_TIMER"
     }
 }

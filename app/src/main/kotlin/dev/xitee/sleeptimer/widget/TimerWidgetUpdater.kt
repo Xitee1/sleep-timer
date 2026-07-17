@@ -5,6 +5,7 @@ import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.xitee.sleeptimer.core.data.model.TimerPhase
 import dev.xitee.sleeptimer.core.data.model.WidgetConfig
+import dev.xitee.sleeptimer.core.data.model.startMinutesFor
 import dev.xitee.sleeptimer.core.data.repository.SettingsRepository
 import dev.xitee.sleeptimer.core.data.repository.TimerRepository
 import dev.xitee.sleeptimer.core.data.repository.WidgetConfigRepository
@@ -68,7 +69,7 @@ class TimerWidgetUpdater @Inject constructor(
                     val manager = AppWidgetManager.getInstance(context)
                     SleepTimerWidgetRenderer.widgetIds(context, manager).forEach { id ->
                         val minutes = if (plan.phase == TimerPhase.IDLE) {
-                            (plan.configs[id] ?: WidgetConfig()).startMinutes(plan.presetMinutes)
+                            plan.configs.startMinutesFor(id, plan.presetMinutes)
                         } else {
                             plan.remainingDisplayMinutes
                         }

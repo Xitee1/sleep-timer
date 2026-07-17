@@ -1,6 +1,7 @@
 package dev.xitee.sleeptimer.widget
 
 import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -30,6 +31,17 @@ class SleepTimerWidgetConfigActivity : ComponentActivity() {
         // placement makes the host discard the half-configured widget.
         setResult(RESULT_CANCELED, resultIntent(appWidgetId))
         if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
+            finish()
+            return
+        }
+
+        // This activity is exported (some launchers start it directly), so reject a
+        // launch for an id that isn't one of our own placed widgets — otherwise
+        // another app could invoke it with a foreign/bogus appWidgetId and persist an
+        // orphan config that onDeleted would never reclaim. The host always binds the
+        // id to us before launching config, so a legitimate launch passes this check.
+        val info = AppWidgetManager.getInstance(this).getAppWidgetInfo(appWidgetId)
+        if (info?.provider != ComponentName(this, SleepTimerWidgetProvider::class.java)) {
             finish()
             return
         }
