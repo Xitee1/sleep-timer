@@ -66,7 +66,7 @@ Shell commands run through a **bound Shizuku UserService**, not the private `new
 ## Privacy/scope constraints (hard rules)
 
 - **No `INTERNET` permission.** The app must never make a network call. Do not add analytics, crash reporting, Firebase, Play Services, ads, or any third-party SDK that opens a socket.
-- **All settings live in DataStore Preferences** (`UserSettings`). Add new settings by extending `UserSettings`, mapping a new `Preferences.Key` in `SettingsRepositoryImpl`, and exposing an `updateX` method.
+- **All settings live in DataStore Preferences.** Global settings go in `UserSettings`: add one by extending `UserSettings`, mapping a new `Preferences.Key` in `SettingsRepositoryImpl`, and exposing an `updateX` method. Per-instance or otherwise dynamic config that doesn't fit the one-value-per-setting model may use its own repository over the same DataStore file (see `WidgetConfigRepository`, keyed by `appWidgetId` and pruned in the provider's `onDeleted`) — but never introduce a second storage mechanism.
 - Strings are localized — any user-visible string added to `values/strings.xml` must also be translated in `values-de/strings.xml`.
 
 ## Planning docs

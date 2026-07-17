@@ -25,4 +25,12 @@
 
     <!-- Device Admin -->
     <string name="device_admin_description">Erforderlich, um den Bildschirm zu sperren, wenn der Schlaf-Timer endet.</string>
+
+    <!-- Home screen widget -->
+    <string name="widget_description">Startet den Schlaf-Timer mit nur einem Tipp.</string>
+    <string name="widget_minutes">%d Min</string>
+    <string name="widget_preview_minutes">15 Min</string>
+    <string name="widget_tap_to_start">Zum Starten tippen</string>
+    <string name="widget_tap_to_cancel">Zum Abbrechen tippen</string>
+    <string name="widget_fading_out">Wiedergabe wird ausgeblendet</string>
 </resources>
