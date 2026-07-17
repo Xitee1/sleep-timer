@@ -6,10 +6,11 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
-import dev.xitee.sleeptimer.core.data.model.MAX_TIMER_MINUTES
 import dev.xitee.sleeptimer.core.data.model.WidgetConfig
+import dev.xitee.sleeptimer.core.data.model.clampFixedWidgetMinutes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.IOException
@@ -43,19 +44,29 @@ class WidgetConfigRepositoryImpl @Inject constructor(
         .map { prefs ->
             val result = mutableMapOf<Int, WidgetConfig>()
             prefs.asMap().forEach { (key, value) ->
+                // Safe casts (not `as`): a wrong-typed value skips that key instead of
+                // throwing a ClassCastException here, which — running after the .catch
+                // above — would escape the degrade-to-defaults contract and kill the
+                // collector.
                 USE_FIXED_REGEX.matchEntire(key.name)?.let { match ->
-                    val id = match.groupValues[1].toIntOrNull() ?: return@forEach
+                    val id = match.groupValues[1].toIntOrNull() ?: return@let
+                    val enabled = value as? Boolean ?: return@let
                     result[id] = (result[id] ?: WidgetConfig())
-                        .copy(useFixedDuration = value as Boolean)
+                        .copy(useFixedDuration = enabled)
                 }
                 FIXED_MINUTES_REGEX.matchEntire(key.name)?.let { match ->
-                    val id = match.groupValues[1].toIntOrNull() ?: return@forEach
+                    val id = match.groupValues[1].toIntOrNull() ?: return@let
+                    val minutes = value as? Int ?: return@let
                     result[id] = (result[id] ?: WidgetConfig())
-                        .copy(fixedMinutes = (value as Int).coerceIn(1, MAX_TIMER_MINUTES))
+                        .copy(fixedMinutes = clampFixedWidgetMinutes(minutes))
                 }
             }
             result
         }
+        // The DataStore file is shared with UserSettings, so `data` re-emits on every
+        // unrelated settings write; only propagate downstream when the parsed configs
+        // actually change, sparing the always-on TimerWidgetUpdater a redundant re-render.
+        .distinctUntilChanged()
 
     override suspend fun getConfig(appWidgetId: Int): WidgetConfig {
         val prefs = dataStore.data
@@ -66,15 +77,14 @@ class WidgetConfigRepositoryImpl @Inject constructor(
         val d = WidgetConfig()
         return WidgetConfig(
             useFixedDuration = prefs[useFixedKey(appWidgetId)] ?: d.useFixedDuration,
-            fixedMinutes = (prefs[fixedMinutesKey(appWidgetId)] ?: d.fixedMinutes)
-                .coerceIn(1, MAX_TIMER_MINUTES),
+            fixedMinutes = clampFixedWidgetMinutes(prefs[fixedMinutesKey(appWidgetId)] ?: d.fixedMinutes),
         )
     }
 
     override suspend fun setConfig(appWidgetId: Int, config: WidgetConfig) {
         dataStore.edit { prefs ->
             prefs[useFixedKey(appWidgetId)] = config.useFixedDuration
-            prefs[fixedMinutesKey(appWidgetId)] = config.fixedMinutes.coerceIn(1, MAX_TIMER_MINUTES)
+            prefs[fixedMinutesKey(appWidgetId)] = clampFixedWidgetMinutes(config.fixedMinutes)
         }
     }
 

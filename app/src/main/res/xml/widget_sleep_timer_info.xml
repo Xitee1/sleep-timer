@@ -2,7 +2,7 @@
 <!-- Default size 2x1 (one cell of height = 40dp per the 70*n-30 formula).
      updatePeriodMillis=0: updates are pushed by TimerWidgetUpdater/the provider,
      never polled. targetCell*/previewLayout/description are API 31+ and silently
-     ignored on older releases. -->
+     ignored on older releases; previewImage is the pre-31 picker thumbnail. -->
 <!-- configure: per-instance setup (last used vs fixed duration).
      widgetFeatures (API 31+): configuration_optional lets the launcher place the
      widget instantly with defaults, reconfigurable enables long-press -> edit.
@@ -15,6 +15,7 @@
     android:minHeight="40dp"
     android:minResizeWidth="110dp"
     android:minResizeHeight="40dp"
+    android:previewImage="@drawable/widget_preview"
     android:previewLayout="@layout/widget_sleep_timer"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="2"
