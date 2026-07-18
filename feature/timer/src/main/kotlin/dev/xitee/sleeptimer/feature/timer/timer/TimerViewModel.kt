@@ -8,12 +8,14 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.xitee.sleeptimer.core.data.model.MAX_TIMER_MINUTES
+import dev.xitee.sleeptimer.core.data.model.ScreenLockMethod
 import dev.xitee.sleeptimer.core.data.model.TimerPhase
 import dev.xitee.sleeptimer.core.data.model.UserSettings
 import dev.xitee.sleeptimer.core.data.repository.SettingsRepository
 import dev.xitee.sleeptimer.core.data.repository.TimerRepository
 import dev.xitee.sleeptimer.core.data.util.remainingMillisToDisplayMinutes
 import dev.xitee.sleeptimer.core.service.SleepTimerService
+import dev.xitee.sleeptimer.core.service.screen.AccessibilityLockHelper
 import dev.xitee.sleeptimer.core.service.screen.ScreenLockHelper
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +33,7 @@ class TimerViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val shizukuManager: ShizukuManager,
     private val screenLockHelper: ScreenLockHelper,
+    private val accessibilityLockHelper: AccessibilityLockHelper,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -92,14 +95,19 @@ class TimerViewModel @Inject constructor(
         val shizukuState = shizukuManager.awaitInitialState()
         val s = settingsRepository.settings.first()
         val shizukuReady = shizukuState == ShizukuManager.State.Ready
-        val adminActive = screenLockHelper.isAdminActive()
-        val adminMissing = s.screenOff && !s.softScreenOff && !adminActive
+        val lockMethod = s.screenLockMethod
+        val adminMissing = s.screenOff && lockMethod == ScreenLockMethod.DeviceAdmin &&
+            !screenLockHelper.isAdminActive()
+        val accessibilityMissing = s.screenOff && lockMethod == ScreenLockMethod.Accessibility &&
+            !accessibilityLockHelper.isServiceEnabled()
         val shizukuFeatures = buildList {
-            if (s.screenOff && s.softScreenOff && !shizukuReady) add(ShizukuFeature.SCREEN_OFF)
+            if (s.screenOff && lockMethod == ScreenLockMethod.Shizuku && !shizukuReady) {
+                add(ShizukuFeature.SCREEN_OFF)
+            }
             if (s.turnOffWifi && !shizukuReady) add(ShizukuFeature.WIFI)
             if (s.turnOffBluetooth && !shizukuReady) add(ShizukuFeature.BLUETOOTH)
         }
-        return StartupPermissionCheck(adminMissing, shizukuFeatures)
+        return StartupPermissionCheck(adminMissing, accessibilityMissing, shizukuFeatures)
     }
 
     /**
@@ -175,6 +183,7 @@ class TimerViewModel @Inject constructor(
 
 data class StartupPermissionCheck(
     val adminMissing: Boolean,
+    val accessibilityMissing: Boolean,
     val shizukuMissingFeatures: List<ShizukuFeature>,
 )
 

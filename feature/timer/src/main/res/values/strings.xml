@@ -102,9 +102,18 @@
     <string name="screen_method_hard_description">Standard Android lock. Requires credential to unlock.</string>
     <string name="screen_method_soft_title">Shizuku (soft)</string>
     <string name="screen_method_soft_description">Simulates power button. Biometric unlock stays active.</string>
+    <string name="screen_method_accessibility_title">Accessibility (soft)</string>
+    <string name="screen_method_accessibility_description">Locks like the power button via an accessibility service. Biometric unlock stays active, no Shizuku needed.</string>
     <string name="screen_method_active_hard">Turn off display - Device admin</string>
     <string name="screen_method_active_soft">Turn off display - Shizuku</string>
+    <string name="screen_method_active_accessibility">Turn off display - Accessibility</string>
     <string name="screen_method_hard_revoked">Turn off display - Device admin permission missing</string>
+    <string name="screen_method_accessibility_revoked">Turn off display - Accessibility service disabled</string>
+
+    <!-- Accessibility service required dialog -->
+    <string name="accessibility_dialog_title">Accessibility service required</string>
+    <string name="accessibility_body_required">To lock the screen this way, enable "SleepTimer screen lock" in the system accessibility settings. SleepTimer only uses it to lock the screen and does not read any screen content.</string>
+    <string name="accessibility_action_open_settings">Open settings</string>
 
     <!-- About -->
     <string name="category_about">About</string>

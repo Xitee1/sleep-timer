@@ -102,9 +102,18 @@
     <string name="screen_method_hard_description">Standard-Android-Sperre. Code zum Entsperren nötig.</string>
     <string name="screen_method_soft_title">Shizuku (sanft)</string>
     <string name="screen_method_soft_description">Simuliert Power-Taste. Biometrische Entsperrung bleibt aktiv.</string>
+    <string name="screen_method_accessibility_title">Bedienungshilfe (sanft)</string>
+    <string name="screen_method_accessibility_description">Sperrt wie die Power-Taste über einen Bedienungshilfen-Dienst. Biometrische Entsperrung bleibt aktiv, kein Shizuku nötig.</string>
     <string name="screen_method_active_hard">Display ausschalten - Geräteadministrator</string>
     <string name="screen_method_active_soft">Display ausschalten - Shizuku</string>
+    <string name="screen_method_active_accessibility">Display ausschalten - Bedienungshilfe</string>
     <string name="screen_method_hard_revoked">Display ausschalten - Geräteadministrator-Berechtigung fehlt</string>
+    <string name="screen_method_accessibility_revoked">Display ausschalten - Bedienungshilfen-Dienst deaktiviert</string>
+
+    <!-- Bedienungshilfen-Dialog -->
+    <string name="accessibility_dialog_title">Bedienungshilfen-Dienst erforderlich</string>
+    <string name="accessibility_body_required">Um den Bildschirm auf diese Weise zu sperren, aktiviere „SleepTimer Bildschirmsperre“ in den Bedienungshilfen-Einstellungen. SleepTimer nutzt den Dienst nur zum Sperren des Bildschirms und liest keine Bildschirminhalte.</string>
+    <string name="accessibility_action_open_settings">Einstellungen öffnen</string>
 
     <!-- Über die App -->
     <string name="category_about">Über</string>

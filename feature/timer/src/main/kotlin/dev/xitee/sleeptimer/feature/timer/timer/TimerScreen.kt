@@ -66,6 +66,7 @@ import dev.xitee.sleeptimer.core.data.util.isSystemReduceMotionEnabled
 import dev.xitee.sleeptimer.core.data.util.remainingMillisToDisplayMinutes
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import dev.xitee.sleeptimer.feature.timer.R
+import dev.xitee.sleeptimer.feature.timer.settings.components.AccessibilityRequiredDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.DeviceAdminRequiredDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.ShizukuRequiredDialog
 import dev.xitee.sleeptimer.feature.timer.theme.AppThemes
@@ -132,6 +133,7 @@ private fun TimerContent(
     }
 
     var showAdminStartupDialog by remember { mutableStateOf(false) }
+    var showAccessibilityStartupDialog by remember { mutableStateOf(false) }
     var shizukuStartupFeatures by remember { mutableStateOf<List<ShizukuFeature>>(emptyList()) }
     val shizukuState by viewModel.shizukuState.collectAsStateWithLifecycle()
 
@@ -144,6 +146,7 @@ private fun TimerContent(
     LaunchedEffect(Unit) {
         viewModel.computeStartupPermissionCheck()?.let { check ->
             showAdminStartupDialog = check.adminMissing
+            showAccessibilityStartupDialog = check.accessibilityMissing
             shizukuStartupFeatures = check.shizukuMissingFeatures
         }
     }
@@ -171,6 +174,19 @@ private fun TimerContent(
                 adminStartupLauncher.launch(intent)
             },
             onDismiss = { showAdminStartupDialog = false },
+        )
+    }
+
+    if (showAccessibilityStartupDialog) {
+        AccessibilityRequiredDialog(
+            onOpenSettings = {
+                showAccessibilityStartupDialog = false
+                context.startActivity(
+                    Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS),
+                )
+            },
+            onDismiss = { showAccessibilityStartupDialog = false },
+            dismissLabelRes = R.string.dialog_action_ignore,
         )
     }
 
