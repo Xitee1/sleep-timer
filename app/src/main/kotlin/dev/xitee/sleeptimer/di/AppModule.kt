@@ -7,8 +7,13 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import dev.xitee.sleeptimer.core.service.TimerWidgetRefresher
 import dev.xitee.sleeptimer.core.service.screen.DeviceAdminComponent
+import dev.xitee.sleeptimer.feature.timer.widgetconfig.WidgetProviderComponent
 import dev.xitee.sleeptimer.receiver.SleepTimerDeviceAdminReceiver
+import dev.xitee.sleeptimer.widget.AppWidgetRefresher
+import dev.xitee.sleeptimer.widget.SleepTimerWidgetProvider
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -23,4 +28,21 @@ object AppModule {
     @DeviceAdminComponent
     fun provideDeviceAdminComponent(@ApplicationContext context: Context): ComponentName =
         ComponentName(context, SleepTimerDeviceAdminReceiver::class.java)
+
+    /**
+     * Same pattern for the widget provider: the widget config screen in
+     * :feature:timer addresses the receiver through this binding.
+     */
+    @Provides
+    @WidgetProviderComponent
+    fun provideWidgetProviderComponent(@ApplicationContext context: Context): ComponentName =
+        ComponentName(context, SleepTimerWidgetProvider::class.java)
+
+    /**
+     * Lets :core:service push a terminal widget refresh without depending on the
+     * AppWidget provider (which lives here). See [TimerWidgetRefresher].
+     */
+    @Provides
+    @Singleton
+    fun provideTimerWidgetRefresher(impl: AppWidgetRefresher): TimerWidgetRefresher = impl
 }

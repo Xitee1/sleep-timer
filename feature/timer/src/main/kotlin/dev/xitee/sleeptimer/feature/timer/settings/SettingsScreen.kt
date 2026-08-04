@@ -3,6 +3,7 @@ package dev.xitee.sleeptimer.feature.timer.settings
 import android.app.Activity
 import android.app.admin.DevicePolicyManager
 import android.content.Intent
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -47,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -55,7 +57,9 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
+import dev.xitee.sleeptimer.core.data.model.ScreenLockMethod
 import dev.xitee.sleeptimer.feature.timer.R
+import dev.xitee.sleeptimer.feature.timer.settings.components.AccessibilityRequiredDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.AutoRotateModeDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.FadeOutSlider
 import dev.xitee.sleeptimer.feature.timer.settings.components.ScreenLockMethodDialog
@@ -107,18 +111,24 @@ private fun SettingsContent(
     val shizukuWifiExplanation = stringResource(R.string.shizuku_feature_wifi)
     val shizukuBluetoothExplanation = stringResource(R.string.shizuku_feature_bluetooth)
 
+    val context = LocalContext.current
+
     val deviceAdminLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             viewModel.updateScreenOff(true)
-            viewModel.updateSoftScreenOff(false)
+            viewModel.updateScreenLockMethod(ScreenLockMethod.DeviceAdmin)
         }
     }
 
     var shizukuDialogExplanation by remember { mutableStateOf<String?>(null) }
     var pendingShizukuToggle by remember { mutableStateOf<(() -> Unit)?>(null) }
     var showMethodDialog by remember { mutableStateOf(false) }
+    var showAccessibilityDialog by remember { mutableStateOf(false) }
+    // Set when the user was sent to the accessibility settings to enable the lock
+    // service; resolved on ON_RESUME once we can re-query the grant.
+    var pendingAccessibilityEnable by remember { mutableStateOf(false) }
     var showAutoRotateDialog by remember { mutableStateOf(false) }
 
     fun requestWithShizuku(explanation: String, enableAction: () -> Unit) {
@@ -144,10 +154,10 @@ private fun SettingsContent(
 
     if (showMethodDialog) {
         ScreenLockMethodDialog(
-            onHardLockSelected = {
+            onDeviceAdminSelected = {
                 if (viewModel.isDeviceAdminActive()) {
                     viewModel.updateScreenOff(true)
-                    viewModel.updateSoftScreenOff(false)
+                    viewModel.updateScreenLockMethod(ScreenLockMethod.DeviceAdmin)
                 } else {
                     val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
                         putExtra(
@@ -162,13 +172,33 @@ private fun SettingsContent(
                     deviceAdminLauncher.launch(intent)
                 }
             },
-            onSoftLockSelected = {
+            onAccessibilitySelected = {
+                if (viewModel.isAccessibilityLockEnabled()) {
+                    viewModel.updateScreenOff(true)
+                    viewModel.updateScreenLockMethod(ScreenLockMethod.Accessibility)
+                } else {
+                    showAccessibilityDialog = true
+                }
+            },
+            onShizukuSelected = {
                 requestWithShizuku(shizukuSoftScreenOffExplanation) {
                     viewModel.updateScreenOff(true)
-                    viewModel.updateSoftScreenOff(true)
+                    viewModel.updateScreenLockMethod(ScreenLockMethod.Shizuku)
                 }
             },
             onDismiss = { showMethodDialog = false },
+        )
+    }
+
+    if (showAccessibilityDialog) {
+        AccessibilityRequiredDialog(
+            onOpenSettings = {
+                // No activity result to wait for — the grant is re-checked on ON_RESUME.
+                pendingAccessibilityEnable = true
+                showAccessibilityDialog = false
+                context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            },
+            onDismiss = { showAccessibilityDialog = false },
         )
     }
 
@@ -193,11 +223,20 @@ private fun SettingsContent(
         viewModel.refreshShizuku()
     }
 
-    // Device admin can be revoked from system Settings without any broadcast we're
-    // subscribed to — re-query on resume so the "Screen" row description reflects
-    // the current admin state if the user came back from Settings → Device admin.
+    // Device admin and the accessibility service can be revoked from system Settings
+    // without any broadcast we're subscribed to — re-query on resume so the "Screen"
+    // row description reflects the current state when the user comes back. This is
+    // also where a pending accessibility-method selection completes: if the user
+    // enabled the service while away, commit the choice they made in the dialog.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        viewModel.refreshDeviceAdminState()
+        viewModel.refreshPermissionState()
+        if (pendingAccessibilityEnable) {
+            pendingAccessibilityEnable = false
+            if (viewModel.isAccessibilityLockEnabled()) {
+                viewModel.updateScreenOff(true)
+                viewModel.updateScreenLockMethod(ScreenLockMethod.Accessibility)
+            }
+        }
     }
 
     TimerBackground(
@@ -275,7 +314,17 @@ private fun SettingsContent(
                     title = stringResource(R.string.screen_title),
                     description = when {
                         !uiState.settings.screenOff -> stringResource(R.string.screen_description)
-                        uiState.settings.softScreenOff -> stringResource(R.string.screen_method_active_soft)
+                        uiState.settings.screenLockMethod == ScreenLockMethod.Shizuku ->
+                            stringResource(R.string.screen_method_active_soft)
+                        uiState.settings.screenLockMethod == ScreenLockMethod.Accessibility ->
+                            if (uiState.isAccessibilityLockEnabled) {
+                                stringResource(R.string.screen_method_active_accessibility)
+                            } else {
+                                // Service was disabled in system settings after being
+                                // chosen — locking falls back to the hard lock (if
+                                // granted) until re-enabled.
+                                stringResource(R.string.screen_method_accessibility_revoked)
+                            }
                         uiState.isDeviceAdminActive -> stringResource(R.string.screen_method_active_hard)
                         // Hard-lock is configured but the admin grant was revoked in
                         // system settings — locking will silently no-op until re-granted.

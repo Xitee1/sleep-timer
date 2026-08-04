@@ -16,6 +16,8 @@ import dev.xitee.sleeptimer.core.data.repository.SettingsRepository
 import dev.xitee.sleeptimer.core.data.repository.SettingsRepositoryImpl
 import dev.xitee.sleeptimer.core.data.repository.TimerRepository
 import dev.xitee.sleeptimer.core.data.repository.TimerRepositoryImpl
+import dev.xitee.sleeptimer.core.data.repository.WidgetConfigRepository
+import dev.xitee.sleeptimer.core.data.repository.WidgetConfigRepositoryImpl
 import javax.inject.Singleton
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
@@ -35,6 +37,10 @@ abstract class DataBindingsModule {
     @Binds
     @Singleton
     abstract fun bindSettingsRepository(impl: SettingsRepositoryImpl): SettingsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindWidgetConfigRepository(impl: WidgetConfigRepositoryImpl): WidgetConfigRepository
 }
 
 @Module

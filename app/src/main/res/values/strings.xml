@@ -30,4 +30,16 @@
 
     <!-- Device Admin -->
     <string name="device_admin_description">Required to lock the screen when the sleep timer ends.</string>
+
+    <!-- Accessibility lock service (shown in the system accessibility settings) -->
+    <string name="accessibility_service_label">SleepTimer screen lock</string>
+    <string name="accessibility_service_description">Used only to lock the screen when the sleep timer ends. SleepTimer does not read or observe any screen content.</string>
+
+    <!-- Home screen widget -->
+    <string name="widget_description">Start the sleep timer with a single tap.</string>
+    <string name="widget_minutes">%d min</string>
+    <string name="widget_preview_minutes">15 min</string>
+    <string name="widget_tap_to_start">Tap to start</string>
+    <string name="widget_tap_to_cancel">Tap to cancel</string>
+    <string name="widget_fading_out">Fading out playback</string>
 </resources>

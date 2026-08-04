@@ -4,7 +4,7 @@ data class UserSettings(
     val stopMediaPlayback: Boolean = true,
     val fadeOutDurationSeconds: Int = 30,
     val screenOff: Boolean = false,
-    val softScreenOff: Boolean = false,
+    val screenLockMethod: ScreenLockMethod = ScreenLockMethod.Default,
     val turnOffWifi: Boolean = false,
     val turnOffBluetooth: Boolean = false,
     val hapticFeedbackEnabled: Boolean = true,

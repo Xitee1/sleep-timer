@@ -51,6 +51,50 @@
                 android:value="true" />
         </service>
 
+        <!-- Optional soft screen-lock via GLOBAL_ACTION_LOCK_SCREEN. exported="true"
+             is safe: only the system holds BIND_ACCESSIBILITY_SERVICE, and it only
+             binds after the user enables the service in accessibility settings. -->
+        <service
+            android:name="dev.xitee.sleeptimer.core.service.screen.LockAccessibilityService"
+            android:exported="true"
+            android:label="@string/accessibility_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_lock_service" />
+        </service>
+
+        <!-- Per-instance widget configuration, launched by the widget host on
+             placement (pre-Android 12) and via long-press -> edit (12+). Exported
+             because some launchers start it directly rather than through the
+             system's AppWidget grant mechanism. -->
+        <activity
+            android:name=".widget.SleepTimerWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.SleepTimer">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <!-- Home screen widget. exported=false is safe: APPWIDGET_UPDATE is a
+             protected system broadcast (delivered regardless), and it keeps the
+             internal WIDGET_START_TIMER trampoline action unreachable for other
+             apps — only our own PendingIntent can trigger it. -->
+        <receiver
+            android:name=".widget.SleepTimerWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_sleep_timer_info" />
+        </receiver>
+
         <receiver
             android:name=".receiver.SleepTimerDeviceAdminReceiver"
             android:exported="true"

@@ -40,6 +40,13 @@
     <string name="step_minutes_value">%d Min</string>
     <string name="screen_title">Bildschirm</string>
     <string name="screen_description">Display ausschalten (Shizuku optional)</string>
+    <string name="widget_config_title">Widget-Einstellungen</string>
+    <string name="widget_config_description">Wähle, womit ein Tipp auf dieses Widget startet. Jedes Widget kann einzeln konfiguriert werden.</string>
+    <string name="widget_config_save">Speichern</string>
+    <string name="widget_fixed_duration_title">Feste Dauer</string>
+    <string name="widget_fixed_duration_off">Dieses Widget startet mit der zuletzt verwendeten Zeit</string>
+    <string name="widget_fixed_duration_on">Dieses Widget startet immer mit der unten eingestellten Dauer</string>
+
     <string name="category_haptic">Haptisches Feedback</string>
     <string name="haptic_title">Haptisches Feedback</string>
     <string name="haptic_description">Vibrieren bei Verwendung von Timer und Bedienelementen</string>
@@ -95,9 +102,18 @@
     <string name="screen_method_hard_description">Standard-Android-Sperre. Code zum Entsperren nötig.</string>
     <string name="screen_method_soft_title">Shizuku (sanft)</string>
     <string name="screen_method_soft_description">Simuliert Power-Taste. Biometrische Entsperrung bleibt aktiv.</string>
+    <string name="screen_method_accessibility_title">Bedienungshilfe (sanft)</string>
+    <string name="screen_method_accessibility_description">Sperrt wie die Power-Taste über einen Bedienungshilfen-Dienst. Biometrische Entsperrung bleibt aktiv, kein Shizuku nötig.</string>
     <string name="screen_method_active_hard">Display ausschalten - Geräteadministrator</string>
     <string name="screen_method_active_soft">Display ausschalten - Shizuku</string>
+    <string name="screen_method_active_accessibility">Display ausschalten - Bedienungshilfe</string>
     <string name="screen_method_hard_revoked">Display ausschalten - Geräteadministrator-Berechtigung fehlt</string>
+    <string name="screen_method_accessibility_revoked">Display ausschalten - Bedienungshilfen-Dienst deaktiviert</string>
+
+    <!-- Bedienungshilfen-Dialog -->
+    <string name="accessibility_dialog_title">Bedienungshilfen-Dienst erforderlich</string>
+    <string name="accessibility_body_required">Um den Bildschirm auf diese Weise zu sperren, aktiviere „SleepTimer Bildschirmsperre“ in den Bedienungshilfen-Einstellungen. SleepTimer nutzt den Dienst nur zum Sperren des Bildschirms und liest keine Bildschirminhalte.</string>
+    <string name="accessibility_action_open_settings">Einstellungen öffnen</string>
 
     <!-- Über die App -->
     <string name="category_about">Über</string>

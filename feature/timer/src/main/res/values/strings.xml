@@ -40,6 +40,13 @@
     <string name="step_minutes_value">%d min</string>
     <string name="screen_title">Screen</string>
     <string name="screen_description">Lock screen when timer ends (Shizuku optional)</string>
+    <string name="widget_config_title">Widget settings</string>
+    <string name="widget_config_description">Choose what a tap on this widget starts. Each widget can be configured individually.</string>
+    <string name="widget_config_save">Save</string>
+    <string name="widget_fixed_duration_title">Fixed duration</string>
+    <string name="widget_fixed_duration_off">This widget starts with the last used time</string>
+    <string name="widget_fixed_duration_on">This widget always starts with the duration below</string>
+
     <string name="category_haptic">Haptic Feedback</string>
     <string name="haptic_title">Haptic feedback</string>
     <string name="haptic_description">Vibrate when using timer and controls</string>
@@ -95,9 +102,18 @@
     <string name="screen_method_hard_description">Standard Android lock. Requires credential to unlock.</string>
     <string name="screen_method_soft_title">Shizuku (soft)</string>
     <string name="screen_method_soft_description">Simulates power button. Biometric unlock stays active.</string>
+    <string name="screen_method_accessibility_title">Accessibility (soft)</string>
+    <string name="screen_method_accessibility_description">Locks like the power button via an accessibility service. Biometric unlock stays active, no Shizuku needed.</string>
     <string name="screen_method_active_hard">Turn off display - Device admin</string>
     <string name="screen_method_active_soft">Turn off display - Shizuku</string>
+    <string name="screen_method_active_accessibility">Turn off display - Accessibility</string>
     <string name="screen_method_hard_revoked">Turn off display - Device admin permission missing</string>
+    <string name="screen_method_accessibility_revoked">Turn off display - Accessibility service disabled</string>
+
+    <!-- Accessibility service required dialog -->
+    <string name="accessibility_dialog_title">Accessibility service required</string>
+    <string name="accessibility_body_required">To lock the screen this way, enable "SleepTimer screen lock" in the system accessibility settings. SleepTimer only uses it to lock the screen and does not read any screen content.</string>
+    <string name="accessibility_action_open_settings">Open settings</string>
 
     <!-- About -->
     <string name="category_about">About</string>
