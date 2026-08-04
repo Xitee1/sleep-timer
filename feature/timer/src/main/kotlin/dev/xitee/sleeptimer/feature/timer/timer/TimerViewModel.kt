@@ -2,7 +2,6 @@ package dev.xitee.sleeptimer.feature.timer.timer
 
 import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -132,10 +131,10 @@ class TimerViewModel @Inject constructor(
         when (state.phase) {
             TimerPhase.RUNNING -> {
                 if (remainingMillisToDisplayMinutes(state.remainingMillis) == coerced) return
-                val intent = serviceIntent(SleepTimerService.ACTION_SET_MINUTES).apply {
-                    putExtra(SleepTimerService.EXTRA_MINUTES, coerced)
-                }
-                context.startService(intent)
+                context.startService(
+                    SleepTimerService.intent(context, SleepTimerService.ACTION_SET_MINUTES)
+                        .putExtra(SleepTimerService.EXTRA_MINUTES, coerced),
+                )
             }
             else -> {
                 _selectedMinutes.value = coerced
@@ -149,30 +148,20 @@ class TimerViewModel @Inject constructor(
     fun startTimer() {
         val minutes = _selectedMinutes.value
         if (minutes <= 0) return
-        val durationMillis = minutes * 60 * 1000L
-        val intent = serviceIntent(SleepTimerService.ACTION_START).apply {
-            putExtra(SleepTimerService.EXTRA_DURATION_MILLIS, durationMillis)
-        }
-        context.startForegroundService(intent)
+        SleepTimerService.start(context, minutes * 60 * 1000L)
     }
 
     fun stopTimer() {
-        context.startService(serviceIntent(SleepTimerService.ACTION_CANCEL))
+        SleepTimerService.cancel(context)
     }
 
     fun addStep() {
-        context.startService(serviceIntent(SleepTimerService.ACTION_ADD_MINUTES))
+        context.startService(SleepTimerService.intent(context, SleepTimerService.ACTION_ADD_MINUTES))
     }
 
     fun subtractStep() {
-        context.startService(serviceIntent(SleepTimerService.ACTION_SUBTRACT_MINUTES))
+        context.startService(SleepTimerService.intent(context, SleepTimerService.ACTION_SUBTRACT_MINUTES))
     }
-
-    private fun serviceIntent(actionName: String): Intent =
-        Intent().apply {
-            action = actionName
-            setClassName(context, SleepTimerService::class.java.name)
-        }
 
     private companion object {
         // Must match UserSettings().presetMinutes so the compareAndSet in init only

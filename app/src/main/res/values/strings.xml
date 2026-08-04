@@ -21,9 +21,7 @@
     <string name="haptic_title">Haptic feedback</string>
     <string name="haptic_description">Vibrate when using timer and controls</string>
 
-    <!-- Quick Settings tile -->
-    <string name="qs_tile_label">Sleep Timer</string>
-    <string name="qs_tile_minutes">%d min</string>
+    <!-- Quick Settings tile (name and minutes reuse app_name / widget_minutes) -->
     <string name="qs_tile_fading_out">Fading out</string>
 
     <!-- Notification strings live in :core:service to keep them next to the consumer. -->

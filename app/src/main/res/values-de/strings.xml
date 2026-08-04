@@ -21,9 +21,7 @@
     <string name="haptic_title">Haptisches Feedback</string>
     <string name="haptic_description">Vibrieren bei Verwendung von Timer und Bedienelementen</string>
 
-    <!-- Quick Settings tile -->
-    <string name="qs_tile_label">Schlaf-Timer</string>
-    <string name="qs_tile_minutes">%d Min</string>
+    <!-- Quick Settings tile (name and minutes reuse app_name / widget_minutes) -->
     <string name="qs_tile_fading_out">Wird ausgeblendet</string>
 
     <!-- Notification strings live in :core:service to keep them next to the consumer. -->

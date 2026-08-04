@@ -99,14 +99,10 @@ internal object SleepTimerWidgetRenderer {
     private fun cancelPendingIntent(context: Context): PendingIntent {
         // A stale tap after the timer already ended is harmless: the service's
         // no-active-countdown guard stops itself before startForeground is due.
-        val intent = Intent().apply {
-            action = SleepTimerService.ACTION_CANCEL
-            setClassName(context, SleepTimerService::class.java.name)
-        }
         return PendingIntent.getService(
             context,
             REQUEST_CODE_CANCEL,
-            intent,
+            SleepTimerService.intent(context, SleepTimerService.ACTION_CANCEL),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
     }
