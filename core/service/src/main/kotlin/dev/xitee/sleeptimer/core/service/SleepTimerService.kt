@@ -1,12 +1,14 @@
 package dev.xitee.sleeptimer.core.service
 
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import android.os.SystemClock
+import android.util.Log
 import androidx.core.app.ServiceCompat
 import dagger.hilt.android.AndroidEntryPoint
 import dev.xitee.sleeptimer.core.data.model.MAX_TIMER_MINUTES
@@ -28,6 +30,7 @@ import dev.xitee.sleeptimer.core.service.shizuku.ShizukuWifiController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
@@ -36,6 +39,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
 
@@ -85,6 +89,42 @@ class SleepTimerService : Service() {
         const val EXTRA_MINUTES = "dev.xitee.sleeptimer.extra.MINUTES"
         private const val FADE_IN_SECONDS = 2
         private const val MAX_TIMER_MILLIS = MAX_TIMER_MINUTES * 60_000L
+        private const val TAG = "SleepTimerService"
+
+        /**
+         * The explicit intent every dispatch surface must use. Kept here so a class
+         * or package move breaks callers at compile time in one place instead of as
+         * several silent no-op intents.
+         */
+        fun intent(context: Context, actionName: String): Intent =
+            Intent().apply {
+                action = actionName
+                setClassName(context, SleepTimerService::class.java.name)
+            }
+
+        /**
+         * Starts the countdown as a foreground service. Returns false when the
+         * platform denies the start: a background-restricted app (Settings → "Don't
+         * allow background activity") is refused the tap exemption and
+         * startForegroundService throws ForegroundServiceStartNotAllowedException
+         * (an IllegalStateException) — callers get a logged no-op, not a crash.
+         */
+        fun start(context: Context, durationMillis: Long): Boolean =
+            try {
+                context.startForegroundService(
+                    intent(context, ACTION_START)
+                        .putExtra(EXTRA_DURATION_MILLIS, durationMillis),
+                )
+                true
+            } catch (e: IllegalStateException) {
+                Log.w(TAG, "Foreground service start denied", e)
+                false
+            }
+
+        /** Cancels a running countdown; a stale call is absorbed by the stale-intent guard. */
+        fun cancel(context: Context) {
+            context.startService(intent(context, ACTION_CANCEL))
+        }
     }
 
     override fun onCreate() {
@@ -275,20 +315,27 @@ class SleepTimerService : Service() {
         countdownJob = null
         val generation = timerGeneration
         serviceScope.launch {
-            // Join the fade-out before restoring volume, otherwise the still-running
-            // fade coroutine would overwrite the restored volume at its next step.
-            job?.cancelAndJoin()
-            mediaVolumeController.restoreVolume()
-            // A newer timer may have started while the join was in flight — its
-            // foreground session must survive this teardown.
-            if (timerGeneration != generation) return@launch
-            updateTimerState(TimerPhase.IDLE)
-            // Push the idle draw to the widgets before we let the process go: the
-            // in-process observer's render could be lost if we're reclaimed right after.
-            timerWidgetRefresher.refresh()
-            notificationManager.cancelNotification()
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
+            // NonCancellable: a second ACTION_CANCEL landing mid-teardown trips the
+            // stale-intent guard's stopSelf → onDestroy → serviceScope.cancel(),
+            // which would otherwise kill this coroutine before the volume restore
+            // and the IDLE write — stranding a phantom "running" phase that the
+            // tile, widget, and app would keep rendering until process death.
+            withContext(NonCancellable) {
+                // Join the fade-out before restoring volume, otherwise the still-running
+                // fade coroutine would overwrite the restored volume at its next step.
+                job?.cancelAndJoin()
+                mediaVolumeController.restoreVolume()
+                // A newer timer may have started while the join was in flight — its
+                // foreground session must survive this teardown.
+                if (timerGeneration != generation) return@withContext
+                updateTimerState(TimerPhase.IDLE)
+                // Push the idle draw to the widgets before we let the process go: the
+                // in-process observer's render could be lost if we're reclaimed right after.
+                timerWidgetRefresher.refresh()
+                notificationManager.cancelNotification()
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+            }
         }
     }
 

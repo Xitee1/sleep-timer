@@ -28,12 +28,37 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Long-pressing the QS tile opens the app instead of the default
+                 App-info screen. -->
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
 
         <service
             android:name="dev.xitee.sleeptimer.core.service.SleepTimerService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
+
+        <!-- Quick Settings tile: starts the timer with the preset duration. The
+             tile label/icon here are what the user sees in the QS edit panel.
+             TOGGLEABLE_TILE deliberately keeps the tile tappable from the lock
+             screen: starting or cancelling the sleep timer on a nightstand must
+             not require an unlock. -->
+        <service
+            android:name=".tile.SleepTimerTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_timer"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
 
         <!-- Optional soft screen-lock via GLOBAL_ACTION_LOCK_SCREEN. exported="true"
              is safe: only the system holds BIND_ACCESSIBILITY_SERVICE, and it only

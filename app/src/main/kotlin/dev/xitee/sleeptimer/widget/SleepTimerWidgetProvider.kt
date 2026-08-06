@@ -4,7 +4,6 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import dagger.hilt.android.AndroidEntryPoint
 import dev.xitee.sleeptimer.core.data.model.TimerPhase
 import dev.xitee.sleeptimer.core.data.model.startMinutesFor
@@ -148,21 +147,10 @@ class SleepTimerWidgetProvider : AppWidgetProvider() {
                 } else {
                     config.startMinutes(settingsRepository.settings.first().presetMinutes)
                 }
-                val serviceIntent = Intent().apply {
-                    action = SleepTimerService.ACTION_START
-                    setClassName(context, SleepTimerService::class.java.name)
-                    putExtra(SleepTimerService.EXTRA_DURATION_MILLIS, startMinutes * 60_000L)
-                }
-                try {
-                    context.startForegroundService(serviceIntent)
-                } catch (e: IllegalStateException) {
-                    // A widget tap normally grants the FGS background-start exemption, but
-                    // a background-restricted app (Settings → "Don't allow background
-                    // activity") is denied it and startForegroundService throws
-                    // ForegroundServiceStartNotAllowedException (an IllegalStateException).
-                    // Swallow it so the tap is a harmless no-op instead of crashing.
-                    Log.w(TAG, "Foreground service start denied for widget tap", e)
-                }
+                // start() owns the FGS dispatch and swallows the denied-start case
+                // (background-restricted app), so the tap degrades to a logged
+                // no-op instead of crashing.
+                SleepTimerService.start(context, startMinutes * 60_000L)
             } finally {
                 starting.set(false)
                 pending.finish()
@@ -171,7 +159,6 @@ class SleepTimerWidgetProvider : AppWidgetProvider() {
     }
 
     companion object {
-        private const val TAG = "SleepTimerWidget"
         const val ACTION_START_TIMER = "dev.xitee.sleeptimer.action.WIDGET_START_TIMER"
 
         // Process-lifetime scope for the short DataStore reads/writes the receiver

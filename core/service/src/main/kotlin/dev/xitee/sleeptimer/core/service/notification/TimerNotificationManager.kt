@@ -5,7 +5,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import androidx.core.app.NotificationCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.xitee.sleeptimer.core.data.model.TimerPhase
@@ -98,18 +97,13 @@ class TimerNotificationManager @Inject constructor(
             .build()
     }
 
-    private fun servicePendingIntent(actionName: String, requestCode: Int): PendingIntent {
-        val intent = Intent().apply {
-            action = actionName
-            setClassName(context, SleepTimerService::class.java.name)
-        }
-        return PendingIntent.getService(
+    private fun servicePendingIntent(actionName: String, requestCode: Int): PendingIntent =
+        PendingIntent.getService(
             context,
             requestCode,
-            intent,
+            SleepTimerService.intent(context, actionName),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-    }
 
     fun updateNotification(
         remainingMinutes: Int,
