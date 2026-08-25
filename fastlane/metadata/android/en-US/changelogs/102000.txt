@@ -1,0 +1,3 @@
+* New: home screen widget — start the timer with one tap.
+* New: Quick Settings tile — starts the timer with the last used duration.
+* New: accessibility service as an alternative screen lock method, so the screen can be locked without granting device admin rights.

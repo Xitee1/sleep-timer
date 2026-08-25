@@ -1,0 +1,3 @@
+* Neu: Homescreen-Widget – Timer mit einem Tippen starten.
+* Neu: Schnelleinstellungen-Kachel – startet den Timer mit der zuletzt verwendeten Dauer.
+* Neu: Bedienungshilfe als alternative Methode zum Sperren des Bildschirms – ohne Geräteadministrator-Rechte.
