@@ -6,6 +6,7 @@ data class UserSettings(
     val screenOff: Boolean = false,
     val screenLockMethod: ScreenLockMethod = ScreenLockMethod.Default,
     val turnOffWifi: Boolean = false,
+    val turnOffMobileData: Boolean = false,
     val turnOffBluetooth: Boolean = false,
     val hapticFeedbackEnabled: Boolean = true,
     val theme: ThemeId = ThemeId.Default,

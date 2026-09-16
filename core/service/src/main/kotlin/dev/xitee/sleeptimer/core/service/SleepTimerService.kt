@@ -25,6 +25,7 @@ import dev.xitee.sleeptimer.core.service.screen.AccessibilityLockHelper
 import dev.xitee.sleeptimer.core.service.screen.ScreenLockHelper
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuBluetoothController
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
+import dev.xitee.sleeptimer.core.service.shizuku.ShizukuMobileDataController
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuScreenOffHelper
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuWifiController
 import kotlinx.coroutines.CoroutineScope
@@ -55,6 +56,7 @@ class SleepTimerService : Service() {
     @Inject lateinit var shizukuManager: ShizukuManager
     @Inject lateinit var shizukuScreenOffHelper: ShizukuScreenOffHelper
     @Inject lateinit var shizukuWifiController: ShizukuWifiController
+    @Inject lateinit var shizukuMobileDataController: ShizukuMobileDataController
     @Inject lateinit var shizukuBluetoothController: ShizukuBluetoothController
     @Inject lateinit var timerWidgetRefresher: TimerWidgetRefresher
 
@@ -355,6 +357,10 @@ class SleepTimerService : Service() {
 
         if (settings.turnOffBluetooth && shizukuManager.isReady()) {
             shizukuBluetoothController.disableBluetooth()
+        }
+
+        if (settings.turnOffMobileData && shizukuManager.isReady()) {
+            shizukuMobileDataController.disableMobileData()
         }
 
         if (settings.screenOff) {
