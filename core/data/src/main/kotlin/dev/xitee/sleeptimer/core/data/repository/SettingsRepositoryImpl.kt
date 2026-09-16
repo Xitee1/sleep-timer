@@ -43,6 +43,7 @@ class SettingsRepositoryImpl @Inject constructor(
         // screen-off, false = device admin). Only read for migration, never written.
         val SOFT_SCREEN_OFF = booleanPreferencesKey("soft_screen_off")
         val TURN_OFF_WIFI = booleanPreferencesKey("turn_off_wifi")
+        val TURN_OFF_MOBILE_DATA = booleanPreferencesKey("turn_off_mobile_data")
         val TURN_OFF_BLUETOOTH = booleanPreferencesKey("turn_off_bluetooth")
         val HAPTIC_FEEDBACK = booleanPreferencesKey("haptic_feedback")
         val THEME = stringPreferencesKey("theme")
@@ -97,6 +98,7 @@ class SettingsRepositoryImpl @Inject constructor(
             screenLockMethod = prefs[SCREEN_LOCK_METHOD]?.let { ScreenLockMethod.fromStorage(it) }
                 ?: if (prefs[SOFT_SCREEN_OFF] == true) ScreenLockMethod.Shizuku else d.screenLockMethod,
             turnOffWifi = prefs[TURN_OFF_WIFI] ?: d.turnOffWifi,
+            turnOffMobileData = prefs[TURN_OFF_MOBILE_DATA] ?: d.turnOffMobileData,
             turnOffBluetooth = prefs[TURN_OFF_BLUETOOTH] ?: d.turnOffBluetooth,
             hapticFeedbackEnabled = prefs[HAPTIC_FEEDBACK] ?: d.hapticFeedbackEnabled,
             theme = ThemeId.fromStorage(prefs[THEME]),
@@ -132,6 +134,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun updateTurnOffBluetooth(enabled: Boolean) {
         dataStore.edit { it[TURN_OFF_BLUETOOTH] = enabled }
+    }
+
+    override suspend fun updateTurnOffMobileData(enabled: Boolean) {
+        dataStore.edit { it[TURN_OFF_MOBILE_DATA] = enabled }
     }
 
     override suspend fun updateHapticFeedback(enabled: Boolean) {

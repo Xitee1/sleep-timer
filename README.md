@@ -22,7 +22,7 @@ No accounts, no ads, no trackers, no network access.
 - Optional screen lock when the timer ends — choose between **Device Admin**
   (standard Android lock, credential required to unlock) or **Shizuku soft
   lock** (simulates the power button, biometric unlock keeps working)
-- Optional Wi-Fi and Bluetooth off when the timer ends (both via Shizuku,
+- Optional Wi-Fi, Bluetooth, and mobile data off when the timer ends (via Shizuku,
   since modern Android blocks apps from toggling these directly)
 - Six built-in themes (Midnight, Ocean, Ember, Light, Basic, AMOLED) with an
   optional drifting starfield behind the dial
@@ -47,7 +47,7 @@ No accounts, no ads, no trackers, no network access.
 
 The app declares a `ShizukuProvider` so it can talk to
 [Shizuku](https://shizuku.rikka.app/) when you enable the Wi-Fi off,
-Bluetooth off, or soft-lock features. Shizuku is **optional** — the core
+Bluetooth off, mobile data off, or soft-lock features. Shizuku is **optional** — the core
 timer works without it, and the provider is dormant until you opt in.
 
 The app does not request the `INTERNET` permission. It cannot connect to any

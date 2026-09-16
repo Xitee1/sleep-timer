@@ -80,6 +80,7 @@
     <string name="shizuku_feature_label_display">Turn off display</string>
     <string name="shizuku_feature_label_wifi">Turn off Wi-Fi</string>
     <string name="shizuku_feature_label_bluetooth">Turn off Bluetooth</string>
+    <string name="shizuku_feature_label_mobile_data">Turn off mobile data</string>
     <string name="shizuku_startup_intro">Shizuku permission is missing for the following enabled features:</string>
 
     <!-- Device admin required dialog (startup) -->
@@ -95,6 +96,9 @@
     <string name="wifi_off_description">Disable Wi-Fi when timer ends (requires Shizuku)</string>
     <string name="bluetooth_off_title">Turn off Bluetooth</string>
     <string name="bluetooth_off_description">Disable Bluetooth when timer ends (requires Shizuku)</string>
+    <string name="mobile_data_off_title">Turn off mobile data</string>
+    <string name="mobile_data_off_description">Disable mobile data when timer ends (requires Shizuku)</string>
+    <string name="shizuku_feature_mobile_data">Turning off mobile data after the timer ends requires Shizuku because Android blocks apps from toggling mobile data directly.</string>
 
     <!-- Screen-lock method dialog -->
     <string name="screen_method_dialog_title">Choose lock method</string>

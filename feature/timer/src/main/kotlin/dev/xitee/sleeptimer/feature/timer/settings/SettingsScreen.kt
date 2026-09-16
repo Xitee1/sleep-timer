@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.MusicOff
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.ScreenRotation
+import androidx.compose.material.icons.filled.SignalCellularAlt
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Icon
@@ -110,6 +111,7 @@ private fun SettingsContent(
         stringResource(R.string.shizuku_feature_soft_screen_off)
     val shizukuWifiExplanation = stringResource(R.string.shizuku_feature_wifi)
     val shizukuBluetoothExplanation = stringResource(R.string.shizuku_feature_bluetooth)
+    val shizukuMobileDataExplanation = stringResource(R.string.shizuku_feature_mobile_data)
 
     val context = LocalContext.current
 
@@ -368,6 +370,22 @@ private fun SettingsContent(
                             }
                         } else {
                             viewModel.updateTurnOffBluetooth(false)
+                        }
+                    },
+                )
+
+                SettingsToggleRow(
+                    icon = Icons.Default.SignalCellularAlt,
+                    title = stringResource(R.string.mobile_data_off_title),
+                    description = stringResource(R.string.mobile_data_off_description),
+                    checked = uiState.settings.turnOffMobileData,
+                    onCheckedChange = { enabled ->
+                        if (enabled) {
+                            requestWithShizuku(shizukuMobileDataExplanation) {
+                                viewModel.updateTurnOffMobileData(true)
+                            }
+                        } else {
+                            viewModel.updateTurnOffMobileData(false)
                         }
                     },
                 )
