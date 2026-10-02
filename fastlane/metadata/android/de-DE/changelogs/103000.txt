@@ -1,0 +1,3 @@
+* Neu: Option, mobile Daten bei Timer-Ende auszuschalten (Shizuku benötigt).
+* Behoben: Ab 60 Minuten zeigt die Zeitanzeige immer H:MM, eine volle Stunde erscheint als „1:00“ statt nur als „1“.
+* Behoben: Der Drehregler dreht sich beim Öffnen mit einer Voreinstellung über einer Stunde nicht mehr mehrfach im Kreis.
