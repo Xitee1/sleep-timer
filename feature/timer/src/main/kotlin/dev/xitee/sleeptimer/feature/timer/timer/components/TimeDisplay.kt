@@ -24,23 +24,16 @@ fun TimeDisplay(
 
     val big: String
     val small: String
-    when {
-        hours == 0 -> {
-            big = remMin.toString()
-            small = stringResource(
-                if (remMin == 1) R.string.time_unit_minute else R.string.time_unit_minutes,
-            )
-        }
-        remMin == 0 -> {
-            big = hours.toString()
-            small = stringResource(
-                if (hours == 1) R.string.time_unit_hour else R.string.time_unit_hours,
-            )
-        }
-        else -> {
-            big = "$hours:${remMin.toString().padStart(2, '0')}"
-            small = stringResource(R.string.time_unit_hr_min)
-        }
+    if (hours == 0) {
+        big = remMin.toString()
+        small = stringResource(
+            if (remMin == 1) R.string.time_unit_minute else R.string.time_unit_minutes,
+        )
+    } else {
+        // From 60 minutes on always show "H:MM" — a bare "1" for a full hour reads
+        // like "1 minute" at a glance.
+        big = "$hours:${remMin.toString().padStart(2, '0')}"
+        small = stringResource(R.string.time_unit_hr_min)
     }
 
     Column(
