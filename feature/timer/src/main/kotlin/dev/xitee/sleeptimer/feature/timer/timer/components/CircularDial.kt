@@ -76,11 +76,20 @@ fun CircularDial(
     }
     val animatedMinutes = remember { Animatable(targetMinutes) }
     LaunchedEffect(targetMinutes, state.isDragging) {
-        val delta = kotlin.math.abs(targetMinutes - animatedMinutes.value)
+        val diff = targetMinutes - animatedMinutes.value
+        val delta = kotlin.math.abs(diff)
         val snap = state.isDragging || delta < 1f
         if (snap) {
             animatedMinutes.snapTo(targetMinutes)
         } else {
+            // Cap the animated sweep at one revolution (60 minutes). On launch the
+            // Animatable starts at the 15-minute default while the persisted preset can
+            // be hours away; tweening the full distance in 360ms would spin the ring
+            // several times. Jump to one revolution short of the target first, so the
+            // ring never animates more than a single round.
+            if (delta > 60f) {
+                animatedMinutes.snapTo(targetMinutes - 60f * kotlin.math.sign(diff))
+            }
             animatedMinutes.animateTo(
                 targetValue = targetMinutes,
                 animationSpec = tween(durationMillis = 360, easing = FastOutSlowInEasing),
