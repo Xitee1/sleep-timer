@@ -10,8 +10,6 @@
     <!-- Time units shown under the dial -->
     <string name="time_unit_minute">minute</string>
     <string name="time_unit_minutes">minutes</string>
-    <string name="time_unit_hour">hour</string>
-    <string name="time_unit_hours">hours</string>
     <string name="time_unit_hr_min">hr · min</string>
     <string name="ends_at_time">Ends at %1$s</string>
 
