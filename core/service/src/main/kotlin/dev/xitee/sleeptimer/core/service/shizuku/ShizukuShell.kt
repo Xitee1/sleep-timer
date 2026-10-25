@@ -6,6 +6,7 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.xitee.sleeptimer.core.service.media.PlayingTrack
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -69,14 +70,22 @@ class ShizukuShell @Inject constructor(
     }
 
     /**
-     * Remaining time of the playing song in milliseconds, read with the shell uid's
-     * MEDIA_CONTENT_CONTROL inside the user service. Null when nothing is playing,
-     * the song has no known length, or Shizuku is not ready.
+     * Binds the user service ahead of time, so a later call doesn't spend the
+     * first-bind delay (Shizuku spawning the process) when it matters.
      */
-    suspend fun playingTrackRemainingMillis(): Long? = withContext(Dispatchers.IO) {
+    suspend fun prepare() {
+        withContext(Dispatchers.IO) { connectedService() }
+    }
+
+    /**
+     * The playing song, read with the shell uid's MEDIA_CONTENT_CONTROL inside the
+     * user service. Null when nothing is playing, its length or position is unknown,
+     * or Shizuku is not ready.
+     */
+    suspend fun playingTrack(): PlayingTrack? = withContext(Dispatchers.IO) {
         val service = connectedService() ?: return@withContext null
         try {
-            service.playingTrackRemainingMillis().takeIf { it >= 0L }
+            service.playingTrack()
         } catch (t: Exception) {
             boundService = null
             Log.e(TAG, "reading the playing track failed", t)
@@ -155,7 +164,7 @@ class ShizukuShell @Inject constructor(
 
         // Bump when ShellUserService's AIDL or behavior changes — Shizuku replaces
         // a running user service whose version differs.
-        const val USER_SERVICE_VERSION = 3
+        const val USER_SERVICE_VERSION = 4
 
         // The first bind spawns a new process via Shizuku; give it more headroom
         // than a plain command.

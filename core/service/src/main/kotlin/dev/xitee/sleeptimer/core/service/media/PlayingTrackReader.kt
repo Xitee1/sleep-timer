@@ -27,19 +27,27 @@ class PlayingTrackReader @Inject constructor(
         NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
 
     /**
-     * Remaining time of the playing song in milliseconds, or null when it can't be
-     * determined: nothing playing, unknown length, or the method's access is missing.
+     * Gets [method] ready for [playingTrack]: binds the Shizuku user service up
+     * front, so the lookup at timer expiry doesn't wait for Shizuku to spawn its process.
      */
-    suspend fun remainingMillis(method: TrackEndMethod): Long? = when (method) {
-        TrackEndMethod.None -> null
-        TrackEndMethod.NotificationAccess -> remainingViaNotificationAccess()
-        TrackEndMethod.Shizuku -> shizukuShell.playingTrackRemainingMillis()
+    suspend fun prepare(method: TrackEndMethod) {
+        if (method == TrackEndMethod.Shizuku) shizukuShell.prepare()
     }
 
-    private fun remainingViaNotificationAccess(): Long? {
+    /**
+     * The playing song, or null when it can't be determined: nothing playing, unknown
+     * length or position, or the method's access is missing.
+     */
+    suspend fun playingTrack(method: TrackEndMethod): PlayingTrack? = when (method) {
+        TrackEndMethod.None -> null
+        TrackEndMethod.NotificationAccess -> playingTrackViaNotificationAccess()
+        TrackEndMethod.Shizuku -> shizukuShell.playingTrack()
+    }
+
+    private fun playingTrackViaNotificationAccess(): PlayingTrack? {
         if (!isNotificationAccessGranted()) return null
         return try {
-            mediaSessionManager.getActiveSessions(listenerComponent).playingTrackRemainingMillis()
+            mediaSessionManager.getActiveSessions(listenerComponent).playingTrack()
         } catch (e: SecurityException) {
             // Access revoked between the check and the call.
             Log.w(TAG, "getActiveSessions denied", e)

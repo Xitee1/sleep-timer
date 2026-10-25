@@ -5,7 +5,8 @@ import android.content.Context
 import android.media.session.MediaSessionManager
 import android.os.Build
 import android.util.Log
-import dev.xitee.sleeptimer.core.service.media.playingTrackRemainingMillis
+import dev.xitee.sleeptimer.core.service.media.PlayingTrack
+import dev.xitee.sleeptimer.core.service.media.playingTrack
 import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
 
@@ -38,16 +39,15 @@ class ShellUserService(private val context: Context?) : IShellUserService.Stub()
         EXIT_ERROR
     }
 
-    override fun playingTrackRemainingMillis(): Long = try {
+    override fun playingTrack(): PlayingTrack? = try {
         // A null listener component makes the system check MEDIA_CONTENT_CONTROL,
         // which the shell uid holds — no notification access needed on this path.
         mediaSessionManager()
             ?.getActiveSessions(null)
-            ?.playingTrackRemainingMillis()
-            ?: UNKNOWN_REMAINING
+            ?.playingTrack()
     } catch (t: Throwable) {
         Log.e(TAG, "reading the playing track failed", t)
-        UNKNOWN_REMAINING
+        null
     }
 
     private fun mediaSessionManager(): MediaSessionManager? {
@@ -76,6 +76,5 @@ class ShellUserService(private val context: Context?) : IShellUserService.Stub()
         const val TAG = "ShellUserService"
         const val EXIT_ERROR = -1
         const val EXIT_TIMEOUT = -2
-        const val UNKNOWN_REMAINING = -1L
     }
 }
