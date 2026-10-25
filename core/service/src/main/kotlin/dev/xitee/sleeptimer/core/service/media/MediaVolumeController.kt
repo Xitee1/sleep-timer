@@ -5,6 +5,7 @@ import android.media.AudioManager
 import android.view.KeyEvent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,7 +33,21 @@ class MediaVolumeController @Inject constructor(
         }
 
         pauseMedia()
+        awaitPlaybackStopped()
         restoreVolume()
+    }
+
+    /**
+     * The pause key is handled asynchronously, and many players ramp down on pause
+     * themselves — restoring the volume right after dispatching it plays that tail at
+     * full volume. Wait until the music stream goes quiet (bounded, in case the player
+     * ignores the key), then let the audio buffer drain.
+     */
+    private suspend fun awaitPlaybackStopped() {
+        withTimeoutOrNull(PAUSE_TIMEOUT_MILLIS) {
+            while (audioManager.isMusicActive) delay(PAUSE_POLL_MILLIS)
+        }
+        delay(PAUSE_SETTLE_MILLIS)
     }
 
     suspend fun fadeInToOriginal(durationSeconds: Int) {
@@ -65,5 +80,11 @@ class MediaVolumeController @Inject constructor(
             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0)
             originalVolume = -1
         }
+    }
+
+    private companion object {
+        const val PAUSE_TIMEOUT_MILLIS = 3_000L
+        const val PAUSE_POLL_MILLIS = 100L
+        const val PAUSE_SETTLE_MILLIS = 500L
     }
 }
