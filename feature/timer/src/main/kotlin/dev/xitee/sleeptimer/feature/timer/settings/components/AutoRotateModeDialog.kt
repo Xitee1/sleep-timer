@@ -87,7 +87,7 @@ fun AutoRotateModeDialog(
 }
 
 @Composable
-private fun ModeOption(
+internal fun ModeOption(
     icon: ImageVector,
     title: String,
     description: String,

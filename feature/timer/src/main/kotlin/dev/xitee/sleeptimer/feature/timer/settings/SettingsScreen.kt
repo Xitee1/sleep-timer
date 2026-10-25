@@ -2,7 +2,11 @@ package dev.xitee.sleeptimer.feature.timer.settings
 
 import android.app.Activity
 import android.app.admin.DevicePolicyManager
+import android.content.ActivityNotFoundException
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -59,10 +63,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
 import dev.xitee.sleeptimer.core.data.model.ScreenLockMethod
+import dev.xitee.sleeptimer.core.data.model.TrackEndMethod
 import dev.xitee.sleeptimer.feature.timer.R
 import dev.xitee.sleeptimer.feature.timer.settings.components.AccessibilityRequiredDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.AutoRotateModeDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.FadeOutSlider
+import dev.xitee.sleeptimer.feature.timer.settings.components.NotificationAccessRequiredDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.ScreenLockMethodDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.labelRes
 import dev.xitee.sleeptimer.feature.timer.settings.components.SettingsToggleRow
@@ -70,6 +76,8 @@ import dev.xitee.sleeptimer.feature.timer.settings.components.SettingsTopBar
 import dev.xitee.sleeptimer.feature.timer.settings.components.ShizukuRequiredDialog
 import dev.xitee.sleeptimer.feature.timer.settings.components.StepMinutesSlider
 import dev.xitee.sleeptimer.feature.timer.settings.components.ThemeRow
+import dev.xitee.sleeptimer.feature.timer.settings.components.TrackEndMethodDialog
+import dev.xitee.sleeptimer.feature.timer.settings.components.TrackEndSlider
 import dev.xitee.sleeptimer.feature.timer.theme.AppThemes
 import dev.xitee.sleeptimer.feature.timer.theme.ProvideAppTheme
 import dev.xitee.sleeptimer.feature.timer.theme.appTheme
@@ -112,6 +120,7 @@ private fun SettingsContent(
     val shizukuWifiExplanation = stringResource(R.string.shizuku_feature_wifi)
     val shizukuBluetoothExplanation = stringResource(R.string.shizuku_feature_bluetooth)
     val shizukuMobileDataExplanation = stringResource(R.string.shizuku_feature_mobile_data)
+    val shizukuTrackEndExplanation = stringResource(R.string.shizuku_feature_track_end)
 
     val context = LocalContext.current
 
@@ -132,6 +141,10 @@ private fun SettingsContent(
     // service; resolved on ON_RESUME once we can re-query the grant.
     var pendingAccessibilityEnable by remember { mutableStateOf(false) }
     var showAutoRotateDialog by remember { mutableStateOf(false) }
+    var showTrackEndMethodDialog by remember { mutableStateOf(false) }
+    var showNotificationAccessDialog by remember { mutableStateOf(false) }
+    // Same ON_RESUME hand-off as pendingAccessibilityEnable, for notification access.
+    var pendingNotificationAccessEnable by remember { mutableStateOf(false) }
 
     fun requestWithShizuku(explanation: String, enableAction: () -> Unit) {
         if (viewModel.isShizukuReady()) {
@@ -204,6 +217,38 @@ private fun SettingsContent(
         )
     }
 
+    if (showTrackEndMethodDialog) {
+        TrackEndMethodDialog(
+            selected = uiState.settings.trackEndMethod,
+            showDisableHint = uiState.settings.trackEndMethod != TrackEndMethod.None,
+            onNotificationAccessSelected = {
+                if (viewModel.isNotificationAccessGranted()) {
+                    viewModel.updateTrackEndMethod(TrackEndMethod.NotificationAccess)
+                } else {
+                    showNotificationAccessDialog = true
+                }
+            },
+            onShizukuSelected = {
+                requestWithShizuku(shizukuTrackEndExplanation) {
+                    viewModel.updateTrackEndMethod(TrackEndMethod.Shizuku)
+                }
+            },
+            onDismiss = { showTrackEndMethodDialog = false },
+        )
+    }
+
+    if (showNotificationAccessDialog) {
+        NotificationAccessRequiredDialog(
+            onOpenSettings = {
+                // No activity result to wait for — the grant is re-checked on ON_RESUME.
+                pendingNotificationAccessEnable = true
+                showNotificationAccessDialog = false
+                openNotificationListenerSettings(context, viewModel.getNotificationListenerComponent())
+            },
+            onDismiss = { showNotificationAccessDialog = false },
+        )
+    }
+
     if (showAutoRotateDialog) {
         AutoRotateModeDialog(
             selected = uiState.settings.autoRotateMode,
@@ -237,6 +282,12 @@ private fun SettingsContent(
             if (viewModel.isAccessibilityLockEnabled()) {
                 viewModel.updateScreenOff(true)
                 viewModel.updateScreenLockMethod(ScreenLockMethod.Accessibility)
+            }
+        }
+        if (pendingNotificationAccessEnable) {
+            pendingNotificationAccessEnable = false
+            if (viewModel.isNotificationAccessGranted()) {
+                viewModel.updateTrackEndMethod(TrackEndMethod.NotificationAccess)
             }
         }
     }
@@ -303,6 +354,28 @@ private fun SettingsContent(
                 FadeOutSlider(
                     durationSeconds = uiState.settings.fadeOutDurationSeconds,
                     onDurationChanged = { viewModel.updateFadeOutDuration(it) },
+                )
+                val trackEndMethod = uiState.settings.trackEndMethod
+                val trackEndAvailable = when (trackEndMethod) {
+                    TrackEndMethod.None -> false
+                    TrackEndMethod.NotificationAccess -> uiState.isNotificationAccessGranted
+                    TrackEndMethod.Shizuku -> uiState.shizukuState == ShizukuManager.State.Ready
+                }
+                TrackEndSlider(
+                    maxWaitMinutes = uiState.settings.trackEndMaxWaitMinutes,
+                    available = trackEndAvailable,
+                    description = stringResource(
+                        when {
+                            trackEndAvailable -> R.string.track_end_hold_to_configure
+                            trackEndMethod == TrackEndMethod.NotificationAccess ->
+                                R.string.track_end_notification_access_missing
+                            trackEndMethod == TrackEndMethod.Shizuku ->
+                                R.string.track_end_shizuku_missing
+                            else -> R.string.track_end_choose_method
+                        },
+                    ),
+                    onMaxWaitChanged = { viewModel.updateTrackEndMaxWaitMinutes(it) },
+                    onChooseMethod = { showTrackEndMethodDialog = true },
                 )
                 StepMinutesSlider(
                     stepMinutes = uiState.settings.stepMinutes,
@@ -411,6 +484,27 @@ private fun SettingsContent(
             }
         }
     }
+}
+
+/**
+ * Opens the notification-access page — directly on our listener's toggle where the
+ * platform supports it (API 30+), otherwise (or if an OEM lacks that screen) the list.
+ */
+private fun openNotificationListenerSettings(context: Context, listener: ComponentName) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val detail = Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
+            .putExtra(
+                Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME,
+                listener.flattenToString(),
+            )
+        try {
+            context.startActivity(detail)
+            return
+        } catch (_: ActivityNotFoundException) {
+            // Fall through to the generic list below.
+        }
+    }
+    context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
 }
 
 @Composable

@@ -12,5 +12,8 @@ data class TimerState(
 enum class TimerPhase {
     IDLE,
     RUNNING,
+
+    // Countdown is over, but the playing song is allowed to finish before the fade.
+    WAITING_FOR_TRACK_END,
     FADING_OUT,
 }

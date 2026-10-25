@@ -8,4 +8,5 @@ data class SettingsUiState(
     val shizukuState: ShizukuManager.State = ShizukuManager.State.NotInstalled,
     val isDeviceAdminActive: Boolean = false,
     val isAccessibilityLockEnabled: Boolean = false,
+    val isNotificationAccessGranted: Boolean = false,
 )

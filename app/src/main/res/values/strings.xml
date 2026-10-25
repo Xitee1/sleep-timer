@@ -22,6 +22,7 @@
     <string name="haptic_description">Vibrate when using timer and controls</string>
 
     <!-- Quick Settings tile (name and minutes reuse app_name / widget_minutes) -->
+    <string name="qs_tile_waiting_for_track_end">Song ending</string>
     <string name="qs_tile_fading_out">Fading out</string>
 
     <!-- Notification strings live in :core:service to keep them next to the consumer. -->
@@ -31,6 +32,7 @@
 
     <!-- Accessibility lock service (shown in the system accessibility settings) -->
     <string name="accessibility_service_label">SleepTimer screen lock</string>
+    <string name="media_listener_label">SleepTimer song length</string>
     <string name="accessibility_service_description">Used only to lock the screen when the sleep timer ends. SleepTimer does not read or observe any screen content.</string>
 
     <!-- Home screen widget -->
@@ -39,5 +41,6 @@
     <string name="widget_preview_minutes">15 min</string>
     <string name="widget_tap_to_start">Tap to start</string>
     <string name="widget_tap_to_cancel">Tap to cancel</string>
+    <string name="widget_waiting_for_track_end">Waiting for the song to end</string>
     <string name="widget_fading_out">Fading out playback</string>
 </resources>

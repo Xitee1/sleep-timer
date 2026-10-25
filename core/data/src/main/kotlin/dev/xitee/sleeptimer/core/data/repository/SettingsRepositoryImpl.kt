@@ -13,6 +13,8 @@ import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
 import dev.xitee.sleeptimer.core.data.model.MAX_TIMER_MINUTES
 import dev.xitee.sleeptimer.core.data.model.ScreenLockMethod
 import dev.xitee.sleeptimer.core.data.model.ThemeId
+import dev.xitee.sleeptimer.core.data.model.TRACK_END_MAX_WAIT_MINUTES
+import dev.xitee.sleeptimer.core.data.model.TrackEndMethod
 import dev.xitee.sleeptimer.core.data.model.UserSettings
 import dev.xitee.sleeptimer.core.data.util.isSystemReduceMotionEnabled
 import kotlinx.coroutines.CoroutineScope
@@ -36,6 +38,8 @@ class SettingsRepositoryImpl @Inject constructor(
     private companion object {
         val STOP_MEDIA = booleanPreferencesKey("stop_media_playback")
         val FADE_OUT_DURATION = intPreferencesKey("fade_out_duration_seconds")
+        val TRACK_END_METHOD = stringPreferencesKey("track_end_method")
+        val TRACK_END_MAX_WAIT = intPreferencesKey("track_end_max_wait_minutes")
         val SCREEN_OFF = booleanPreferencesKey("screen_off")
         val SCREEN_LOCK_METHOD = stringPreferencesKey("screen_lock_method")
 
@@ -94,6 +98,9 @@ class SettingsRepositoryImpl @Inject constructor(
         UserSettings(
             stopMediaPlayback = prefs[STOP_MEDIA] ?: d.stopMediaPlayback,
             fadeOutDurationSeconds = prefs[FADE_OUT_DURATION] ?: d.fadeOutDurationSeconds,
+            trackEndMethod = TrackEndMethod.fromStorage(prefs[TRACK_END_METHOD]),
+            trackEndMaxWaitMinutes = (prefs[TRACK_END_MAX_WAIT] ?: d.trackEndMaxWaitMinutes)
+                .coerceIn(0, TRACK_END_MAX_WAIT_MINUTES),
             screenOff = prefs[SCREEN_OFF] ?: d.screenOff,
             screenLockMethod = prefs[SCREEN_LOCK_METHOD]?.let { ScreenLockMethod.fromStorage(it) }
                 ?: if (prefs[SOFT_SCREEN_OFF] == true) ScreenLockMethod.Shizuku else d.screenLockMethod,
@@ -118,6 +125,14 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun updateFadeOutDuration(seconds: Int) {
         dataStore.edit { it[FADE_OUT_DURATION] = seconds }
+    }
+
+    override suspend fun updateTrackEndMethod(method: TrackEndMethod) {
+        dataStore.edit { it[TRACK_END_METHOD] = method.name }
+    }
+
+    override suspend fun updateTrackEndMaxWaitMinutes(minutes: Int) {
+        dataStore.edit { it[TRACK_END_MAX_WAIT] = minutes.coerceIn(0, TRACK_END_MAX_WAIT_MINUTES) }
     }
 
     override suspend fun updateScreenOff(enabled: Boolean) {

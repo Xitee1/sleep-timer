@@ -48,6 +48,8 @@ class TimerNotificationManager @Inject constructor(
         phase: TimerPhase = TimerPhase.RUNNING,
     ): Notification {
         val contentText = when {
+            phase == TimerPhase.WAITING_FOR_TRACK_END ->
+                context.getString(R.string.notification_waiting_for_track_end)
             phase == TimerPhase.FADING_OUT -> context.getString(R.string.notification_fading_out)
             remainingMinutes > 0 -> context.resources.getQuantityString(
                 R.plurals.notification_minutes_remaining,

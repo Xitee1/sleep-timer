@@ -7,7 +7,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
 import dev.xitee.sleeptimer.core.data.model.ScreenLockMethod
 import dev.xitee.sleeptimer.core.data.model.ThemeId
+import dev.xitee.sleeptimer.core.data.model.TrackEndMethod
 import dev.xitee.sleeptimer.core.data.repository.SettingsRepository
+import dev.xitee.sleeptimer.core.service.media.PlayingTrackReader
 import dev.xitee.sleeptimer.core.service.screen.AccessibilityLockHelper
 import dev.xitee.sleeptimer.core.service.screen.ScreenLockHelper
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
@@ -25,12 +27,13 @@ class SettingsViewModel @Inject constructor(
     private val shizukuManager: ShizukuManager,
     private val screenLockHelper: ScreenLockHelper,
     private val accessibilityLockHelper: AccessibilityLockHelper,
+    private val playingTrackReader: PlayingTrackReader,
 ) : ViewModel() {
 
-    // Tick to re-query isAdminActive / isServiceEnabled. Both grants can be revoked
-    // from system Settings without any callback into the app, so nothing else drives
-    // a refresh. Bumped from SettingsScreen on ON_RESUME so returning from the system
-    // settings reflects the current state.
+    // Tick to re-query isAdminActive / isServiceEnabled / notification access. These
+    // grants can be revoked from system Settings without any callback into the app, so
+    // nothing else drives a refresh. Bumped from SettingsScreen on ON_RESUME so
+    // returning from the system settings reflects the current state.
     private val permissionRefreshTicker = MutableStateFlow(0)
 
     val uiState: StateFlow<SettingsUiState?> =
@@ -44,6 +47,7 @@ class SettingsViewModel @Inject constructor(
                 shizukuState = shizukuState,
                 isDeviceAdminActive = screenLockHelper.isAdminActive(),
                 isAccessibilityLockEnabled = accessibilityLockHelper.isServiceEnabled(),
+                isNotificationAccessGranted = playingTrackReader.isNotificationAccessGranted(),
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
@@ -51,11 +55,15 @@ class SettingsViewModel @Inject constructor(
 
     fun isAccessibilityLockEnabled(): Boolean = accessibilityLockHelper.isServiceEnabled()
 
+    fun isNotificationAccessGranted(): Boolean = playingTrackReader.isNotificationAccessGranted()
+
     fun getAdminComponent(): ComponentName = screenLockHelper.adminComponent
+
+    fun getNotificationListenerComponent(): ComponentName = playingTrackReader.listenerComponent
 
     fun refreshShizuku() = shizukuManager.refresh()
 
-    /** Triggers a re-read of the device-admin and accessibility-service grants. */
+    /** Triggers a re-read of the device-admin, accessibility and notification-access grants. */
     fun refreshPermissionState() {
         permissionRefreshTicker.value = permissionRefreshTicker.value + 1
     }
@@ -68,6 +76,14 @@ class SettingsViewModel @Inject constructor(
 
     fun updateFadeOutDuration(seconds: Int) {
         viewModelScope.launch { settingsRepository.updateFadeOutDuration(seconds) }
+    }
+
+    fun updateTrackEndMethod(method: TrackEndMethod) {
+        viewModelScope.launch { settingsRepository.updateTrackEndMethod(method) }
+    }
+
+    fun updateTrackEndMaxWaitMinutes(minutes: Int) {
+        viewModelScope.launch { settingsRepository.updateTrackEndMaxWaitMinutes(minutes) }
     }
 
     fun updateScreenOff(enabled: Boolean) {

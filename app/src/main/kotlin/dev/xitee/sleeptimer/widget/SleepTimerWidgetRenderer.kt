@@ -69,6 +69,14 @@ internal object SleepTimerWidgetRenderer {
                 )
                 views.setOnClickPendingIntent(R.id.widget_root, cancelPendingIntent(context))
             }
+            TimerPhase.WAITING_FOR_TRACK_END -> {
+                views.setViewVisibility(R.id.widget_minutes, View.GONE)
+                views.setTextViewText(
+                    R.id.widget_label,
+                    context.getString(R.string.widget_waiting_for_track_end),
+                )
+                views.setOnClickPendingIntent(R.id.widget_root, cancelPendingIntent(context))
+            }
             TimerPhase.FADING_OUT -> {
                 views.setViewVisibility(R.id.widget_minutes, View.GONE)
                 views.setTextViewText(

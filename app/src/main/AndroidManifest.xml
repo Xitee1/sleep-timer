@@ -76,6 +76,20 @@
                 android:resource="@xml/accessibility_lock_service" />
         </service>
 
+        <!-- Optional notification access, only used to read the playing song's
+             length via MediaSessionManager ("let the song finish"). exported="true"
+             is safe: only the system holds BIND_NOTIFICATION_LISTENER_SERVICE, and it
+             only binds after the user grants notification access. -->
+        <service
+            android:name="dev.xitee.sleeptimer.core.service.media.MediaNotificationListener"
+            android:exported="true"
+            android:label="@string/media_listener_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <!-- Per-instance widget configuration, launched by the widget host on
              placement (pre-Android 12) and via long-press -> edit (12+). Exported
              because some launchers start it directly rather than through the

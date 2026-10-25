@@ -1,15 +1,25 @@
 package dev.xitee.sleeptimer.core.service.shizuku
 
+import android.annotation.SuppressLint
+import android.content.Context
+import android.media.session.MediaSessionManager
+import android.os.Build
 import android.util.Log
+import dev.xitee.sleeptimer.core.service.media.PlayingTrack
+import dev.xitee.sleeptimer.core.service.media.playingTrack
 import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
 
 /**
- * Runs inside the process Shizuku spawns with shell (uid 2000) privileges.
- * Instantiated there by name via its no-arg constructor — don't add constructor
- * parameters or reference Hilt/app infrastructure from this class.
+ * Runs inside the process Shizuku spawns with shell (uid 2000) privileges, where no
+ * Application or Hilt graph exists — don't reference Hilt or app singletons here.
+ *
+ * Shizuku instantiates this class by name: servers since API 13 prefer the
+ * `(Context)` constructor and fall back to the no-arg one, so both must stay.
  */
-class ShellUserService : IShellUserService.Stub() {
+class ShellUserService(private val context: Context?) : IShellUserService.Stub() {
+
+    constructor() : this(null)
 
     override fun destroy() {
         exitProcess(0)
@@ -27,6 +37,39 @@ class ShellUserService : IShellUserService.Stub() {
     } catch (t: Throwable) {
         Log.e(TAG, "exec failed: ${command.joinToString(" ")}", t)
         EXIT_ERROR
+    }
+
+    override fun playingTrack(): PlayingTrack? = try {
+        // A null listener component makes the system check MEDIA_CONTENT_CONTROL,
+        // which the shell uid holds — no notification access needed on this path.
+        mediaSessionManager()
+            ?.getActiveSessions(null)
+            ?.playingTrack()
+    } catch (t: Throwable) {
+        Log.e(TAG, "reading the playing track failed", t)
+        null
+    }
+
+    private fun mediaSessionManager(): MediaSessionManager? {
+        val context = context ?: return null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) registerMediaServiceManager()
+        return context.getSystemService(MediaSessionManager::class.java)
+    }
+
+    /**
+     * Since Android 11 the media framework is a mainline module whose system-service
+     * wrappers find their binders through a MediaServiceManager that ActivityThread
+     * registers when an app process starts. This process is spawned by Shizuku
+     * outside that path, so MediaSessionManager's constructor would hit a null
+     * manager — register it here once. Hidden API, but not enforced in this process.
+     */
+    @SuppressLint("PrivateApi")
+    private fun registerMediaServiceManager() {
+        val initializer = Class.forName("android.media.MediaFrameworkPlatformInitializer")
+        if (initializer.getMethod("getMediaServiceManager").invoke(null) != null) return
+        val managerClass = Class.forName("android.media.MediaServiceManager")
+        initializer.getMethod("setMediaServiceManager", managerClass)
+            .invoke(null, managerClass.getDeclaredConstructor().newInstance())
     }
 
     private companion object {

@@ -6,6 +6,7 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.xitee.sleeptimer.core.service.media.PlayingTrack
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -52,22 +53,7 @@ class ShizukuShell @Inject constructor(
      * wedged command can't block timer teardown forever.
      */
     suspend fun exec(vararg args: String): Boolean = withContext(Dispatchers.IO) {
-        if (!shizukuManager.isReady()) {
-            Log.w(TAG, "exec called but Shizuku not ready: state=${shizukuManager.state.value}")
-            return@withContext false
-        }
-        val service = try {
-            withTimeout(BIND_TIMEOUT_MS) { obtainService() }
-        } catch (ce: CancellationException) {
-            if (ce is TimeoutCancellationException) {
-                Log.w(TAG, "binding shell user service timed out after ${BIND_TIMEOUT_MS}ms")
-                return@withContext false
-            }
-            throw ce
-        } catch (t: Exception) {
-            Log.e(TAG, "binding shell user service failed", t)
-            return@withContext false
-        }
+        val service = connectedService() ?: return@withContext false
         try {
             val exit = service.exec(args, EXEC_TIMEOUT_MS)
             if (exit != 0) {
@@ -80,6 +66,50 @@ class ShizukuShell @Inject constructor(
             boundService = null
             Log.e(TAG, "exec failed: ${args.joinToString(" ")}", t)
             false
+        }
+    }
+
+    /**
+     * Binds the user service ahead of time, so a later call doesn't spend the
+     * first-bind delay (Shizuku spawning the process) when it matters.
+     */
+    suspend fun prepare() {
+        withContext(Dispatchers.IO) { connectedService() }
+    }
+
+    /**
+     * The playing song, read with the shell uid's MEDIA_CONTENT_CONTROL inside the
+     * user service. Null when nothing is playing, its length or position is unknown,
+     * or Shizuku is not ready.
+     */
+    suspend fun playingTrack(): PlayingTrack? = withContext(Dispatchers.IO) {
+        val service = connectedService() ?: return@withContext null
+        try {
+            service.playingTrack()
+        } catch (t: Exception) {
+            boundService = null
+            Log.e(TAG, "reading the playing track failed", t)
+            null
+        }
+    }
+
+    /** The bound user service, or null when Shizuku is not ready or binding fails. */
+    private suspend fun connectedService(): IShellUserService? {
+        if (!shizukuManager.isReady()) {
+            Log.w(TAG, "Shizuku not ready: state=${shizukuManager.state.value}")
+            return null
+        }
+        return try {
+            withTimeout(BIND_TIMEOUT_MS) { obtainService() }
+        } catch (ce: CancellationException) {
+            if (ce is TimeoutCancellationException) {
+                Log.w(TAG, "binding shell user service timed out after ${BIND_TIMEOUT_MS}ms")
+                return null
+            }
+            throw ce
+        } catch (t: Exception) {
+            Log.e(TAG, "binding shell user service failed", t)
+            null
         }
     }
 
@@ -134,7 +164,7 @@ class ShizukuShell @Inject constructor(
 
         // Bump when ShellUserService's AIDL or behavior changes — Shizuku replaces
         // a running user service whose version differs.
-        const val USER_SERVICE_VERSION = 1
+        const val USER_SERVICE_VERSION = 4
 
         // The first bind spawns a new process via Shizuku; give it more headroom
         // than a plain command.

@@ -8,6 +8,7 @@
         <item quantity="other">%d minutes remaining</item>
     </plurals>
     <string name="notification_less_than_minute">Less than a minute remaining</string>
+    <string name="notification_waiting_for_track_end">Waiting for the song to end</string>
     <string name="notification_fading_out">Fading out playback</string>
     <string name="notification_action_add_minutes">+%d min</string>
     <string name="notification_action_subtract_minutes">-%d min</string>

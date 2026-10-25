@@ -15,11 +15,13 @@ import dev.xitee.sleeptimer.core.data.model.MAX_TIMER_MINUTES
 import dev.xitee.sleeptimer.core.data.model.ScreenLockMethod
 import dev.xitee.sleeptimer.core.data.model.TimerPhase
 import dev.xitee.sleeptimer.core.data.model.TimerState
+import dev.xitee.sleeptimer.core.data.model.TrackEndMethod
 import dev.xitee.sleeptimer.core.data.model.UserSettings
 import dev.xitee.sleeptimer.core.data.repository.SettingsRepository
 import dev.xitee.sleeptimer.core.data.repository.TimerRepositoryImpl
 import dev.xitee.sleeptimer.core.data.util.remainingMillisToDisplayMinutes
 import dev.xitee.sleeptimer.core.service.media.MediaVolumeController
+import dev.xitee.sleeptimer.core.service.media.PlayingTrackReader
 import dev.xitee.sleeptimer.core.service.notification.TimerNotificationManager
 import dev.xitee.sleeptimer.core.service.screen.AccessibilityLockHelper
 import dev.xitee.sleeptimer.core.service.screen.ScreenLockHelper
@@ -51,6 +53,7 @@ class SleepTimerService : Service() {
     @Inject lateinit var settingsRepository: SettingsRepository
     @Inject lateinit var notificationManager: TimerNotificationManager
     @Inject lateinit var mediaVolumeController: MediaVolumeController
+    @Inject lateinit var playingTrackReader: PlayingTrackReader
     @Inject lateinit var screenLockHelper: ScreenLockHelper
     @Inject lateinit var accessibilityLockHelper: AccessibilityLockHelper
     @Inject lateinit var shizukuManager: ShizukuManager
@@ -90,6 +93,11 @@ class SleepTimerService : Service() {
         const val EXTRA_DURATION_MILLIS = "dev.xitee.sleeptimer.extra.DURATION_MILLIS"
         const val EXTRA_MINUTES = "dev.xitee.sleeptimer.extra.MINUTES"
         private const val FADE_IN_SECONDS = 2
+        private const val TRACK_POLL_MILLIS = 1_000L
+
+        // Polls in a row without a playing song before the wait counts playback as
+        // stopped. Covers the buffering/skipping states players report between songs.
+        private const val TRACK_MISSING_MAX_POLLS = 3
         private const val MAX_TIMER_MILLIS = MAX_TIMER_MINUTES * 60_000L
         private const val TAG = "SleepTimerService"
 
@@ -228,6 +236,16 @@ class SleepTimerService : Service() {
             mediaVolumeController.restoreVolume()
             runCountdownAndExpire()
         }
+
+        // Bind Shizuku's user service now instead of at expiry: the first bind spawns
+        // a process, and during the expiry lookup the timer sits at zero, where "+"
+        // can't extend it.
+        serviceScope.launch {
+            val settings = settingsRepository.settings.first()
+            if (settings.stopMediaPlayback && settings.trackEndMaxWaitMinutes > 0) {
+                playingTrackReader.prepare(settings.trackEndMethod)
+            }
+        }
     }
 
     /** Anchors [remainingMillis] to a fresh elapsedRealtime deadline. */
@@ -268,12 +286,13 @@ class SleepTimerService : Service() {
                 updateTimerState(TimerPhase.RUNNING)
                 notifyRemainingIfChanged()
             }
-            TimerPhase.FADING_OUT -> {
+            TimerPhase.WAITING_FOR_TRACK_END, TimerPhase.FADING_OUT -> {
                 // Replace countdownJob with the fade-in + restart so Cancel during
                 // the 2 s fade-in window cancels this whole sequence, not just the
-                // already-finished fade-out. The countdown and fade-in run in
-                // parallel — the clock ticks from the moment the user presses +,
-                // not after the fade-in completes.
+                // already-finished fade-out. While waiting for the song to end no
+                // fade has started yet, so the fade-in is a no-op. The countdown and
+                // fade-in run in parallel — the clock ticks from the moment the user
+                // presses +, not after the fade-in completes.
                 val oldJob = countdownJob ?: return
                 val stepMillis = (stepMinutes * 60_000L).coerceAtMost(MAX_TIMER_MILLIS)
                 countdownJob = serviceScope.launch {
@@ -345,10 +364,15 @@ class SleepTimerService : Service() {
         val settings: UserSettings = settingsRepository.settings.first()
 
         if (settings.stopMediaPlayback) {
-            updateTimerState(TimerPhase.FADING_OUT)
-            lastNotifiedMinutes = Int.MIN_VALUE
-            notificationManager.updateNotification(0, stepMinutes, TimerPhase.FADING_OUT)
-            mediaVolumeController.fadeOutAndPause(settings.fadeOutDurationSeconds)
+            when (awaitTrackEnd(settings)) {
+                TrackEnd.FADE_OUT -> {
+                    updateTimerState(TimerPhase.FADING_OUT)
+                    lastNotifiedMinutes = Int.MIN_VALUE
+                    notificationManager.updateNotification(0, stepMinutes, TimerPhase.FADING_OUT)
+                    mediaVolumeController.fadeOutAndPause(settings.fadeOutDurationSeconds)
+                }
+                TrackEnd.STOP_NOW -> mediaVolumeController.pauseMedia()
+            }
         }
 
         if (settings.turnOffWifi && shizukuManager.isReady()) {
@@ -409,6 +433,64 @@ class SleepTimerService : Service() {
         timerWidgetRefresher.refresh()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
+    }
+
+    /** How playback ends once [awaitTrackEnd] returns. */
+    private enum class TrackEnd { FADE_OUT, STOP_NOW }
+
+    /**
+     * Lets the playing song finish: returns when the fade-out should start so that it
+     * ends together with the song. Returns at once when the feature is off, the song
+     * length is unknown (e.g. a livestream, or the method's access is missing), or the
+     * rest of the song exceeds [UserSettings.trackEndMaxWaitMinutes]. Also returns
+     * early when playback stops, and with [TrackEnd.STOP_NOW] when another song starts.
+     */
+    private suspend fun awaitTrackEnd(settings: UserSettings): TrackEnd {
+        val method = settings.trackEndMethod
+        if (method == TrackEndMethod.None || settings.trackEndMaxWaitMinutes <= 0) {
+            return TrackEnd.FADE_OUT
+        }
+        val fadeMillis = settings.fadeOutDurationSeconds * 1_000L
+        val maxWaitMillis = settings.trackEndMaxWaitMinutes * 60_000L
+        var track = playingTrackReader.playingTrack(method) ?: return TrackEnd.FADE_OUT
+        if (track.remainingMillis > maxWaitMillis || track.remainingMillis <= fadeMillis) {
+            return TrackEnd.FADE_OUT
+        }
+
+        updateTimerState(TimerPhase.WAITING_FOR_TRACK_END)
+        lastNotifiedMinutes = Int.MIN_VALUE
+        notificationManager.updateNotification(0, stepMinutes, TimerPhase.WAITING_FOR_TRACK_END)
+
+        // Hard cap on the elapsedRealtime clock, so seeking back within the song can't
+        // stretch the wait beyond the configured maximum.
+        val waitDeadline = SystemClock.elapsedRealtime() + maxWaitMillis
+        var missingPolls = 0
+        while (true) {
+            val untilFade = track.remainingMillis - fadeMillis
+            if (untilFade <= TRACK_POLL_MILLIS) {
+                // Final stretch: sleep exactly until the fade must start. Another poll
+                // could land after the song ended and mistake the next one for a skip,
+                // which would stop playback without the fade.
+                delay(untilFade)
+                return TrackEnd.FADE_OUT
+            }
+            delay(TRACK_POLL_MILLIS)
+            if (SystemClock.elapsedRealtime() >= waitDeadline) return TrackEnd.FADE_OUT
+            val current = playingTrackReader.playingTrack(method)
+            if (current == null) {
+                // Nothing playing: paused/stopped — or a skip in progress, where the
+                // player briefly reports skipping/buffering. Give the next song a moment
+                // to show up before treating playback as stopped.
+                if (++missingPolls >= TRACK_MISSING_MAX_POLLS) return TrackEnd.FADE_OUT
+                continue
+            }
+            missingPolls = 0
+            // Another song started (skipped to it) — fading out at the start of a new
+            // song makes no sense, so stop right away. Seeking within the song only
+            // moves the remaining time and keeps waiting.
+            if (current.key != track.key) return TrackEnd.STOP_NOW
+            track = current
+        }
     }
 
     private fun updateTimerState(phase: TimerPhase) {
