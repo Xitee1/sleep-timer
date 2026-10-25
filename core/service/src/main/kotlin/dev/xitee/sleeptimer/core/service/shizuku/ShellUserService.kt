@@ -1,7 +1,9 @@
 package dev.xitee.sleeptimer.core.service.shizuku
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.media.session.MediaSessionManager
+import android.os.Build
 import android.util.Log
 import dev.xitee.sleeptimer.core.service.media.playingTrackRemainingMillis
 import java.util.concurrent.TimeUnit
@@ -39,13 +41,35 @@ class ShellUserService(private val context: Context?) : IShellUserService.Stub()
     override fun playingTrackRemainingMillis(): Long = try {
         // A null listener component makes the system check MEDIA_CONTENT_CONTROL,
         // which the shell uid holds — no notification access needed on this path.
-        context?.getSystemService(MediaSessionManager::class.java)
+        mediaSessionManager()
             ?.getActiveSessions(null)
             ?.playingTrackRemainingMillis()
             ?: UNKNOWN_REMAINING
     } catch (t: Throwable) {
         Log.e(TAG, "reading the playing track failed", t)
         UNKNOWN_REMAINING
+    }
+
+    private fun mediaSessionManager(): MediaSessionManager? {
+        val context = context ?: return null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) registerMediaServiceManager()
+        return context.getSystemService(MediaSessionManager::class.java)
+    }
+
+    /**
+     * Since Android 11 the media framework is a mainline module whose system-service
+     * wrappers find their binders through a MediaServiceManager that ActivityThread
+     * registers when an app process starts. This process is spawned by Shizuku
+     * outside that path, so MediaSessionManager's constructor would hit a null
+     * manager — register it here once. Hidden API, but not enforced in this process.
+     */
+    @SuppressLint("PrivateApi")
+    private fun registerMediaServiceManager() {
+        val initializer = Class.forName("android.media.MediaFrameworkPlatformInitializer")
+        if (initializer.getMethod("getMediaServiceManager").invoke(null) != null) return
+        val managerClass = Class.forName("android.media.MediaServiceManager")
+        initializer.getMethod("setMediaServiceManager", managerClass)
+            .invoke(null, managerClass.getDeclaredConstructor().newInstance())
     }
 
     private companion object {

@@ -155,7 +155,7 @@ class ShizukuShell @Inject constructor(
 
         // Bump when ShellUserService's AIDL or behavior changes — Shizuku replaces
         // a running user service whose version differs.
-        const val USER_SERVICE_VERSION = 2
+        const val USER_SERVICE_VERSION = 3
 
         // The first bind spawns a new process via Shizuku; give it more headroom
         // than a plain command.
