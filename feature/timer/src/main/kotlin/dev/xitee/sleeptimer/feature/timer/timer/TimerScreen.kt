@@ -209,7 +209,9 @@ private fun TimerContent(
         )
     }
 
-    val isRunning = uiState is TimerUiState.Running || uiState is TimerUiState.FadingOut
+    // Waiting for the song to end and the fade-out render like a countdown at zero.
+    val isEnding = uiState is TimerUiState.WaitingForTrackEnd || uiState is TimerUiState.FadingOut
+    val isRunning = uiState is TimerUiState.Running || isEnding
 
     LaunchedEffect(uiState) {
         if (uiState is TimerUiState.Idle) {
@@ -231,7 +233,7 @@ private fun TimerContent(
     } else when (val s = uiState) {
         is TimerUiState.Idle -> s.selectedMinutes
         is TimerUiState.Running -> remainingMillisToDisplayMinutes(s.remainingMillis)
-        is TimerUiState.FadingOut -> 0
+        is TimerUiState.WaitingForTrackEnd, is TimerUiState.FadingOut -> 0
     }
 
     TimerBackground(
@@ -257,7 +259,7 @@ private fun TimerContent(
                     kotlinx.coroutines.delay(10_000L)
                 }
             }
-            val endMillis: Long? = if (uiState is TimerUiState.FadingOut || displayMinutes <= 0) {
+            val endMillis: Long? = if (isEnding || displayMinutes <= 0) {
                 null
             } else {
                 nowMillis + displayMinutes * 60_000L

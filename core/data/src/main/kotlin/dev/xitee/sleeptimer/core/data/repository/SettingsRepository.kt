@@ -3,6 +3,7 @@ package dev.xitee.sleeptimer.core.data.repository
 import dev.xitee.sleeptimer.core.data.model.AutoRotateMode
 import dev.xitee.sleeptimer.core.data.model.ScreenLockMethod
 import dev.xitee.sleeptimer.core.data.model.ThemeId
+import dev.xitee.sleeptimer.core.data.model.TrackEndMethod
 import dev.xitee.sleeptimer.core.data.model.UserSettings
 import kotlinx.coroutines.flow.Flow
 
@@ -10,6 +11,8 @@ interface SettingsRepository {
     val settings: Flow<UserSettings>
     suspend fun updateStopMediaPlayback(enabled: Boolean)
     suspend fun updateFadeOutDuration(seconds: Int)
+    suspend fun updateTrackEndMethod(method: TrackEndMethod)
+    suspend fun updateTrackEndMaxWaitMinutes(minutes: Int)
     suspend fun updateScreenOff(enabled: Boolean)
     suspend fun updateScreenLockMethod(method: ScreenLockMethod)
     suspend fun updateTurnOffWifi(enabled: Boolean)

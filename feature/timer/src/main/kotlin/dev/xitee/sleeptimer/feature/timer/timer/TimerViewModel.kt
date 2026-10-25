@@ -77,6 +77,7 @@ class TimerViewModel @Inject constructor(
                     progress = progress,
                 )
             }
+            TimerPhase.WAITING_FOR_TRACK_END -> TimerUiState.WaitingForTrackEnd
             TimerPhase.FADING_OUT -> TimerUiState.FadingOut
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TimerUiState.Idle())

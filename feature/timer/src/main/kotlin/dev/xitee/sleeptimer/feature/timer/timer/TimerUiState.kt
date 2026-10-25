@@ -12,5 +12,7 @@ sealed interface TimerUiState {
         val progress: Float,
     ) : TimerUiState
 
+    data object WaitingForTrackEnd : TimerUiState
+
     data object FadingOut : TimerUiState
 }

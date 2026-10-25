@@ -86,9 +86,9 @@ class SleepTimerTileService : TileService() {
         super.onClick()
         when (timerRepository.timerState.value.phase) {
             TimerPhase.IDLE -> startTimerWithPreset()
-            // RUNNING / FADING_OUT: cancel restores volume and stops the service; if
-            // the countdown ended in the meantime, the fresh instance's stale-intent
-            // guard stops it again without touching timer state.
+            // RUNNING / WAITING_FOR_TRACK_END / FADING_OUT: cancel restores volume and
+            // stops the service; if the countdown ended in the meantime, the fresh
+            // instance's stale-intent guard stops it again without touching timer state.
             else -> SleepTimerService.cancel(this)
         }
     }
@@ -109,6 +109,7 @@ class SleepTimerTileService : TileService() {
         val tile = qsTile ?: return
         tile.state = if (model.phase == TimerPhase.IDLE) Tile.STATE_INACTIVE else Tile.STATE_ACTIVE
         val statusText = when (model.phase) {
+            TimerPhase.WAITING_FOR_TRACK_END -> getString(R.string.qs_tile_waiting_for_track_end)
             TimerPhase.FADING_OUT -> getString(R.string.qs_tile_fading_out)
             // coerceAtLeast: the helper rounds up, but the service publishes one
             // final RUNNING tick with remainingMillis == 0 before the phase flips —
