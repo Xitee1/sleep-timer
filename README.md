@@ -19,14 +19,25 @@ No accounts, no ads, no trackers, no network access.
 - Shows the exact wall-clock time at which the timer will end
 - Stops audio and video playback across apps at the end of the timer
 - Configurable fade-out duration before playback stops
+- Optional "let the song finish": when the timer ends, the current song may
+  play to its end before the fade-out starts (configurable maximum wait; the
+  song length is read via notification access or Shizuku)
 - Optional screen lock when the timer ends — choose between **Device Admin**
-  (standard Android lock, credential required to unlock) or **Shizuku soft
-  lock** (simulates the power button, biometric unlock keeps working)
+  (standard Android lock, credential required to unlock), **Accessibility soft
+  lock** (locks like the power button, biometric unlock keeps working, no
+  Shizuku needed) or **Shizuku soft lock** (simulates the power button,
+  biometric unlock keeps working)
 - Optional Wi-Fi, Bluetooth, and mobile data off when the timer ends (via Shizuku,
   since modern Android blocks apps from toggling these directly)
+- Home screen widget to start the timer with one tap — each widget can use the
+  last used duration or its own fixed duration
+- Quick Settings tile that starts the timer with the last used duration
 - Six built-in themes (Midnight, Ocean, Ember, Light, Basic, AMOLED) with an
   optional drifting starfield behind the dial
-- Haptic feedback for timer controls (can be disabled)
+- Screen rotation setting (follow the system setting, always rotate, or
+  portrait only)
+- Haptic feedback for timer controls and a launch animation for the start
+  button (both can be disabled)
 - Foreground service keeps the timer reliable even when the app is in the
   background
 - English and German translations
@@ -44,10 +55,12 @@ No accounts, no ads, no trackers, no network access.
 | `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_MEDIA_PLAYBACK` | Keeps the countdown running reliably in the background so it fires on time |
 | `POST_NOTIFICATIONS` | Shows the running timer with quick actions (+/− step, cancel) |
 | `BIND_DEVICE_ADMIN` (optional, `force-lock` only) | Required by Android to lock the screen when the timer ends — only requested if you pick the Device Admin lock method |
+| Accessibility service (optional) | Locks the screen when the timer ends — only needed if you pick the Accessibility lock method; it does not read any screen content |
+| Notification access (optional) | Reads the length and position of the playing song for "let the song finish" — only needed if you pick the notification access method; it does not read any notification content |
 
 The app declares a `ShizukuProvider` so it can talk to
 [Shizuku](https://shizuku.rikka.app/) when you enable the Wi-Fi off,
-Bluetooth off, mobile data off, or soft-lock features. Shizuku is **optional** — the core
+Bluetooth off, mobile data off, Shizuku soft lock, or Shizuku song length features. Shizuku is **optional** — the core
 timer works without it, and the provider is dormant until you opt in.
 
 The app does not request the `INTERNET` permission. It cannot connect to any
