@@ -1,0 +1,2 @@
+* New: option to let the current song finish before the timer stops playback, with the fade-out ending together with the song. A slider sets how long the timer waits at most (requires notification access or Shizuku).
+* Fixed: no more brief burst of full volume at the end of the fade-out.

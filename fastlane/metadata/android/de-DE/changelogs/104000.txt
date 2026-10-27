@@ -1,0 +1,2 @@
+* Neu: Option, den laufenden Song zu Ende spielen zu lassen, bevor der Timer die Wiedergabe stoppt – das Ausblenden endet zusammen mit dem Song. Ein Schieberegler legt fest, wie lange der Timer höchstens wartet (Benachrichtigungszugriff oder Shizuku benötigt).
+* Behoben: Am Ende des Ausblendens ist die Musik nicht mehr kurz in voller Lautstärke zu hören.
