@@ -33,6 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MoreTime
 import androidx.compose.material.icons.filled.MusicOff
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.RocketLaunch
@@ -383,6 +384,14 @@ private fun SettingsContent(
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
+
+                SettingsToggleRow(
+                    icon = Icons.Default.MoreTime,
+                    title = stringResource(R.string.shake_to_extend_title),
+                    description = stringResource(R.string.shake_to_extend_description),
+                    checked = uiState.settings.shakeToExtend,
+                    onCheckedChange = { viewModel.updateShakeToExtend(it) },
+                )
 
                 SettingsToggleRow(
                     icon = Icons.Default.PhoneAndroid,

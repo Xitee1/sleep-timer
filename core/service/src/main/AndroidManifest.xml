@@ -1,2 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Confirms a shake-to-extend from the service (ShakeVibrator), also with the screen off. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+</manifest>

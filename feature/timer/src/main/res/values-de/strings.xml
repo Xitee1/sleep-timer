@@ -53,6 +53,8 @@
     <string name="shizuku_feature_track_end">Die Liedlänge auf diese Weise auszulesen erfordert Shizuku, da Android nur privilegierten Apps Einblick in die Mediensitzungen anderer Apps gewährt.</string>
     <string name="step_minutes_title">+/− Schrittweite</string>
     <string name="step_minutes_value">%d Min</string>
+    <string name="shake_to_extend_title">Schütteln zum Verlängern</string>
+    <string name="shake_to_extend_description">Handy schütteln verlängert den laufenden Timer um die +/− Schrittweite</string>
     <string name="screen_title">Bildschirm</string>
     <string name="screen_description">Display ausschalten (Shizuku optional)</string>
     <string name="widget_config_title">Widget-Einstellungen</string>

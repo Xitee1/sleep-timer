@@ -126,6 +126,10 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.updateStepMinutes(minutes) }
     }
 
+    fun updateShakeToExtend(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.updateShakeToExtend(enabled) }
+    }
+
     fun updateLaunchAnimationEnabled(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.updateLaunchAnimationEnabled(enabled) }
     }

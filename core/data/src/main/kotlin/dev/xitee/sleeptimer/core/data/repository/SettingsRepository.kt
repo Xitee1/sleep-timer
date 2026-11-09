@@ -23,6 +23,7 @@ interface SettingsRepository {
     suspend fun updateStarsEnabled(enabled: Boolean)
     suspend fun updateAutoRotateMode(mode: AutoRotateMode)
     suspend fun updateStepMinutes(minutes: Int)
+    suspend fun updateShakeToExtend(enabled: Boolean)
     suspend fun updatePresetMinutes(minutes: Int)
     suspend fun updateLaunchAnimationEnabled(enabled: Boolean)
 }
