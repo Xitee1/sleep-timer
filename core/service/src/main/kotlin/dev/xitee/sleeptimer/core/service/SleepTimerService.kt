@@ -25,6 +25,8 @@ import dev.xitee.sleeptimer.core.service.media.PlayingTrackReader
 import dev.xitee.sleeptimer.core.service.notification.TimerNotificationManager
 import dev.xitee.sleeptimer.core.service.screen.AccessibilityLockHelper
 import dev.xitee.sleeptimer.core.service.screen.ScreenLockHelper
+import dev.xitee.sleeptimer.core.service.shake.ShakeDetector
+import dev.xitee.sleeptimer.core.service.shake.ShakeVibrator
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuBluetoothController
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuManager
 import dev.xitee.sleeptimer.core.service.shizuku.ShizukuMobileDataController
@@ -38,6 +40,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -62,6 +65,8 @@ class SleepTimerService : Service() {
     @Inject lateinit var shizukuMobileDataController: ShizukuMobileDataController
     @Inject lateinit var shizukuBluetoothController: ShizukuBluetoothController
     @Inject lateinit var timerWidgetRefresher: TimerWidgetRefresher
+    @Inject lateinit var shakeDetector: ShakeDetector
+    @Inject lateinit var shakeVibrator: ShakeVibrator
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var countdownJob: Job? = null
@@ -73,6 +78,7 @@ class SleepTimerService : Service() {
     private var remainingMillis: Long = 0L
     private var totalDurationMillis: Long = 0L
     private var stepMinutes: Int = 0
+    private var shakeToExtend: Boolean = false
 
     // Bumped by startTimer so an in-flight cancel teardown can tell whether a newer
     // timer took over while it was joining the old countdown job (see cancelTimer).
@@ -139,9 +145,12 @@ class SleepTimerService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        // Prime synchronously so the first notification uses the saved step,
-        // not a default from before the settings flow has emitted.
-        stepMinutes = runBlocking { settingsRepository.settings.first().stepMinutes }
+        // Prime synchronously so the first notification uses the saved step and the
+        // first timer listens for shakes, not defaults from before the settings flow
+        // has emitted.
+        val initialSettings = runBlocking { settingsRepository.settings.first() }
+        stepMinutes = initialSettings.stepMinutes
+        shakeToExtend = initialSettings.shakeToExtend
         serviceScope.launch {
             settingsRepository.settings
                 .map { it.stepMinutes }
@@ -152,6 +161,16 @@ class SleepTimerService : Service() {
                     if (changed && countdownJob?.isActive == true && lastNotifiedMinutes >= 0) {
                         notificationManager.updateNotification(lastNotifiedMinutes, stepMinutes)
                     }
+                }
+        }
+        serviceScope.launch {
+            settingsRepository.settings
+                .map { it.shakeToExtend }
+                .distinctUntilChanged()
+                .collect { enabled ->
+                    shakeToExtend = enabled
+                    // Applies a toggle in the settings to an already running timer.
+                    updateShakeListening()
                 }
         }
     }
@@ -236,6 +255,7 @@ class SleepTimerService : Service() {
             mediaVolumeController.restoreVolume()
             runCountdownAndExpire()
         }
+        updateShakeListening()
 
         // Bind Shizuku's user service now instead of at expiry: the first bind spawns
         // a process, and during the expiry lookup the timer sits at zero, where "+"
@@ -272,19 +292,21 @@ class SleepTimerService : Service() {
         notificationManager.updateNotification(minutes, stepMinutes)
     }
 
-    private fun addStep() {
+    /** Adds one step to the timer. Returns false when the timer could not be extended. */
+    private fun addStep(): Boolean {
         when (timerRepository.timerState.value.phase) {
             TimerPhase.RUNNING -> {
-                if (countdownJob?.isActive != true) return
+                if (countdownJob?.isActive != true) return false
                 // Already at 0 and the job is mid-teardown in onTimerExpired (no fade,
                 // phase still RUNNING): adding here would set a deadline no loop reads,
                 // and the teardown then resets to IDLE — the tap would be silently lost.
-                if (remainingMillis <= 0L) return
+                if (remainingMillis <= 0L) return false
                 val stepMillis = stepMinutes * 60_000L
                 setRemaining((remainingMillis + stepMillis).coerceAtMost(MAX_TIMER_MILLIS))
                 totalDurationMillis = (totalDurationMillis + stepMillis).coerceAtMost(MAX_TIMER_MILLIS)
                 updateTimerState(TimerPhase.RUNNING)
                 notifyRemainingIfChanged()
+                return true
             }
             TimerPhase.WAITING_FOR_TRACK_END, TimerPhase.FADING_OUT -> {
                 // Replace countdownJob with the fade-in + restart so Cancel during
@@ -293,7 +315,7 @@ class SleepTimerService : Service() {
                 // fade has started yet, so the fade-in is a no-op. The countdown and
                 // fade-in run in parallel — the clock ticks from the moment the user
                 // presses +, not after the fade-in completes.
-                val oldJob = countdownJob ?: return
+                val oldJob = countdownJob ?: return false
                 val stepMillis = (stepMinutes * 60_000L).coerceAtMost(MAX_TIMER_MILLIS)
                 countdownJob = serviceScope.launch {
                     oldJob.cancelAndJoin()
@@ -304,9 +326,27 @@ class SleepTimerService : Service() {
                     launch { mediaVolumeController.fadeInToOriginal(FADE_IN_SECONDS) }
                     runCountdownAndExpire()
                 }
+                return true
             }
-            else -> {}
+            else -> return false
         }
+    }
+
+    /**
+     * Listens for shakes while a timer is active and shake-to-extend is on. Called
+     * wherever either condition changes; safe to call repeatedly.
+     */
+    private fun updateShakeListening() {
+        if (shakeToExtend && countdownJob?.isActive == true) {
+            shakeDetector.start(::onShake)
+        } else {
+            shakeDetector.stop()
+        }
+    }
+
+    /** A shake acts like "+" in every active phase, confirmed by vibration. */
+    private fun onShake() {
+        if (addStep()) shakeVibrator.vibrateExtended()
     }
 
     private fun setRemainingMinutes(minutes: Int) {
@@ -334,6 +374,7 @@ class SleepTimerService : Service() {
     private fun cancelTimer() {
         val job = countdownJob
         countdownJob = null
+        updateShakeListening()
         val generation = timerGeneration
         serviceScope.launch {
             // NonCancellable: a second ACTION_CANCEL landing mid-teardown trips the
@@ -425,6 +466,7 @@ class SleepTimerService : Service() {
         // foreground session the successor is still using.
         if (countdownJob !== coroutineContext[Job]) return
         countdownJob = null
+        updateShakeListening()
 
         // Reset state before stopping foreground to avoid race with onDestroy
         timerRepository.updateState(TimerState())
@@ -504,6 +546,7 @@ class SleepTimerService : Service() {
     }
 
     override fun onDestroy() {
+        shakeDetector.stop()
         serviceScope.cancel()
         super.onDestroy()
     }

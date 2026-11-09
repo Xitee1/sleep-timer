@@ -54,6 +54,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val STARS_ENABLED = booleanPreferencesKey("stars_enabled")
         val AUTO_ROTATE_MODE = stringPreferencesKey("auto_rotate_mode")
         val STEP_MINUTES = intPreferencesKey("step_minutes")
+        val SHAKE_TO_EXTEND = booleanPreferencesKey("shake_to_extend")
         val PRESET_MINUTES = intPreferencesKey("preset_minutes")
         val LAUNCH_ANIMATION_ENABLED = booleanPreferencesKey("launch_animation_enabled")
     }
@@ -112,6 +113,7 @@ class SettingsRepositoryImpl @Inject constructor(
             starsEnabled = prefs[STARS_ENABLED] ?: d.starsEnabled,
             autoRotateMode = AutoRotateMode.fromStorage(prefs[AUTO_ROTATE_MODE]),
             stepMinutes = prefs[STEP_MINUTES] ?: d.stepMinutes,
+            shakeToExtend = prefs[SHAKE_TO_EXTEND] ?: d.shakeToExtend,
             // Clamp on read too: values persisted before the cap changed must not
             // leak an out-of-range preset into the dial.
             presetMinutes = (prefs[PRESET_MINUTES] ?: d.presetMinutes).coerceIn(1, MAX_TIMER_MINUTES),
@@ -173,6 +175,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun updateStepMinutes(minutes: Int) {
         dataStore.edit { it[STEP_MINUTES] = minutes.coerceIn(1, 30) }
+    }
+
+    override suspend fun updateShakeToExtend(enabled: Boolean) {
+        dataStore.edit { it[SHAKE_TO_EXTEND] = enabled }
     }
 
     override suspend fun updatePresetMinutes(minutes: Int) {

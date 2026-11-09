@@ -19,6 +19,7 @@ data class UserSettings(
     val starsEnabled: Boolean = true,
     val autoRotateMode: AutoRotateMode = AutoRotateMode.Default,
     val stepMinutes: Int = 5,
+    val shakeToExtend: Boolean = false,
     val presetMinutes: Int = 15,
     val launchAnimationEnabled: Boolean = true,
 )

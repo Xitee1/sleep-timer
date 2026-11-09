@@ -53,6 +53,8 @@
     <string name="shizuku_feature_track_end">Reading the song length this way requires Shizuku because Android only lets privileged apps see the media sessions of other apps.</string>
     <string name="step_minutes_title">+/− step</string>
     <string name="step_minutes_value">%d min</string>
+    <string name="shake_to_extend_title">Shake to extend</string>
+    <string name="shake_to_extend_description">Shake the phone to extend the running timer by the +/− step</string>
     <string name="screen_title">Screen</string>
     <string name="screen_description">Lock screen when timer ends (Shizuku optional)</string>
     <string name="widget_config_title">Widget settings</string>
